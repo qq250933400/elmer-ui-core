@@ -1,6 +1,6 @@
 #  elmer-ui-core web轻量前端框架
 
-####版本更新：
+#### 版本更新：
 	# v1.2.8
 		* 修改withRouter代码逻辑，通过declareComponent注册redirect方法
 		* 增加router配置在跳转前或页面加载前自动call API
@@ -101,7 +101,7 @@ class DemoModel {
 	selector: "demo",
 	model: {
 		test: DemoModel
-		// 此处入驻的model没调用一次组件都会创建一个新的对象
+		// 此处注入的model每调用一次组件都会创建一个新的对象
 	},
 	service: {
 		// 此处可注入service, service只会创建一个对象，调用多次组件，只会有一个组件
