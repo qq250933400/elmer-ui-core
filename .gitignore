@@ -1,0 +1,15 @@
+/node_modules/
+/demo/
+/.vscode/
+/mochawesome-report/
+/.nyc_output/
+/coverage/
+yarn.lock
+yarn-error.log
+package-lock.json
+/example/
+/lib/
+/mochawesome-report/
+
+.DS_Store
+/**/*/.DS_Store

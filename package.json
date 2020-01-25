@@ -1,0 +1,95 @@
+{
+    "name": "elmer-ui-core",
+    "version": "1.2.9",
+    "description": "web app framework",
+    "typings": "lib/index.d.ts",
+    "main": "lib/index.js",
+    "module": "lib/index.js",
+    "bin": {
+        "elmerUIBuilder": "bin/index.js"
+    },
+    "scripts": {
+        "test": "mocha  --reporter mochawesome",
+        "cover": "nyc --reporter=html mocha",
+        "lib": "tsc -w",
+        "build": "tsc",
+        "static": "node ./bin/index.js --static",
+        "testReport": "mocha ./test/index.test.js ./test/**/*.test.js --reporter mochawesome"
+    },
+    "keywords": [
+        "web framework",
+        "elmer-ui-core",
+        "typescript",
+        "webApp"
+    ],
+    "author": "elmer s j mo",
+    "license": "ISC",
+    "nyc": {
+        "include": [
+            "src/**/*.ts",
+            "src/**/*.tsx"
+        ],
+        "exclude": [
+            "**/*.d.ts"
+        ],
+        "extension": [
+            ".ts",
+            ".tsx"
+        ],
+        "require": [
+            "ts-node/register"
+        ],
+        "reporter": [
+            "text",
+            "html"
+        ],
+        "sourceMap": true,
+        "instrument": true,
+        "all": true
+    },
+    "devDependencies": {
+        "@types/loader-utils": "^1.1.3",
+        "@types/node": "^12.12.24",
+        "babel-loader": "^7.1.5",
+        "babel-preset-env": "^1.7.0",
+        "extract-text-webpack-plugin": "^4.0.0-beta.0",
+        "jsdom": "^15.2.0",
+        "loader-utils": "^1.2.3",
+        "mocha": "^6.2.1",
+        "mochawesome": "^4.1.0",
+        "nyc": "^14.1.1",
+        "progress-bar-webpack-plugin": "^1.11.0",
+        "schema-utils": "^2.5.0",
+        "ts-loader": "^5.2.2",
+        "tslint": "^5.11.0",
+        "typescript": "^2.9.2"
+    },
+    "dependencies": {
+        "@abraham/reflection": "^0.4.2",
+        "@types/core-js": "^2.5.0",
+        "@types/jquery": "^3.3.22",
+        "ajv": "5.0.0",
+        "autoprefixer": "^9.2.0",
+        "axios": "^0.18.0",
+        "babel-cli": "^6.26.0",
+        "babel-core": "^6.26.3",
+        "babel-plugin-transform-class-properties": "^6.24.1",
+        "babel-polyfill": "^6.26.0",
+        "chalk": "^2.4.1",
+        "colors": "^1.3.3",
+        "core-js": "^2.5.7",
+        "decorator": "^0.0.1",
+        "elmer-common": "^0.1.1",
+        "elmer-redux": "^1.0.7",
+        "elmer-validation": "^1.0.6",
+        "elmer-virtual-dom": "^1.0.0",
+        "elmer-worker": "^1.0.4",
+        "eslint-plugin-typescript": "^0.12.0",
+        "path": "^0.12.7",
+        "promise": "^8.0.3",
+        "reflect-metadata": "^0.1.12",
+        "ts-node": "^7.0.1",
+        "typescript-eslint-parser": "^18.0.0",
+        "zone.js": "^0.8.26"
+    }
+}
