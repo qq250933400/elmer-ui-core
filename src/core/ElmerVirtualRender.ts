@@ -252,7 +252,7 @@ export class ElmerVirtualRender extends Common {
                         let isValueXor = /^\s*\!/.test(staticValueKey);
                         staticValueKey = staticValueKey.replace(/^(\s*\!)/,"").replace(/^(\s*this\.)/, "");
                         let staticValue = this.getValue(this.renderComponent, staticValueKey);
-                        staticValue = staticValue !== undefined ? staticValue : this.getValue(optionData, staticValueKey);
+                        staticValue = staticValue !== undefined ? staticValue : (optionData ? this.getValue(optionData, staticValueKey) : undefined);
                         // set second parameter to bind result when the first parameter is undefined or null
                         if(staticValue === undefined || staticValue === null) {
                             if(defaultValueIsText) {// the second parameter is a static string
@@ -469,7 +469,7 @@ export class ElmerVirtualRender extends Common {
             });
         } catch (e) {
             // tslint:disable-next-line:no-console
-            console.error(e);
+            console.error(e, nodeData, this.renderComponent);
         }
         return {
             attrs: result,
