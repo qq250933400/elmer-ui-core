@@ -146,8 +146,10 @@ export class RouterService extends Common {
         }
     }
     getToRouter(toUrl: string): any {
+        console.log(toUrl, this.routers);
         if(this.isArray(this.routers)) {
             const routeUrl = this.getRoutePathValue(toUrl);
+            console.log(routeUrl, "------>>");
             for(let i=0;i<this.routers.length;i++) {
                 const tmpRouter = this.routers[i];
                 if(this.isString(tmpRouter.path)) {
@@ -169,7 +171,7 @@ export class RouterService extends Common {
         const config = getRouterConfig<any,TypeRouterServiceOptions>();
         const serviceConfig = config.service;
         const resultApi:any = {};
-        if(serviceConfig.config && router) {
+        if(serviceConfig && serviceConfig.config && router) {
             // tslint:disable-next-line: forin
             for(const key in serviceConfig.config) {
                 const itemData = serviceConfig.config[key];
