@@ -10,7 +10,7 @@ import {
 } from "./core/ElmerUI";
 
 import { getGlobalVar, defineGlobalVar, __extends } from "./init/globalUtil";
-import { defineReduxProvider as defineReduxProviderFn, createReducer,defineStateOperateAction,defineReducer } from "elmer-redux";
+import { defineReduxProvider as defineReduxProviderFn, createReducer,defineStateOperateAction,defineReducer,ReduxController } from "elmer-redux";
 import { declareComponent,Injectable, autowired } from "./inject/injectable";
 import { propTypes } from "./propsValidation";
 import { Component } from "./core/Component";
@@ -20,6 +20,7 @@ export const addResize = addResizeFn;
 export const removeResize = removeResizeFn;
 export const defineReduxProvider = defineReduxProviderFn;
 export const redux = {
+    ReduxController,
     createReducer,
     defineReducer,
     defineReduxProvider,
