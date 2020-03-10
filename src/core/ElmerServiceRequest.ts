@@ -214,7 +214,7 @@ export class ElmerServiceRequest extends Common {
         return (await this.sendRequest(option));
     }
     private getEndPoint(option:IServiceRequest<any>): any {
-        if(this.isEmpty(option.namespace)) {
+        if(this.isEmpty(option.namespace) && this.config) {
             return this.getValue(this.config.endPoints, option.endPoint);
         } else {
             const nameSpace:IServiceConfig<any, any> = this.getValue(this.config, option.namespace);

@@ -155,7 +155,7 @@ export abstract class Component extends Common implements IComponent {
             const request = {
                 // tslint:disable-next-line:no-object-literal-type-assertion
                 obj:(<ElmerServiceRequest> {})
-            };
+            };console.log("loadTemplate", ajaxType);
             const type = /(GET|POST)/i.test(ajaxType) ? ajaxType : "GET";
             autowired(ElmerServiceRequest)(request, "obj");
             return new Promise((resolve:Function) => {
@@ -176,6 +176,7 @@ export abstract class Component extends Common implements IComponent {
                 });
             });
         } else {
+            console.log("ajax Not Send Request");
             return new Promise((resolve) => {
                 resolve(this.templateCode);
             });

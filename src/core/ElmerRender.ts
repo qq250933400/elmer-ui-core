@@ -48,7 +48,7 @@ export class ElmerRender extends Common {
     @autowired(VirtualElement)
     private virtualDom:VirtualElement;
     @autowired(VirtualElementsDiff, {
-        argv: [globalClassFactory​​(VirtualElement)]
+        argv: [globalClassFactory(VirtualElement)]
     })
     private virtualDiff: VirtualElementsDiff;
     @autowired(ElmerVirtualRender)
@@ -98,7 +98,7 @@ export class ElmerRender extends Common {
                 let ajaxHtmlCodeLoadCompleted = false;
                 let beginTime = (new Date()).getTime();
                 let endTime = beginTime;
-                let timeout = this.renderComponent.template.timeout || 6000;
+                let timeout = this.renderComponent.template.timeout || 3000;
                 // 异步加载模版信息
                 this.renderComponent.loadTemplate(this.renderComponent.template.url, this.renderComponent.template.isEndPoint, this.renderComponent.template.ajaxType).then((resp:any) => {
                     ajaxHtmlCodeLoadCompleted = true;

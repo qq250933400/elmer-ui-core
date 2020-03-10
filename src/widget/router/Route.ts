@@ -1,4 +1,4 @@
-import { Component, declareComponent, propTypes, IPropCheckRule } from "../../index";
+import { Component, declareComponent, IPropCheckRule, propTypes } from "../../index";
 
 @declareComponent({
     selector: "route"

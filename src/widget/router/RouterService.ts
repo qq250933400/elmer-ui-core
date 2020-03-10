@@ -146,10 +146,8 @@ export class RouterService extends Common {
         }
     }
     getToRouter(toUrl: string): any {
-        console.log(toUrl, this.routers);
         if(this.isArray(this.routers)) {
             const routeUrl = this.getRoutePathValue(toUrl);
-            console.log(routeUrl, "------>>");
             for(let i=0;i<this.routers.length;i++) {
                 const tmpRouter = this.routers[i];
                 if(this.isString(tmpRouter.path)) {
@@ -220,7 +218,6 @@ export class RouterService extends Common {
                                 if(typeof this.target?.props?.updateApiData === "function") {
                                     this.target?.props?.updateApiData(endPoint.options.reduxActionType, resp);
                                 } else {
-                                    console.log(this.target);
                                     // tslint:disable-next-line: no-console
                                     console.error("RouterService错误的调用");
                                 }
