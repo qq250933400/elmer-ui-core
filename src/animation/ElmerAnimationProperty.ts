@@ -188,19 +188,19 @@ export const calcPropertyData = (resultData: any, key, value: string | number): 
         }
     } else {
         if(StaticCommon.isString(value)) {
-            // opacity 是一个特殊的属性，当value为空时值是1
+            // opacity 是一个特殊的属性，当value为空时值是1 transform: translateX() scale()
             if(key !== "opacity") {
                 const mapValue = value.replace(/^\s*/, "").replace(/\s*$/, "").replace(/\s{2,}/," ");
-                const mapList = mapValue.split(" ");
+                const mapList = /^transform/i.test(key) ? mapValue.split(",") : mapValue.split(" ");
                 for(let i=0;i<mapList.length;i++) {
                     let tmpValue = mapList[i];
                     let index = i + 1;
                     if(!isCssEmpty(tmpValue)) {
-                        if(/^[0-9\.]*$/.test(tmpValue)) {
+                        if(/^[\-]{0,1}[0-9\.]*$/.test(tmpValue)) {
                             dResult[`value${index}`] = StaticCommon.isNumeric(tmpValue) && StaticCommon.isString(tmpValue) ? parseFloat(tmpValue) : tmpValue;
                             dResult[`value${index}Unit`] = "";
-                        } else if (/^[0-9\.]{1,}([a-z]{1,}|%)$/.test(tmpValue)) {
-                            const tmpMatch = tmpValue.match(/^([0-9]{1,})([a-z]{1,}|%)$/);
+                        } else if (/^[\-]{0,1}[0-9\.]{1,}([a-z]{1,}|%)$/.test(tmpValue)) {
+                            const tmpMatch = tmpValue.match(/^([\-]{0,1}[0-9]{1,})([a-z]{1,}|%)$/);
                             if(tmpMatch) {
                                 dResult[`value${index}`] = StaticCommon.isNumeric(tmpMatch[1]) && StaticCommon.isString(tmpMatch[1]) ? parseFloat(tmpMatch[1]) : tmpMatch[1];
                                 dResult[`value${index}Unit`] = tmpMatch[2];
@@ -303,7 +303,7 @@ const getCssValue = (cssKey: string, value?: any, defaultUnit?: string, valueUni
                 if(value.length === 3) {
                     return rgbToHex(value[0], value[1], value[2]);
                 } else if(value.length === 4) {
-                    return `rgba(${value.join(',')})`;
+                    return `rgba(${value.join(",")})`;
                 } else {
                     return value.join(" ");
                 }
@@ -320,6 +320,7 @@ export const convertAnimationDataToCssProperty = (animationData: TypeAnimationPr
     const cssResult:any = {};
     if(animationData) {
         const transformValues = [];
+        // tslint:disable-next-line: forin
         for(const cssKey in animationData) {
             const cssData: TypeAnimationContext = animationData[cssKey];
             const cssValue = [];
@@ -340,7 +341,7 @@ export const convertAnimationDataToCssProperty = (animationData: TypeAnimationPr
             } else if(/^transform/i.test(cssKey)) {
                 let cssKeyValue = cssKey.replace(/^transform/i, "");
                 cssKeyValue = cssKeyValue.substr(0,1).toLowerCase() + cssKeyValue.substr(1);
-                transformValues.push(`${cssKeyValue}(${cssValue.join(',')})`);
+                transformValues.push(`${cssKeyValue}(${cssValue.join(",")})`);
             }
         }
         if(transformValues.length>0) {
@@ -355,8 +356,8 @@ export const convertAnimationDataToCssProperty = (animationData: TypeAnimationPr
 };
 
 export default {
-    converOption: calcPropertyConfigData,
     converAnimationProperty: convertAnimationDataToCssProperty,
+    converOption: calcPropertyConfigData,
     gradient,
     hexToRgb,
     readWillChangeCssDefaultData,

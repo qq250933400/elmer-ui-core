@@ -4,6 +4,6 @@ var assert = require("assert");
 describe("Testting typescript 3.7 support", () => {
     it("optional call attribute", () => {
         const a = {};
-        assert.equal(a.data?.title, undefined);
+        assert.equal(a.title, undefined);
     });
 });

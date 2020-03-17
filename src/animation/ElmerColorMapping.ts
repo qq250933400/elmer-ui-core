@@ -1,3 +1,4 @@
+// tslint:disable: object-literal-sort-keys
 export default {
     maroon: "#800000",
     darkred: "#8B0000",
@@ -134,3 +135,4 @@ export default {
     ghostwhite: "#F8F8FF",
     white: "#FFFFFF",
 };
+// tslint:endable: object-literal-sort-keys

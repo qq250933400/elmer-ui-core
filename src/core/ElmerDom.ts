@@ -459,11 +459,12 @@ export class ElmerDOM extends ElmerDomQuery {
         }
         this.css(dom, "height", 0);
         this.animation({
-            type: options ? options.type : "Linear",
+            dom,
+            duration: options ? (options.duration || 300) : 300,
             from,
             to,
-            duration: options ? (options.duration || 300) : 300,
-            dom,
+            type: options ? options.type : "Linear",
+            // tslint:disable-next-line: object-literal-sort-keys
             onFinish: () => {
                 this.css(dom, {
                     height: dValue.height,
@@ -472,28 +473,35 @@ export class ElmerDOM extends ElmerDomQuery {
                 options && typeof options.onFinish === "function" && options.onFinish();
             }
         });
+        dValue = null;
+        to = null;
+        from = null;
+        domHeight = null;
+        attrHeightValue = null;
     }
     slideOut(dom:HTMLElement, options?: TypeShowAnimationParam): void {
-        let domHeight:number = dom.clientHeight;
-        let from:TypeAnimationProperty = {
+        const domHeight:number = dom.clientHeight;
+        const from:TypeAnimationProperty = {
             height: domHeight,
             opacity: 1
         };
-        let to:TypeAnimationProperty = {
+        const to:TypeAnimationProperty = {
             height: 0,
             opacity: 0.5
         };
-        let dValue = animationMethod.converAnimationProperty(animationMethod.readWillChangeCssDefaultData(dom, from, to));
+        const dValue = animationMethod.converAnimationProperty(animationMethod.readWillChangeCssDefaultData(dom, from, to));
         this.animation({
-            type: options ? options.type : "Linear",
+            dom,
+            duration: options ? (options.duration || 300) : 300,
             from,
             to,
-            duration: options ? (options.duration || 300) : 300,
-            dom,
+            type: options ? options.type : "Linear",
+            // tslint:disable-next-line: object-literal-sort-keys
             onFinish: () => {
                 this.css(dom, {
                     display: "none",
                     opacity: 1,
+                    // tslint:disable-next-line: object-literal-sort-keys
                     height: dValue.height
                 });
                 this.attr(dom, "data-animation-height", dValue.height);
@@ -502,6 +510,7 @@ export class ElmerDOM extends ElmerDomQuery {
         });
     }
     private onAnimationChange(evt:TypeAnimationChangeEvent): void {
+        // console.log(evt.value);
         this.css(evt.dom, evt.value);
     }
     private queryInDom(dom:HTMLElement, selector:IElmerDomSelector): HTMLElement[] {
