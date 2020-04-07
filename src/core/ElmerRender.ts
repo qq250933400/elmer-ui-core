@@ -3,6 +3,7 @@ import { defineContext, getContext } from "elmer-redux";
 import { HtmlParse, IVirtualElement, VirtualElement, VirtualElementOperate, VirtualElementsDiff } from "elmer-virtual-dom";
 import { SvgConfig } from "../configuration/SvgConfig";
 import { autowired } from "../inject";
+import { globalClassFactory } from "../inject/globalClassFactory";
 import { IComponent } from "../interface/IComponent";
 import { IDeclareComponent } from "../interface/IDeclareComponentOptions";
 import { IElmerRenderParams, TypeRenderEventData, TypeUIRenderOptions } from "../interface/IElmerRender";
@@ -13,7 +14,6 @@ import { IPropCheckRule } from "../propsValidation";
 import { ElmerDOM } from "./ElmerDom";
 import { addResize, removeResize } from "./ElmerUI";
 import { ElmerVirtualRender } from "./ElmerVirtualRender";
-import { globalClassFactory } from "../inject/globalClassFactory";
 
 export class ElmerRender extends Common {
     previousSibling?: HTMLElement|SVGSVGElement|Element|Text|Comment;
@@ -253,6 +253,7 @@ export class ElmerRender extends Common {
     renderHtml(): void {
         let sourceDom = this.virtualDom.create("VirtualRoot");
         let oldDom:IVirtualElement = this.nodeData || this.virtualDom.create("VirtualRoot");
+
         if(!this.htmlParseData || this.isNeedParse) {
             if(!this.isEmpty(this.htmlCode)) {
                 if(this.isString(this.htmlCode)) {
@@ -626,6 +627,7 @@ export class ElmerRender extends Common {
                     }
                 }
             } else if(nodeData.status === VirtualElementOperate.APPEND) {
+
                 // 当前动作将自定义组件渲染到真实dom树中
                 const dataProps = nodeData.props||{};
                 const domID = this.getRandomID();

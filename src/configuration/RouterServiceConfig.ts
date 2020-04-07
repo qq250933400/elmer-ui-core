@@ -4,7 +4,7 @@ import { getGlobalConfiguration } from "./GlobalConfig";
 import { TypeRouterConfig, TypeServiceConfig } from "./TypeGlobalConfig";
 
 export const getRouterConfig = <RouterConfigData, RouterConfigOptions>():TypeRouterConfig<RouterConfigData, RouterConfigOptions> => {
-    const globalConfig = getGlobalConfiguration<unknown,unknown,RouterConfigData,RouterConfigOptions, unknown, unknown, unknown>();
+    const globalConfig = getGlobalConfiguration<unknown,unknown,RouterConfigData,RouterConfigOptions, unknown, unknown, unknown, unknown>();
     return globalConfig.router;
 };
 
@@ -19,13 +19,13 @@ export const getRouterServiceByNamespace = <IServiceEndPoints,IServiceConfigOpti
 };
 
 export const setRouterServiceConfig = <ConfigData, ConfigDataOptions>(configData:TypeServiceConfig<ConfigData, ConfigDataOptions>): void => {
-    const globalConfig = getGlobalConfiguration<unknown,unknown,ConfigData, ConfigDataOptions, unknown, unknown, unknown>();
+    const globalConfig = getGlobalConfiguration<unknown,unknown,ConfigData, ConfigDataOptions, unknown, unknown, unknown, unknown>();
     if(globalConfig.router && globalConfig.router.service) {
         StaticCommon.extend(globalConfig.router.service, configData);
     } else  {
         globalConfig.router = <any>{
             requests: {}
         };
-        globalConfig.router.service = configData;
+        globalConfig.router.service = <any>configData;
     }
 };

@@ -1,3 +1,4 @@
+import { ReduxController } from "elmer-redux";
 import { IVirtualElement } from "elmer-virtual-dom";
 import { Component } from "../../core/Component";
 import { defineGlobalState, getGlobalState } from "../../init/globalUtil";
@@ -7,6 +8,7 @@ import { TypeUIRenderOptions } from "../../interface/IElmerRender";
 import { IPropCheckRule, PropTypes } from "../../propsValidation";
 import "./Route";
 import { ROUTER_SKIP_API_ACTION, RouterService } from "./RouterService";
+import { autowired } from "../../inject/injectable";
 
 type TypeRouterPropRule = {
     hashRouter: IPropCheckRule;
@@ -23,7 +25,7 @@ type TypeRouterState = {
     loadingPercent?: string;
 };
 type TypeRouterInjectService = {
-    data?: RouterService;
+    data?: any;
 };
 type TypeRouterContextType = {
     renderStore: IPropCheckRule;
@@ -35,7 +37,8 @@ type TypeRouterContext = {
 };
 @declareComponent({
     selector: "router",
-    service: {
+    // tslint:disable-next-line: object-literal-sort-keys
+    model: {
         data: RouterService
     },
     // tslint:disable-next-line: object-literal-sort-keys
@@ -83,10 +86,13 @@ export class Router extends Component {
         loadingPercent: "0%",
         url: ""
     };
-    service: TypeRouterInjectService;
+    model: TypeRouterInjectService;
     context: TypeRouterContext;
     protected router: IRouter;
     private sourceRouters: IRouter[];
+
+    @autowired(ReduxController)
+    private redux:ReduxController;
     constructor(props:TypeRouterProps, context: {[P in keyof TypeRouterContextType]:any}) {
         super(props);
         const children = props.children || [];
@@ -123,22 +129,25 @@ export class Router extends Component {
         // tslint:disable-next-line:no-console
         console.log("Router对象model注入成功，初始化Route参数");
         const linkUrl = undefined !== this.state.url && null !== this.state.url ? this.state.url : (location.href || "");
-        this.service.data.initConfig(this.sourceRouters, this.props.hashRouter);
-        this.service.data.setBindRouteComponent(this);
-        this.service.data.refreshUrl(this.state.url);
-        const updateRouter = this.service.data.checkRoutersVisible(linkUrl, null, null);
+        this.model.data.initConfig(this.sourceRouters, this.props.hashRouter);
+        this.model.data.setBindRouteComponent(this);
+        this.model.data.refreshUrl(this.state.url);
+        this.model.data.dispatch = (state:any): Promise<any> => {
+            return this.redux.dispatch(state);
+        };
+        const updateRouter = this.model.data.checkRoutersVisible(linkUrl, null, null);
         if(!this.isEqual(updateRouter, this.router)) {
             this.router = updateRouter;
             // 当在服务端渲染的时候不执行请求动作，请求动作已经在elmer-ui-rsv代码中做了，
             // 按纯前端渲染设计页面初始化的时候自动请求配置的Router API,
             // 当开启服务端渲染的时候第一次渲染在服务端已经做了请求数据操作，所以在Router初始化时不用请求API
             if(undefined === this.context?.renderStore?.options || !this.context.renderStore?.options?.isRSV) {
-                const ApiData = this.service.data.getRouterRequests(updateRouter);
+                const ApiData = this.model.data.getRouterRequests(updateRouter);
                 if(!getGlobalState("RenderInServer") && Object.keys(ApiData).length > 0) {
                     this.state.isAjaxLoading = true;
                     this.state.isNeedAjax = true;
                     this.state.loadingPercent = "0%";
-                    this.service.data.ajaxAll(ApiData, {
+                    this.model.data.ajaxAll(ApiData, {
                         onCompleted:() => {
                             this.setState({
                                 isAjaxLoading: false
@@ -166,9 +175,9 @@ export class Router extends Component {
         }
     }
     onRouterChanged(newUrl:string, oldUrl: string, param:any): void {
-        const updateRouter = this.service.data.checkRoutersVisible(newUrl, oldUrl, param);
+        const updateRouter = this.model.data.checkRoutersVisible(newUrl, oldUrl, param);
         if(!this.isEqual(updateRouter, this.router)) {
-            let ApiData = this.service.data.getRouterRequests(updateRouter);
+            let ApiData = this.model.data.getRouterRequests(updateRouter);
             let skipResult = param ? param[ROUTER_SKIP_API_ACTION] : null;
             this.router = updateRouter;
             if(Object.keys(ApiData).length > 0 && (undefined === skipResult || null === skipResult || (null !== skipResult && undefined !== skipResult && !skipResult))) {
@@ -177,7 +186,7 @@ export class Router extends Component {
                     isNeedAjax: true,
                     loadingPercent: "0%"
                 });
-                this.service.data.ajaxAll(ApiData, {
+                this.model.data.ajaxAll(ApiData, {
                     // tslint:disable-next-line: object-literal-sort-keys
                     onCompleted:():void => {
                         this.setState({

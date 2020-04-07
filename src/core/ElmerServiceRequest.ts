@@ -2,12 +2,11 @@ import axios, { AxiosResponse } from "axios";
 import { Common } from "elmer-common";
 import { getServiceConfig } from "../configuration/AppServiceConfig";
 import { TypeServiceConfig } from "../configuration/TypeGlobalConfig";
-import { getGlobalState } from "../init/globalUtil";
-import { Injectable } from "../inject";
-import { IServiceConfig, IServiceEndPoint,IServiceRequest } from "../interface/IElmerService";
+import { IServiceConfig, IServiceEndPoint,IServiceRequest, TypeServiceRequestType } from "../interface/IElmerService";
 
-@Injectable("ElmerServiceRequest")
+
 export class ElmerServiceRequest extends Common {
+    static className:string = "ElmerServiceRequest";
     private configData:TypeServiceConfig<any, any>;
     private config:any;
     private success: Function|undefined;
@@ -91,7 +90,7 @@ export class ElmerServiceRequest extends Common {
         return new Promise((resolve:Function, reject:Function) => {
             if(endPoint || !this.isEmpty(option.url)) {
                 const reqUrl = this.getRequestUrl(endPoint, option);
-                let method: string = this.config.dummy ? "GET" : option["method"] || (endPoint && endPoint.method) || "GET";
+                let method: string = this.config.dummy ? "GET" : this.getRequestMethod(option, endPoint);
                 endPoint && typeof endPoint.onBefore === "function" && endPoint.onBefore(option);
                 const header = {
                     // "Content-Type" : "application/x-www-from-urlencoded",
@@ -212,6 +211,25 @@ export class ElmerServiceRequest extends Common {
     async sendRequestAsync(option:IServiceRequest<any>):Promise<any> {
         // tslint:disable-next-line:no-return-await
         return (await this.sendRequest(option));
+    }
+    private getRequestMethod(option:IServiceRequest<any>, endPoint:IServiceEndPoint<any>):TypeServiceRequestType {
+        if(option) {
+            if(!this.isEmpty(option["type"])) {
+                return option["type"];
+            }
+            if(!this.isEmpty(option["method"])) {
+                return option["method"];
+            }
+        }
+        if(endPoint) {
+            if(!this.isEmpty(endPoint.type)) {
+                return endPoint.type;
+            }
+            if(!this.isEmpty(endPoint.method)) {
+                return endPoint.method;
+            }
+        }
+        return "GET";
     }
     private getEndPoint(option:IServiceRequest<any>): any {
         if(this.isEmpty(option.namespace) && this.config) {

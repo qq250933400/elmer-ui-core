@@ -42,6 +42,7 @@ export class ReduxProvider extends Component {
             rule: PropTypes.func
         },
         reducers: {
+            defaultValue: {},
             description: "Redux监听方法集合",
             rule: PropTypes.object.isRequired
         },
@@ -75,7 +76,8 @@ export class ReduxProvider extends Component {
             default:
                 this.reduxController.saveStore = sessionStorage;
         }
-        console.log("Component Init", this.reduxController.reducers)
+        // tslint:disable-next-line: no-console
+        console.log("Init Redux Provider");
     }
     $init(): void {
         defineReduxProvider(getGlobalState, defineGlobalState);

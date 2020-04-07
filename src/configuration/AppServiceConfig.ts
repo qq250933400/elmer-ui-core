@@ -4,7 +4,7 @@ import { getGlobalConfiguration } from "./GlobalConfig";
 import { TypeServiceConfig } from "./TypeGlobalConfig";
 
 export const getServiceConfig = <ServiceConfig, ServiceConfigOptions>():TypeServiceConfig<ServiceConfig, ServiceConfigOptions> => {
-    const globalConfig = getGlobalConfiguration<ServiceConfig,ServiceConfigOptions, unknown, unknown, unknown, unknown, unknown>();
+    const globalConfig = getGlobalConfiguration<ServiceConfig,ServiceConfigOptions, unknown, unknown, unknown, unknown, unknown, unknown>();
     return globalConfig.service;
 };
 

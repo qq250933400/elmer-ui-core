@@ -9,7 +9,7 @@ export const defineGlobalConfiguration = <
     RouterServiceConfig,
     RouterServiceConfigEndPointOptions,
     I18nData,I18nLocales,
-    I18nConvert>(
+    I18nConvert,ENV>(
         configData: TypeGlobalConfig<
             AppServiceNamespaceConfig,
             AppServiceConfigEndPointOptions,
@@ -17,7 +17,8 @@ export const defineGlobalConfiguration = <
             RouterServiceConfigEndPointOptions,
             I18nData,
             I18nLocales,
-            I18nConvert>
+            I18nConvert,
+            ENV>
     ): void => {
     const saveConfigData:TypeGlobalConfig<
         AppServiceNamespaceConfig,
@@ -26,7 +27,8 @@ export const defineGlobalConfiguration = <
         RouterServiceConfigEndPointOptions,
         I18nData,
         I18nLocales,
-        I18nConvert> = getGlobalState("configuration");
+        I18nConvert,
+        ENV> = getGlobalState("configuration");
     if(!saveConfigData) {
         defineGlobalState("configuration", configData, false);
     } else {
@@ -91,7 +93,7 @@ export const getGlobalConfiguration = <
     RouterServiceConfig,
     RouterServiceConfigEndPointOptions,
     I18nData,I18nLocales,
-    I18nConvert>
+    I18nConvert,ENV>
     ():TypeGlobalConfig<
         AppServiceNamespaceConfig,
         AppServiceConfigEndPointOptions,
@@ -99,7 +101,8 @@ export const getGlobalConfiguration = <
         RouterServiceConfigEndPointOptions,
         I18nData,
         I18nLocales,
-        I18nConvert> => {
+        I18nConvert,
+        ENV> => {
     let globalConfigState = getGlobalState("configuration");
     if(!globalConfigState) {
         globalConfigState = {

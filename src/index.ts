@@ -40,6 +40,7 @@ export * from "./core/ElmerServiceRequest";
 export * from "./configuration";
 export * from "./i18n";
 export * from "./animation/ElmerAnimation";
+export * from "./configuration";
 // ---------import widget 注册所有组件 ----------
 export * from "./widget";
 // tslint:enable:ordered-imports

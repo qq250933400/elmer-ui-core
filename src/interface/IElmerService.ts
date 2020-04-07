@@ -1,8 +1,10 @@
 import { AxiosResponse } from "axios";
 
+export type TypeServiceRequestType = "POST" | "GET" | "DELETE" | "PUT";
+
 export interface IServiceRequest<ServiceRequestOptions> {
     endPoint?: string;
-    type?: "POST" | "GET" | "DELETE" | "PUT";
+    type?: TypeServiceRequestType;
     data?: any;
     timeout?: number;
     uri?: any;
@@ -30,8 +32,8 @@ export interface IServiceConfig<TypeServiceEndPoints, TypeServiceEndPointOptions
 
 export interface IServiceEndPoint<TypeOptions> {
     url: string;
-    type?: "POST" | "GET" | "DELETE" | "PUT";
-    method?: "POST" | "GET" | "DELETE" | "PUT";
+    type?: TypeServiceRequestType;
+    method?: TypeServiceRequestType;
     header?: any;
     uri?: any;
     payload?: any;

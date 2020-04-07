@@ -1,6 +1,6 @@
 import { Common } from "elmer-common";
-import { ElmerServiceRequest } from "../..";
 import { getRouterConfig } from "../../configuration/RouterServiceConfig";
+import { ElmerServiceRequest } from "../../core/ElmerServiceRequest";
 import { defineGlobalState, getGlobalState } from "../../init/globalUtil";
 import { IRouter } from "../../interface/IDeclareComponentOptions";
 import { IServiceEndPoint, IServiceRequest } from "../../interface/IElmerService";
@@ -198,7 +198,6 @@ export class RouterService extends Common {
             const allStatus = {};
             let allPercent = 100.0;
             let loaded = 0;
-
             // tslint:disable-next-line: forin
             for(const namespace in apiData) {
                 const endPoints = apiData[namespace] || [];
@@ -209,6 +208,7 @@ export class RouterService extends Common {
                         options: {
                             key: i
                         },
+                        // tslint:disable-next-line: object-literal-sort-keys
                         success: (resp:any, events: any) => {
                             const endPoint:IServiceEndPoint<TypeRouterServiceOptions> = events.endPoint;
                             if(this.isEmpty(endPoint.options.reduxActionType)) {
@@ -243,7 +243,12 @@ export class RouterService extends Common {
             }
             allPercent = (allSend.length) * 100;
             this.http.setConfig(serviceConfig);
-            this.http.send(allSend, (resp) => {
+            this.http.send(allSend, (resp, configRequest:any) => {
+                const reduxType = this.getValue(configRequest,"endPoint.options.reduxActionType");
+                typeof this["dispatch"] === "function" && this["dispatch"]({
+                    data: resp.data ? resp.data : resp,
+                    type: reduxType
+                });
                 resolve(options?.option);
             }, (err) => {
                 reject(options?.option);
@@ -321,3 +326,4 @@ export class RouterService extends Common {
         }
     }
 }
+
