@@ -9,6 +9,12 @@ export const withRouter = (childComponent: any, Fn:any): any => {
             let obj:RouterService = Fn(RouterService);
             let toRouter = obj.checkRoutersVisible(path, null, toParam);
             let ApiData = obj.getRouterRequests(toRouter);
+            let toPath = path;
+            if(obj.hashRouter) {
+                if(!(/^\#\/.*/.test(path))) {
+                    toPath = "#/" + path.replace(/^\//, "");
+                }
+            }
             if(Object.keys(ApiData).length > 0) {
                 toParam[ROUTER_SKIP_API_ACTION] = true;
                 obj.setState({
@@ -25,7 +31,7 @@ export const withRouter = (childComponent: any, Fn:any): any => {
                         option.obj.setState({
                             isAjaxLoading: false
                         });
-                        history.pushState(toParam, null, path);
+                        history.pushState(toParam, null, toPath);
                     },
                     onDownloadProgress: (event, option:any) => {
                         option.obj.setState({
@@ -42,13 +48,14 @@ export const withRouter = (childComponent: any, Fn:any): any => {
                     });
                 });
             } else {
-                history.pushState(toParam, null, path);
+                history.pushState(toParam, null, toPath);
             }
             obj = null;
             ApiData = null;
             toRouter = null;
         };
         childComponent.prototype.hashRouter = (<RouterService>Fn(RouterService)).hashRouter;
+        return childComponent;
     } else {
         throw new Error("withRouter只能用于Component");
     }

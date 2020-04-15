@@ -1,3 +1,10 @@
+export const formatSelector = (selectorName: string): string => {
+    let dName = selectorName.replace(/([A-Z])/g, "-$1").replace(/^([a-z])/i, "-$1").toLowerCase();
+    dName = /^\-/.test(dName) ? dName : "-" + dName;
+    dName = "eui" + dName;
+    return dName;
+};
+
 export const registerComponent = (widgets: object | Function, domName?: string) => {
     const register = (widgetFactory: Function, domNameValue?: string) => {
         // tslint:disable-next-line:no-shadowed-variable
@@ -6,9 +13,7 @@ export const registerComponent = (widgets: object | Function, domName?: string) 
         if (fMatch) {
             let dName = fMatch[1];
             dName = domNameValue && domNameValue.length>0 ? domNameValue :  dName;
-            dName = dName.replace(/([A-Z])/g, "-$1").replace(/^([a-z])/i, "-$1").toLowerCase();
-            dName = /^\-/.test(dName) ? dName : "-" + dName;
-            dName = "eui" + dName;
+            dName = formatSelector(dName);
             const saveData = elmerData.components || {};
             if (!saveData[dName]) {
                 Object.defineProperty(widgetFactory, "selector", {

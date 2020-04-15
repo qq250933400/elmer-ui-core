@@ -6,6 +6,7 @@ export type TypeUIRenderOptions = {
 
 export interface IElmerRenderParams {
     virtualTarget: HTMLElement;
+    virtualId: string;
     component: IComponent;
     contentDom?: HTMLElement;
     previousSibling?: HTMLElement|SVGSVGElement|Element|Text|Comment;

@@ -37,7 +37,8 @@ export class ElmerUI extends Common {
                 },
                 htmlCode,
                 uiRenderOptions: options,
-                virtualTarget: target,
+                virtualId: "root",
+                virtualTarget: target
             });
             handler.dom = {};
             handler["render"] = () => {

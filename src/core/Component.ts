@@ -1,8 +1,8 @@
 import { Common } from "elmer-common";
 import { IVirtualElement } from "elmer-virtual-dom";
-import { autowired } from "../inject";
+import { autoInit, autowired } from "../inject";
 import { EnumHTMLElementInsertMethod, IComponent, TypeThemeDefault } from "../interface/IComponent";
-import { ElmerDOM } from "./ElmerDom";
+import { withRouter } from "../widget/router/withRoter";
 import { ElmerServiceRequest } from "./ElmerServiceRequest";
 
 // tslint:disable:no-empty
@@ -10,7 +10,7 @@ import { ElmerServiceRequest } from "./ElmerServiceRequest";
 /**
  * 所有的组件必须继承次类
  */
-export abstract class Component extends Common implements IComponent {
+abstract class ComponentClass extends Common implements IComponent {
     static propType:any = {};
     static contextType:any = {};
     /**
@@ -155,7 +155,7 @@ export abstract class Component extends Common implements IComponent {
             const request = {
                 // tslint:disable-next-line:no-object-literal-type-assertion
                 obj:(<ElmerServiceRequest> {})
-            };console.log("loadTemplate", ajaxType);
+            };
             const type = /(GET|POST)/i.test(ajaxType) ? ajaxType : "GET";
             autowired(ElmerServiceRequest)(request, "obj");
             return new Promise((resolve:Function) => {
@@ -176,11 +176,11 @@ export abstract class Component extends Common implements IComponent {
                 });
             });
         } else {
-            console.log("ajax Not Send Request");
             return new Promise((resolve) => {
                 resolve(this.templateCode);
             });
         }
     }
 }
+export const Component = withRouter(ComponentClass, autoInit);
 // tslint:enable:no-empty

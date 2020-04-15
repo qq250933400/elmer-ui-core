@@ -27,6 +27,7 @@ export class ElmerRender extends Common {
     eventListeners: TypeRenderEventData[] = [];
     resizeID: string[] = [];
     virtualDomList: any = {};
+    virtualId: string; // current virtual dom id
     nodeData: IVirtualElement;
     oldData: IVirtualElement;
 
@@ -67,6 +68,7 @@ export class ElmerRender extends Common {
         this.previousSibling = props.previousSibling;
         this.contextStore = props.context;
         this.uiOptions = props.uiRenderOptions;
+        this.virtualId = props.virtualId;
         this.extend(this.renderComponent,{
             addEvent: this.bindDomEvent.bind(this),
             setData: this.setComponentData.bind(this),
@@ -180,7 +182,9 @@ export class ElmerRender extends Common {
             this.renderComponent.domList[dKey];
             delete this.renderComponent.domList[dKey];
         });
-
+        // call injectComponent release event
+        this.nodeData.virtualID = this.virtualId;
+        this.injectComponent.releaseComponent(this.renderComponent, this.nodeData);
         // this.contentChildren = [];
         this.eventListeners = [];
         Object.keys(this.virtualDomList).map((tmpID)=> {
@@ -653,7 +657,8 @@ export class ElmerRender extends Common {
                     htmlCode: "",
                     previousSibling,
                     uiRenderOptions: this.uiOptions,
-                    virtualTarget: targetParent
+                    virtualId: domID,
+                    virtualTarget: targetParent,
                 });
                 this.injectComponent.initComponent(component, componentClass, nodeData);
                 this.injectComponent.run(component, componentClass, nodeData);
@@ -768,7 +773,6 @@ export class ElmerRender extends Common {
                 isDelete: true
             };
             if(oldVirtualDom) {
-                this.injectComponent.releaseComponent(oldVirtualDom.component, componentClass, nodeData);
                 oldVirtualDom.render.dispose();
                 delete this.virtualDomList[nodeData.virtualID];
                 if(!this.isEmpty(nodeData.props.id)) {
@@ -1130,21 +1134,47 @@ export class ElmerRender extends Common {
                 const uItem = checkItem.children[i];
                 if(uItem.status !== "DELETE") {
                     // --- 检测Item是否包含Content元素，检测到，替换为children
-                    if(/\<content\s*\>\s*\<\/content\s*\>/.test(uItem.innerHTML) || /\<content\s*\/\>/.test(uItem.innerHTML) || uItem.tagName === "content") {
+                    if(
+                        /\<content[0-9]*\s*\>\S*\<\/content[0-9]*\s*\>/i.test(uItem.innerHTML) ||
+                        /\<content[0-9]*\s*\/\>/i.test(uItem.innerHTML) ||
+                        /^content[0-9]*$/i.test(uItem.tagName) ||
+                        /\<context[0-9]*\s*\>\S*\<\/context[0-9]*\s*\>/i.test(uItem.innerHTML) ||
+                        /\<context[0-9]*\s*\/\>/i.test(uItem.innerHTML) ||
+                        /^context[0-9]*$/i.test(uItem.tagName) ||
+                        uItem.tagName === "content") {
                         // 检测到当前dom是content元素或者包含content元素，
                         // 其他dom结构不用再做，
-                        if(uItem.tagName === "content") {
+                        if(uItem.tagName === "content" || uItem.tagName === "context") {
                             for(let j=0,mLen = children.length;j<mLen;j++) {
                                 children[j].isContent = true;
                             }
                             this.virtualDom.init(checkItem);
                             this.virtualDom.replaceAt(children, i);
                             this.virtualDom.clear();
+                            break;
                         } else {
-                            // 执行下一层搜索
-                            this.replaceContent(checkItem.children[i], children);
+                            if(/^content[0-9]{1,}$/.test(uItem.tagName) || /^context[0-9]{1,}$/.test(uItem.tagName)) {
+                                for(let j=0, mLen = children.length; j< mLen; j++) {
+                                    let nMatch = uItem.tagName.match(/([0-9]*)$/);
+                                    if(nMatch) {
+                                        const num = nMatch[1];
+                                        const contextKey = "ChildrenWrapper" + num;
+                                        if(contextKey.toLowerCase() === children[j].tagName.toLowerCase()) {
+                                            for(let z=0,zLen = children[j].children.length;z<zLen;z++) {
+                                                children[j].children[z].isContent = true;
+                                            }
+                                            this.virtualDom.init(checkItem);
+                                            this.virtualDom.replaceAt(children[j].children, i);
+                                            break;
+                                        }
+                                    }
+                                    nMatch = null;
+                                }
+                            } else {
+                                // 执行下一层搜索
+                                this.replaceContent(checkItem.children[i], children);
+                            }
                         }
-                        break;
                     }
                 }
             }

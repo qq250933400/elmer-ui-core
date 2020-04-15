@@ -91,5 +91,11 @@
         "ts-node": "^7.0.1",
         "typescript-eslint-parser": "^18.0.0",
         "zone.js": "^0.8.26"
+    },
+    "peerDependencies": {
+        "elmer-common": "^0.1.2",
+        "elmer-redux": "^1.0.9",
+        "elmer-validation": "^1.0.7",
+        "elmer-virtual-dom": "^1.0.1"
     }
 }

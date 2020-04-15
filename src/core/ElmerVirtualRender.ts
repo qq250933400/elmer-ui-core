@@ -103,14 +103,16 @@ export class ElmerVirtualRender extends Common {
                             // 使用从父组件传下来的值
                             repeatSource = this.getValue(propsData, valueKey);
                         }
-                        if (this.isArray(repeatSource)) {
+                        if (this.isArray(repeatSource) || this.isObject(repeatSource)) {
                             delete nodeData.props[subKey];
-                            if(repeatSource.length>0) {
+                            let sourceKeys = Object.keys(repeatSource);
+                            if(sourceKeys.length>0) {
                                 this.virtualDom.clear();
                                 this.virtualDom.init(nodeData);
-                                for (let i = 0; i < repeatSource.length; i++) {
+                                for (let i = 0; i < sourceKeys.length; i++) {
                                     const updateValue = {};
-                                    updateValue[key] = repeatSource[i];
+                                    const sourceKey = sourceKeys[i];
+                                    updateValue[key] = repeatSource[sourceKey];
                                     updateValue[key].key = i;
                                     ((currentData, delAttrKey) => {
                                         const newNode: IVirtualElement = this.virtualDom.clone();
@@ -120,6 +122,7 @@ export class ElmerVirtualRender extends Common {
                                     })(updateValue, subKey);
                                 }
                             }
+                            sourceKeys = null;
                         } else {
                             nodeData.status = "DELETE";
                             nodeData.props.if = false;

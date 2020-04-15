@@ -2,13 +2,12 @@ import { ReduxController } from "elmer-redux";
 import { IVirtualElement } from "elmer-virtual-dom";
 import { Component } from "../../core/Component";
 import { defineGlobalState, getGlobalState } from "../../init/globalUtil";
-import { declareComponent } from "../../inject/injectable";
+import { autowired, declareComponent } from "../../inject/injectable";
 import { IRouter } from "../../interface/IDeclareComponentOptions";
 import { TypeUIRenderOptions } from "../../interface/IElmerRender";
 import { IPropCheckRule, PropTypes } from "../../propsValidation";
 import "./Route";
 import { ROUTER_SKIP_API_ACTION, RouterService } from "./RouterService";
-import { autowired } from "../../inject/injectable";
 
 type TypeRouterPropRule = {
     hashRouter: IPropCheckRule;

@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import { registerComponent } from "../core/elmerRegister";
+import { formatSelector, registerComponent } from "../core/elmerRegister";
 import { I18nController } from "../i18n/i18nController";
 import { addToClassPool } from "../init/globalUtil";
 import { IDeclareComponentOptions } from "../interface/IDeclareComponentOptions";
@@ -56,7 +56,7 @@ export function declareComponent(options: IDeclareComponentOptions): Function {
     // tslint:disable-next-line:variable-name
     return (__contructor:Function): void => {
         const i18nController:I18nController = globalClassFactory(I18nController);
-        __contructor.prototype.selector = options.selector;
+        __contructor.prototype.selector = formatSelector(options.selector || "");
         // 使用defineReadonlyProperty定义属性，防止用户自定义方法重复定义
         defineReadonlyProperty(__contructor.prototype, "injectModel",options.model);
         defineReadonlyProperty(__contructor.prototype, "injectService",options.service);
