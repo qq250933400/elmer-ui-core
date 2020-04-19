@@ -1,5 +1,16 @@
-import { defineServiceNamespace, getServiceConfig,setServiceConfig,setServiceNamespaceEndPoints,setServiceRequstConfig } from "./AppServiceConfig";
-import { getRouterConfig,getRouterServiceByNamespace,getRouterServiceConfig,setRouterServiceConfig } from "./RouterServiceConfig";
+import {
+    defineServiceNamespace,
+    getServiceConfig,
+    setServiceConfig,
+    setServiceNamespaceEndPoints,
+    setServiceRequstConfig
+} from "./AppServiceConfig";
+import {
+    getRouterConfig,
+    getRouterServiceByNamespace,
+    getRouterServiceConfig,
+    setRouterServiceConfig
+} from "./RouterServiceConfig";
 
 export * from "./GlobalConfig";
 export * from "./TypeGlobalConfig";

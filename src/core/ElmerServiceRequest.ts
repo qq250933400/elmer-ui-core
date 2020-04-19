@@ -1,9 +1,9 @@
 import axios, { AxiosResponse } from "axios";
 import { Common } from "elmer-common";
+import { getGlobalConfiguration } from "../configuration";
 import { getServiceConfig } from "../configuration/AppServiceConfig";
 import { TypeServiceConfig } from "../configuration/TypeGlobalConfig";
 import { IServiceConfig, IServiceEndPoint,IServiceRequest, TypeServiceRequestType } from "../interface/IElmerService";
-
 
 export class ElmerServiceRequest extends Common {
     static className:string = "ElmerServiceRequest";
@@ -13,6 +13,7 @@ export class ElmerServiceRequest extends Common {
     private fail: Function|undefined;
     private complete: Function|undefined;
     private requestResult: object = {};
+    private env: string = "Prod";
     constructor() {
         super();
         this.configData = getServiceConfig();
@@ -25,6 +26,7 @@ export class ElmerServiceRequest extends Common {
      * @param reload [boolean] 是否强制刷新配置信息
      */
     public init(reload?: boolean): void {
+        this.env = getGlobalConfiguration().env || "Prod";
         this.configData = getServiceConfig();
         this.config = this.configData.config;
     }
@@ -36,6 +38,7 @@ export class ElmerServiceRequest extends Common {
         if(configData) {
             this.configData = configData;
             this.config = this.configData.config;
+            this.env = getGlobalConfiguration().env || "Prod";
         } else {
             throw new Error("Can not set an empty object to service config");
         }
@@ -276,7 +279,14 @@ export class ElmerServiceRequest extends Common {
             reqUrl = namespaceData.dummyPath + (endPoint ? endPoint.dummy : "undefined");
         } else {
             if(this.isEmpty(option.url)) {
-                reqUrl = namespaceData.baseUrl + (endPoint ? endPoint.url : "undefined");
+                const env = this.env;
+                let baseUrl = namespaceData.baseUrl;
+                if(namespaceData.envUrls && !this.isEmpty(env)) {
+                    if(!this.isEmpty(namespaceData.envUrls[env])) {
+                        baseUrl = namespaceData.envUrls[env];
+                    }
+                }
+                reqUrl = baseUrl + (endPoint ? endPoint.url : "undefined");
             } else {
                 reqUrl = option.url;
                 // if opion url is not empty, then use request url from harcode data;

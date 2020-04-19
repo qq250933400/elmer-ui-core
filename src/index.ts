@@ -14,6 +14,7 @@ import { defineReduxProvider as defineReduxProviderFn, createReducer,defineState
 import { declareComponent,Injectable, autowired } from "./inject/injectable";
 import { propTypes } from "./propsValidation";
 import { Component } from "./core/Component";
+import { setServiceEnv } from "./configuration/GlobalConfig";
 
 export const ElmerUI = ElmerUIClass;
 export const addResize = addResizeFn;
@@ -71,3 +72,4 @@ elmerData.declareComponent = declareComponent;
 elmerData.createUI = createUI;
 elmerData.getUI = getUI;
 elmerData["redux"] = redux;
+elmerData.setEnv = setServiceEnv;

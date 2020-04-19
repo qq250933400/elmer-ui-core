@@ -83,6 +83,9 @@ export const defineGlobalConfiguration = <
         } else {
             saveConfigData.router = configData.router;
         }
+        if(!StaticCommon.isEmpty(configData.env)) {
+            saveConfigData.env = configData.env;
+        }
         StaticCommon.extend(saveConfigData.i18n, configData.i18n, true);
     }
 };
@@ -113,4 +116,33 @@ export const getGlobalConfiguration = <
         defineGlobalState("configuration", globalConfigState);
     }
     return globalConfigState;
+};
+
+export const getEnvFromCommand = (commandList:string[]): string => {
+    let env = "Prod";
+    if(commandList && commandList.length>0) {
+        for(let i=0;i<commandList.length;i++) {
+            const tmpCommand = commandList[i];
+            const tmpMatch = tmpCommand.match(/^\-\-env\=([a-z0-9]{1,})$/i);
+            if(tmpMatch) {
+                env = tmpMatch[1];
+            } else {
+                const lMatch = tmpCommand.match(/^\-env\=([a-z0-9]{1,})$/i);
+                if(lMatch) {
+                    env = lMatch[1];
+                }
+            }
+        }
+    }
+    return env;
+};
+
+export const setServiceEnv = (env:string): void => {
+    if(!StaticCommon.isEmpty(env)) {
+        const configData = getGlobalConfiguration();
+        configData.env = <any>env;
+    } else {
+        // tslint:disable-next-line: no-console
+        console.error("Service env can not be an empty string");
+    }
 };

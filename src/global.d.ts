@@ -27,6 +27,7 @@ declare namespace ElmerUI {
         Injectable: Function;
         propTypes:any;
         Component:Function;
+        setEnv: Function;
         extends:ClassDecorator;
     }
 }
