@@ -1,6 +1,6 @@
 import { ROUTER_SKIP_API_ACTION, RouterService } from "./RouterService";
 
-export const withRouter = (childComponent: any, Fn:any): any => {
+export const withRouter = <T>(childComponent: any, Fn:any): T => {
     if(Object.prototype.toString.call(childComponent) === "[object Function]") {
         childComponent.prototype.redirect = (path: string, params: any) => {
             const now = new Date();

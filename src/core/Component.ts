@@ -10,7 +10,7 @@ import { ElmerServiceRequest } from "./ElmerServiceRequest";
 /**
  * 所有的组件必须继承次类
  */
-abstract class ComponentClass extends Common implements IComponent {
+export abstract class Component extends Common implements IComponent {
     static propType:any = {};
     static contextType:any = {};
     /**
@@ -182,5 +182,6 @@ abstract class ComponentClass extends Common implements IComponent {
         }
     }
 }
-export const Component = withRouter(ComponentClass, autoInit);
+
+withRouter<Component>(Component, autoInit);
 // tslint:enable:no-empty
