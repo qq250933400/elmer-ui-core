@@ -39,6 +39,7 @@ export interface IServiceEndPoint<TypeOptions> {
     payload?: any;
     dummy?: string;
     options?:TypeOptions;
+    data?: any;
     onAfter?(resp:AxiosResponse): void;
     onBefore?<IServiceRequestOptions>(options?:IServiceRequest<IServiceRequestOptions>, endPoint?:IServiceEndPoint<TypeOptions>): void;
 }

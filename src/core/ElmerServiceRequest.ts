@@ -101,8 +101,12 @@ export class ElmerServiceRequest extends Common {
                     // "Access-Control-Allow-Origin": "*",
                     ...this.getRequestHeader(endPoint, option)
                 };
+                const allData = {
+                    ...(this.isObject(endPoint.data) ? endPoint.data : {}),
+                    ...(this.isObject(option.data) ? option.data : {})
+                };
                 const timeout = option.timeout || 30000;
-                const postData = this.isObject(option.data) ? JSON.stringify(option.data) : option.data;
+                const postData = JSON.stringify(allData);
                 method = method.toUpperCase();
                 // tslint:disable:no-console
                 console.info("-------Ajax Request---------");
