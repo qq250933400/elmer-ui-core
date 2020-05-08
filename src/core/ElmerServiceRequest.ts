@@ -102,8 +102,8 @@ export class ElmerServiceRequest extends Common {
                     ...this.getRequestHeader(endPoint, option)
                 };
                 const allData = {
-                    ...(this.isObject(endPoint.data) ? endPoint.data : {}),
-                    ...(this.isObject(option.data) ? option.data : {})
+                    ...(endPoint && this.isObject(endPoint.data) ? endPoint.data : {}),
+                    ...(option && this.isObject(option.data) ? option.data : {})
                 };
                 const timeout = option.timeout || 30000;
                 const postData = JSON.stringify(allData);

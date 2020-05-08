@@ -66,7 +66,7 @@ export class RouterService extends Common {
     checkRoutersVisible(newUrl: string, oldUrl:string, param:any): IRouter {
         const locationUrl = newUrl || "";
         if(this.isArray(this.routers)) {
-            const routeUrl = this.getRoutePathValue(locationUrl);
+            const routeUrl = this.getRoutePathValue(locationUrl); // current path
             const checkRouters = this.routers;
             for(let i=0;i<checkRouters.length;i++) {
                 const tmpRouter = checkRouters[i];
@@ -77,7 +77,7 @@ export class RouterService extends Common {
                     const queryIndex = checkPath.indexOf("?");
                     const newQueryData = this.getQueryDataFromUrl(locationUrl);
                     checkPath = queryIndex >= 0 ? checkPath.substr(0, queryIndex) : checkPath;
-                    if(checkPath === routeUrl) {
+                    if(routeUrl.substr(0, checkPath.length) === checkPath) {
                         tmpProps.if = true;
                         return {
                             component: tmpRouter.component,

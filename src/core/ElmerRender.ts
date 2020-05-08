@@ -637,7 +637,6 @@ export class ElmerRender extends Common {
                 const domID = this.getRandomID();
                 nodeData.virtualID = domID; // 提前定义virtualID ,否则导致redux,injectComponent执行的方法无法正确获取virtualID
                 const props = {};
-
                 this.defineReadOnlyProperty(props, "children", this.getComponentChildren(nodeData));
                 this.extend(props, dataProps, true);
                 this.extend(props, this.getUserComponentEvents(nodeData), true);
@@ -650,6 +649,16 @@ export class ElmerRender extends Common {
                     contextData: mapContextData,
                     saveAttrKey: "contextStore"
                 }) : this.contextStore;
+                // 父组件引用的自定义组件在子组件也可以使用，不需要再次Import
+                let UserDefineComponents:IDeclareComponent[] = this.renderComponent.components;
+                if(UserDefineComponents && UserDefineComponents.length>0) {
+                    let myComponents:any[] = (<any>component).components || [];
+                    myComponents.push(...UserDefineComponents);
+                    delete (<any>component).components;
+                    this.defineReadOnlyProperty(component, "components", myComponents);
+                    UserDefineComponents = null;
+                    myComponents = null;
+                }
                 const render = new ElmerRender({
                     component,
                     contentDom: null,
@@ -1141,6 +1150,7 @@ export class ElmerRender extends Common {
                         /\<context[0-9]*\s*\>\S*\<\/context[0-9]*\s*\>/i.test(uItem.innerHTML) ||
                         /\<context[0-9]*\s*\/\>/i.test(uItem.innerHTML) ||
                         /^context[0-9]*$/i.test(uItem.tagName) ||
+                        /^context[A-Z\-][0-9a-zA-Z]*$/.test(uItem.tagName) ||
                         uItem.tagName === "content") {
                         // 检测到当前dom是content元素或者包含content元素，
                         // 其他dom结构不用再做，
@@ -1153,9 +1163,12 @@ export class ElmerRender extends Common {
                             this.virtualDom.clear();
                             break;
                         } else {
-                            if(/^content[0-9]{1,}$/.test(uItem.tagName) || /^context[0-9]{1,}$/.test(uItem.tagName)) {
+                            if(/^content[0-9]{1,}$/.test(uItem.tagName) ||
+                                /^context[0-9]{1,}$/.test(uItem.tagName) ||
+                                /^context[A-Z\-][0-9a-zA-Z]*$/.test(uItem.tagName)
+                            ) {
                                 for(let j=0, mLen = children.length; j< mLen; j++) {
-                                    let nMatch = uItem.tagName.match(/([0-9]*)$/);
+                                    let nMatch = uItem.tagName.match(/^context([A-Z\-][0-9a-zA-Z]*)$/) || uItem.tagName.match(/([0-9]*)$/);
                                     if(nMatch) {
                                         const num = nMatch[1];
                                         const contextKey = "ChildrenWrapper" + num;
