@@ -1,12 +1,12 @@
 import { EnumCheckerTypes ,IDataTypeChecker, IDataTypeCheckerOption } from "./typeChecker";
 import { oneEnumValueOfValidator, oneOfValidator, oneValueOfValidator } from "./validators/dataTypeValidators";
 
-function onError(msg: string, fn: Function): void {
+function onError(msg: string, fn: Function, params:any): void {
     if(fn && typeof fn === "function") {
-        fn(msg);
+        fn(msg, params);
     } else {
         // tslint:disable-next-line:no-console
-        console.error(msg);
+        console.error(msg, params);
     }
 }
 
@@ -40,11 +40,11 @@ function createParamTypeChecker(checkerType: string, types: Array<Function|IData
                     checkTypes.push(tmpChecker.type);
                 });
                 const checkTypesStr = checkTypes.join(",");
-                onError(`参数类型不匹配,定义类型[${cType}(${checkTypesStr})]，传入值类型${lType}。`, (options ? options.error : null));
+                onError(`参数类型不匹配,定义类型[${cType}(${checkTypesStr})]，传入值类型${lType}。`, (options ? options.error : null), types);
                 return false;
             }
         } else {
-            onError(cType+"未定义validate方法。", (options ? options.error : null));
+            onError(cType+"未定义validate方法。", (options ? options.error : null), types);
             return false;
         }
         return true;

@@ -143,11 +143,11 @@ export class InjectComponent extends Common {
     protected doCheckPropType(target: any, propertyKey: string, checkCallBack: Function): void {
         const propValue = target.props[propertyKey];
         this.isFunction(checkCallBack) && checkCallBack(propValue, {
-            error: (msg: any) => {
+            error: (msg: any, type:any) => {
                 const tagName = target.humpToStr(target["selector"]);
                 const sMsg = "组件【eui-"+tagName+"】属性【"+propertyKey+"】设置错误：" + msg;
                 // tslint:disable-next-line:no-console
-                console.error(sMsg);
+                console.error(sMsg, type);
             },
             propertyName: propertyKey,
             propertyValue: propValue
