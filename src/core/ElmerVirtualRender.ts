@@ -113,7 +113,7 @@ export class ElmerVirtualRender extends Common {
                                     const updateValue = {};
                                     const sourceKey = sourceKeys[i];
                                     updateValue[key] = repeatSource[sourceKey];
-                                    if(this.isObject(updateValue[key])){
+                                    if(this.isObject(updateValue[key])) {
                                         updateValue[key].key = i;
                                     }
                                     ((currentData, delAttrKey) => {
@@ -521,15 +521,26 @@ export class ElmerVirtualRender extends Common {
         } else {
             let childrenChanged = false;
             let newChildren = [];
+            let saveKeyAttrValue = [];
             nodeItem.children.map((checkItem, index) => {
                 // tslint:disable-next-line:no-shadowed-variable
                 const isRender = this.renderAttribute(<VirtualElement>checkItem);
                 if(!isRender) {
                     childrenChanged = true;
+                } else {
+                    if(checkItem.props && !this.isEmpty(checkItem.props.key)) {
+                        if(saveKeyAttrValue.indexOf(checkItem.props.key + "")<0) {
+                            saveKeyAttrValue.push(checkItem.props.key + "");
+                        } else {
+                            // tslint:disable-next-line: no-console
+                            console.error(`Child elements under the same parent element cannot have the same key set. [${checkItem.props.key}]`);
+                        }
+                    }
                 }
-                // delete checkItem.props["if"];
+                delete checkItem.props["if"];
                 newChildren.push(checkItem);
             });
+            saveKeyAttrValue = null;
             if(childrenChanged) {
                 nodeItem.children = newChildren;
             }
