@@ -31,7 +31,7 @@ export type TypeServiceEvent = {
 export type TypeServiceConfig<TypeServiceConfigData, TypeServiceConfigEndPointOptions> = {
     common?: {
         onResponse?(resp:AxiosResponse, event?: TypeServiceEvent): boolean | undefined;
-        onBefore?(endPoint:IServiceEndPoint<TypeServiceConfigEndPointOptions>): boolean | undefined;
+        onBefore?(endPoint:IServiceEndPoint<TypeServiceConfigEndPointOptions>, option?:IServiceRequest<any>): boolean | undefined;
         onError?(error: TypeServiceError): boolean | undefined;
     },
     config: { [P in keyof TypeServiceConfigData]: IServiceConfig<any, TypeServiceConfigEndPointOptions> };

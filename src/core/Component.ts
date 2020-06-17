@@ -112,14 +112,17 @@ export abstract class Component extends Common implements IComponent {
     public $beforeVirtualRender?(dom?:IVirtualElement): void;
     public $beforeDiff?(dom?:IVirtualElement): void;
     public $onPropsChanged(propData: any,oldProps: any): void {}
-    public $init?(): void {}
-    public $inject?(): void {}
-    public $before?(): void {}
-    public $after?(): void {}
-    public $resize?(): void {}
-    public $dispose?(): void {}
-    public redirect(path:string, params?: any):void {}
+    public $init?(): void;
+    public $inject?(): void;
+    public $before?(): void;
+    public $after?(): void;
+    public $resize?(): void;
+    public $dispose?(): void;
+    public redirect(path:string, params?: any):void{};
     public getChildrenContext():any {return null;}
+    public $didMount?():void; // 第一次挂载程序
+    public $didUpdate?():void;
+    public $willMount?():void;
     /**
      * 修改全局样式
      * @param theme 全局样式名称

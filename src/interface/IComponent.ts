@@ -41,6 +41,9 @@ export interface IComponent {
     $afterDiff?(dom?:IVirtualElement): void;
     $resize?(): void;
     $dispose?(): void;
+    $didMount?():void;
+    $didUpdate?():void;
+    $willMount?(): void;
     addEvent?(handle: any, dom: HTMLElement|Element|Node,eventName: string, callBack:Function, options?:AddEventListenerOptions):void;
     animationEnd?(dom: HTMLElement|Element|Node,callBack:Function):void;
     setData(data: object, refresh?: boolean): void;

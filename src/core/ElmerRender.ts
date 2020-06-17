@@ -77,7 +77,7 @@ export class ElmerRender extends Common {
         // 初始化组件立即执行
         typeof this.renderComponent.$init === "function" && this.renderComponent.$init();
     }
-    render(): void {
+    render(isFirstRender?: boolean): void {
         try {
             if (this.isFunction((this.renderComponent)["$before"])) {
                 // tslint:disable-next-line: no-unnecessary-type-assertion
@@ -94,7 +94,7 @@ export class ElmerRender extends Common {
                 const htmlCode = this.renderComponent.render();
                 this.setHtmlCode(htmlCode);
                 this.renderHtml();
-                this.afterRender();
+                this.afterRender(isFirstRender);
             } else {
                 let ajaxHtmlCode = "";
                 let ajaxHtmlCodeLoadCompleted = false;
@@ -107,7 +107,7 @@ export class ElmerRender extends Common {
                     ajaxHtmlCode = resp;
                     this.setHtmlCode(ajaxHtmlCode);
                     this.renderHtml();
-                    this.afterRender();
+                    this.afterRender(isFirstRender);
                 }).catch((err:any) => {
                     ajaxHtmlCodeLoadCompleted = true;
                     ajaxHtmlCode = err.statusText || err.message || "<h6>Load Template fail.</h6>";
@@ -124,14 +124,14 @@ export class ElmerRender extends Common {
                 timeout = null;
                 this.setHtmlCode(ajaxHtmlCode);
                 this.renderHtml();
-                this.afterRender();
+                this.afterRender(isFirstRender);
             }
         } catch (e) {
             // tslint:disable-next-line:no-console
             console.error(e, this.renderComponent.selector, this);
         }
     }
-    afterRender():void {
+    afterRender(isFirstRender: boolean):void {
         const myComponents: any[] = this.virtualDomList || {};
         if(!this.renderComponent["firstRender"]) {
             Object.keys(myComponents).map((myKey) => {
@@ -145,17 +145,21 @@ export class ElmerRender extends Common {
             });
             if(this.isFunction(this.renderComponent.$after)) {
                 this.renderComponent.$after();
+                // tslint:disable-next-line: no-console
+                console.warn("Life cycle function $after will be removed in the new version. Please use didmount and didupdate instead");
             }
         }
         if(this.uiOptions && this.uiOptions.isRSV && !this.rsvAttachDom) {
             this.rsvAttachDom = true;
         }
+        !isFirstRender && typeof this.renderComponent.$didUpdate === "function" && typeof this.renderComponent.$didUpdate();
     }
     /**
      * 在重新渲染组件前调用此方法释放所有绑定的事件
      */
     dispose(): void {
         this.releaseAllEvents();
+        typeof this.renderComponent.$willMount === "function" && this.renderComponent.$willMount();
         if(this.nodeData && this.nodeData.children && this.nodeData.children.length>0) {
             this.nodeData.children.map((tmpChild, index) => {
                if(this.isDOM(tmpChild.dom)) {
@@ -340,7 +344,7 @@ export class ElmerRender extends Common {
         }
         this.htmlCode = htmlCodeData || "";
     }
-    private renderDomEvents(dom: HTMLElement, events: any[], dataSet?:any): void {
+    private renderDomEvents(dom: HTMLElement, events: any[],domData:IVirtualElement, dataSet:any): void {
         if(events && this.isArray(events) && events.length>0) {
             events.map((evt:any) => {
                 let isBinded = false;
@@ -385,7 +389,7 @@ export class ElmerRender extends Common {
                     }
                 }
                 if(!isBinded) {
-                    const passive = this.isEmpty(dom.getAttribute("passive"));
+                    const passive = domData.props.passive !== undefined && domData.props.passive !== null ? domData.props.passive : true;
                     this.bindDomEvent(evt.handler,dom, evt.eventName, evt.callBack,{
                         capture: !this.isEmpty(dom.getAttribute("capture")),
                         passive
@@ -435,7 +439,7 @@ export class ElmerRender extends Common {
                     if(nodeData.tagName !== "svg" && !isSVG) {
                         if(nodeData.status === VirtualElementOperate.APPEND) {
                             const defineDom:HTMLElement = <HTMLElement>this.getAppendDom(nodeData, <HTMLElement>parent, isSVG);
-                            this.renderDomEvents(defineDom, nodeData.events, nodeData.dataSet);
+                            this.renderDomEvents(defineDom, nodeData.events,nodeData, nodeData.dataSet);
                             this.renderDomAttribute(defineDom, nodeData,isFirstLevel);
                             this.appendVirtualToDom(<HTMLElement>parent, defineDom, nodeData, isFirstLevel, position);
                             nextParent = defineDom;
@@ -457,11 +461,11 @@ export class ElmerRender extends Common {
                             }
                             this.releaseNodeDataChildren(nodeData);
                         } else if(nodeData.status === VirtualElementOperate.UPDATE) {
-                            this.renderDomEvents(<HTMLElement>nodeData.dom, nodeData.events, nodeData.dataSet);
+                            this.renderDomEvents(<HTMLElement>nodeData.dom, nodeData.events,nodeData, nodeData.dataSet);
                             this.renderDomAttribute(<HTMLElement>nodeData.dom, nodeData,isFirstLevel);
                             nextParent = nodeData.dom;
                         } else if (nodeData.status === VirtualElementOperate.NORMAL) {
-                            this.renderDomEvents(<HTMLElement>nodeData.dom, nodeData.events, nodeData.dataSet);
+                            this.renderDomEvents(<HTMLElement>nodeData.dom, nodeData.events,nodeData, nodeData.dataSet);
                             nextParent = nodeData.dom;
                         } else {
                             nextParent = nodeData.dom;
@@ -520,7 +524,7 @@ export class ElmerRender extends Common {
                                 }
                             }
                         } else if(nodeData.status === "UPDATE") {
-                            this.renderDomEvents(<HTMLElement>nodeData.dom, nodeData.events, nodeData.dataSet);
+                            this.renderDomEvents(<HTMLElement>nodeData.dom, nodeData.events,nodeData, nodeData.dataSet);
                             this.renderDomAttribute(<HTMLElement>nodeData.dom, nodeData,isFirstLevel);
                             if(nodeData.children.length > 0) {
                                 this.renderNodeDataToDOM(nodeData, <HTMLElement>nodeData.dom, false, true);
@@ -691,11 +695,11 @@ export class ElmerRender extends Common {
                     }
                 };
                 (<any>component)["firstRender"] = true;
-                render.render();
+                render.render(true);
                 this.defineReadOnlyProperty(component, "firstLevel", isFirstLevel);
                 this.defineReadOnlyProperty(component, "domData", render.nodeData);
                 if (!this.isEmpty(props["id"])) {
-                    if (this.renderComponent.dom === undefined) {
+                    if (this.renderComponent.dom === undefined || this.renderComponent.dom === null) {
                         this.renderComponent.dom = {};
                     }
                     if(!nodeData.isContent || nodeData.props.attach) {
@@ -757,6 +761,7 @@ export class ElmerRender extends Common {
                     }
                     properties = null;
                 }
+                typeof component.$didMount === "function" && component.$didMount();
                 this.virtualDomList[domID] = {
                     component,
                     render
@@ -924,8 +929,21 @@ export class ElmerRender extends Common {
                                         if(!isSVG) {
                                             if(changeProps[attrKey] === undefined || changeProps[attrKey] === null) {
                                                 dom.removeAttribute(attrKeyValue);
+                                                // if tagName == a and href is empty then set javascript:void(0); to the attribute of href
+                                                if(domData.tagName === "a" && /^href$/i.test(attrKey)) {
+                                                    dom.setAttribute("href", "javascript:void(0);");
+                                                }
                                             } else {
-                                                dom.setAttribute(attrKeyValue, changeProps[attrKey]);
+                                                if(domData.tagName !== "a" && !/^href$/i.test(attrKey)) {
+                                                    dom.setAttribute(attrKeyValue, changeProps[attrKey]);
+                                                } else {
+                                                    if(!/^\s*javascript\:/i.test(changeProps[attrKey]) || /^\s*javascript\:\s*void\s*\(\s*[0]{0,1}\s*\)\s*\;\s*$/.test(changeProps[attrKey])) {
+                                                        dom.setAttribute(attrKeyValue, changeProps[attrKey]);
+                                                    } else {
+                                                        // tslint:disable-next-line: no-console
+                                                        console.error("Script code is not allowed for the href attribute!\r\n" + changeProps[attrKey]);
+                                                    }
+                                                }
                                             }
                                         } else {
                                             if(SvgConfig.xlinkAttributes.indexOf(attrKeyValue) > 0) {

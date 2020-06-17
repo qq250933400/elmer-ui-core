@@ -92,9 +92,10 @@ export class ElmerServiceRequest extends Common {
         }
         return new Promise((resolve:Function, reject:Function) => {
             if(endPoint || !this.isEmpty(option.url)) {
-                const reqUrl = this.getRequestUrl(endPoint, option);
                 let method: string = this.config.dummy ? "GET" : this.getRequestMethod(option, endPoint);
-                endPoint && typeof endPoint.onBefore === "function" && endPoint.onBefore(option);
+                const comBeforeResult = this.configData?.common?.onBefore?.(endPoint, option); // 执行配置的全局方法
+                endPoint && typeof endPoint.onBefore === "function" && endPoint.onBefore(option, endPoint);
+                const reqUrl = this.getRequestUrl(endPoint, option);
                 const header = {
                     // "Content-Type" : "application/x-www-from-urlencoded",
                     "Content-Type": "application/json;charset=UTF-8",
@@ -116,7 +117,6 @@ export class ElmerServiceRequest extends Common {
                 if(!this.isEmpty(option.type)) {
                     method = option.type.toUpperCase();
                 }
-                const comBeforeResult = this.configData?.common?.onBefore?.(endPoint);
                 if(undefined === comBeforeResult || (undefined !== comBeforeResult && comBeforeResult)) {
                     if(!option.skip) {
                         // tslint:enable:no-console
@@ -240,7 +240,8 @@ export class ElmerServiceRequest extends Common {
     }
     private getEndPoint(option:IServiceRequest<any>): any {
         if(this.isEmpty(this.config)) {
-            throw new Error("Please call init first");
+            this.init();
+            // throw new Error("Please call init first");
         }
         if(this.isEmpty(option.namespace) && this.config) {
             return this.getValue(this.config.endPoints, option.endPoint);

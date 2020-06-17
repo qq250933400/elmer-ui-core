@@ -48,10 +48,11 @@ export class ElmerUI extends Common {
                 defineGlobalState​​("renderOptions", options || {});
             }
             // tslint:disable-next-line: no-floating-promises
-            render.render();
+            render.render(true);
             if(options && options.isRSV) {
                 this.setValue(getGlobalState​​("renderOptions"), "rsvAttachDom", true);
             }
+            typeof (<IComponent>handler).$didMount === "function" && (<IComponent>handler).$didMount();
             return render;
         } else {
             // tslint:disable-next-line:no-console

@@ -119,6 +119,9 @@ export class Router extends Component {
         }
         this.state.url = props.url;
     }
+    $willMount(): void {
+        this.model.data.dispose();
+    }
     $onPropsChanged(props:TypeRouterProps): void {
         if(props.url !== this.state.url) {
             this.onRouterChanged(props.url || location.href || "", this.state.url, props.param);

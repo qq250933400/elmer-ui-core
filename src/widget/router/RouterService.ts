@@ -32,7 +32,7 @@ export class RouterService extends Common {
     private target:any;
 
     private http:ElmerServiceRequest = new ElmerServiceRequest(); // 路由需要创建一个独立的serviceRequest
-
+    private hashChangeID: string;
     constructor() {
         super();
         if(!getGlobalState("euiRouter")) {
@@ -44,6 +44,7 @@ export class RouterService extends Common {
             }, true);
         }
         this.toUrl = window.location.href || "";
+        this.hashChangeID = this.guid();
         this.handleOnHashChange();
     }
     initConfig(routeData:IRouter[], hashRouter: boolean): void {
@@ -258,9 +259,21 @@ export class RouterService extends Common {
             });
         });
     }
+    dispose():void {
+        // remove event handler
+    }
     private handleOnHashChange(): void {
         const myState = getGlobalState("euiRouter");
         const pushState = history.pushState;
+        const onHashChangedHandler = function() {
+            const euiRouterObj = getGlobalState("euiRouter");
+            const listener = euiRouterObj.routerListener;
+            if(listener) {
+                for(const key in listener) {
+                    listener[key] && typeof listener[key].fn === "function" && listener[key].fn.apply(listener[key]._this, arguments);
+                }
+            }
+        };
         history.pushState = (data:any, title: string, url?:string) => {
             this.onHashChanged({
                 newURL: url,
@@ -270,12 +283,24 @@ export class RouterService extends Common {
             return pushState.apply(history, [data, title, url]);
         };
         if("onhashchange" in window) {
-            window.onhashchange = this.onHashChanged.bind(this);
+            window.onhashchange = onHashChangedHandler;
         } else {
             // tslint:disable-next-line:no-console
             console.error("Your browser not support onHashChanged");
         }
-        this.setValue(myState, "onLocationChanged", this.onHashChanged.bind(this));
+        if(!this.isFunction(myState.onLocationChanged)) {
+            this.defineReadOnlyProperty(myState, "onLocationChanged", onHashChangedHandler);
+        }
+        if(!myState.routerListener || !myState.routerListener[this.hashChangeID]) {
+            // 添加事件监听函数
+            if(!myState.routerListener) {
+                myState.routerListener = {};
+            }
+            myState.routerListener[this.hashChangeID] = {
+                _this: this,
+                fn: this.onHashChanged.bind(this)
+            };
+        }
     }
     private calcAllRequestProgress(curLoaded:number, curTotal:number, allStatus: any, id: number|string):number {
         const curPercent = parseFloat((curLoaded / curTotal).toFixed(4));
