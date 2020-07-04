@@ -366,7 +366,7 @@ export class ElmerVirtualRender extends Common {
                         if(this.isObject(bindAttrValue)) {
                             result = {
                                 ...result,
-                                ...(bindAttrValue || {})
+                                ...(<any>bindAttrValue)
                             };
                         } else {
                             result[bindAttrValue] = bindAttrValue;

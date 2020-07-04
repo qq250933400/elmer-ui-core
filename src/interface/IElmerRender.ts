@@ -9,6 +9,7 @@ export interface IElmerRenderParams {
     virtualId: string;
     component: IComponent;
     contentDom?: HTMLElement;
+    path?: string[];
     previousSibling?: HTMLElement|SVGSVGElement|Element|Text|Comment;
     htmlCode: string;
     target?: HTMLElement;

@@ -1,4 +1,4 @@
-import { Common } from "elmer-common";
+import { Common, queueCallFunc, TypeQueueCallParam } from "elmer-common";
 import { getRouterConfig } from "../../configuration/RouterServiceConfig";
 import { ElmerServiceRequest } from "../../core/ElmerServiceRequest";
 import { defineGlobalState, getGlobalState } from "../../init/globalUtil";
@@ -195,23 +195,44 @@ export class RouterService extends Common {
         return new Promise<T>((resolve, reject) => {
             const config = getRouterConfig<any,TypeRouterServiceOptions>();
             const serviceConfig = config.service;
-            const allSend:Array<IServiceRequest<any>> = [];
-            const allStatus = {};
+            const allParams:TypeQueueCallParam[] = [];
             let allPercent = 100.0;
             let loaded = 0;
             // tslint:disable-next-line: forin
             for(const namespace in apiData) {
                 const endPoints = apiData[namespace] || [];
                 for(let i = 0;i < endPoints.length; i ++) {
-                    allSend.push({
-                        endPoint: endPoints[i],
-                        namespace,
-                        options: {
-                            key: i
-                        },
+                    allParams.push({
+                        id: namespace + "." + endPoints[i],
+                        params: {
+                            endPoint: endPoints[i],
+                            namespace
+                        }
+                    });
+                }
+            }
+            allPercent = (allParams.length) * 100.0;
+            this.http.setConfig(serviceConfig);
+            queueCallFunc(allParams, (option, param):any => {
+                // tslint:disable-next-line: variable-name
+                return new Promise<any>((_resolve, _reject) => {
+                    let myLoaded = 0;
+                    this.http.sendRequest({
+                        endPoint: param.endPoint,
+                        namespace: param.namespace,
+                        options: param.options,
                         // tslint:disable-next-line: object-literal-sort-keys
-                        success: (resp:any, events: any) => {
-                            const endPoint:IServiceEndPoint<TypeRouterServiceOptions> = events.endPoint;
+                        downloadProgress: (event:ProgressEvent) => {
+                            const curLoaded = event.total > 0 ? (event.loaded / event.total) * 100 : 100;
+                            loaded += curLoaded - myLoaded;
+                            myLoaded = curLoaded;
+                            options?.onDownloadProgress({
+                                loaded,
+                                total: allPercent
+                            });
+                        },
+                        success: (resp:any, respJson) => {
+                            const endPoint:IServiceEndPoint<TypeRouterServiceOptions> = respJson.endPoint;
                             if(this.isEmpty(endPoint.options.reduxActionType)) {
                                 // tslint:disable-next-line: no-console
                                 console.error("保存请求数据:失败未设置reduxActionType", endPoint);
@@ -223,39 +244,27 @@ export class RouterService extends Common {
                                     console.error("RouterService错误的调用");
                                 }
                             }
-                        },
-                        // tslint:disable-next-line: object-literal-sort-keys
-                        downloadProgress:(event, res:IServiceRequest<any>):void => {
-                            loaded = this.calcAllRequestProgress(event.loaded, event.total, allStatus, res?.options?.key);
-                            typeof options?.onDownloadProgress?.({
-                                loaded,
-                                total: allPercent
-                            }, options.option);
-                        },
-                        complete: (res:any) => {
-                            loaded = this.calcAllRequestProgress(100, 100, allStatus, res?.options?.key);
-                            typeof options?.onDownloadProgress?.({
-                                loaded,
-                                total: allPercent
-                            }, options?.option);
                         }
+                    }).then((resp:any) => {
+                        setTimeout(() => {
+                            _resolve(resp);
+                        }, 3000);
+                    }).catch((error:any) => {
+                        _reject(error);
                     });
-                }
-            }
-            allPercent = (allSend.length) * 100;
-            this.http.setConfig(serviceConfig);
-            this.http.send(allSend, (resp, configRequest:any) => {
-                const reduxType = this.getValue(configRequest,"endPoint.options.reduxActionType");
-                typeof this["dispatch"] === "function" && this["dispatch"]({
-                    data: resp.data ? resp.data : resp,
-                    type: reduxType
                 });
-                resolve(options?.option);
-            }, (err) => {
-                reject(options?.option);
-            }, () => {
-                options?.onCompleted?.(options?.option);
-                resolve(options?.option);
+            }).then((result) => {
+                options?.onDownloadProgress({
+                    loaded: allPercent,
+                    total: allPercent
+                });
+                resolve(result);
+            }).catch((error) => {
+                options?.onDownloadProgress({
+                    loaded: allPercent,
+                    total: allPercent
+                }, options.option);
+                reject(error);
             });
         });
     }
@@ -265,10 +274,12 @@ export class RouterService extends Common {
     private handleOnHashChange(): void {
         const myState = getGlobalState("euiRouter");
         const pushState = history.pushState;
+        // tslint:disable-next-line: only-arrow-functions
         const onHashChangedHandler = function() {
             const euiRouterObj = getGlobalState("euiRouter");
             const listener = euiRouterObj.routerListener;
             if(listener) {
+                // tslint:disable-next-line: forin
                 for(const key in listener) {
                     listener[key] && typeof listener[key].fn === "function" && listener[key].fn.apply(listener[key]._this, arguments);
                 }

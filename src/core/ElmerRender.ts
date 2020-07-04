@@ -36,6 +36,7 @@ export class ElmerRender extends Common {
     private contextStore: any;
     private uiOptions:TypeUIRenderOptions;
     private rsvAttachDom?: boolean;
+    private path?: string[];
 
     @autowired(InjectComponent)
     private injectComponent: InjectComponent;
@@ -69,6 +70,7 @@ export class ElmerRender extends Common {
         this.contextStore = props.context;
         this.uiOptions = props.uiRenderOptions;
         this.virtualId = props.virtualId;
+        this.path = props.path;
         this.extend(this.renderComponent,{
             addEvent: this.bindDomEvent.bind(this),
             setData: this.setComponentData.bind(this),
@@ -128,7 +130,7 @@ export class ElmerRender extends Common {
             }
         } catch (e) {
             // tslint:disable-next-line:no-console
-            console.error(e, this.renderComponent.selector, this);
+            console.error(e, this.path.join("->") + "->" + this.renderComponent.selector);
         }
     }
     afterRender(isFirstRender: boolean):void {
@@ -668,10 +670,11 @@ export class ElmerRender extends Common {
                     contentDom: null,
                     context: JSON.parse(JSON.stringify(childContextData)),
                     htmlCode: "",
+                    path: !this.isEmpty(this.renderComponent.selector) ? (this.path && this.path.length > 0 ? [...this.path, this.renderComponent.selector] : [this.renderComponent.selector]) : [],
                     previousSibling,
                     uiRenderOptions: this.uiOptions,
                     virtualId: domID,
-                    virtualTarget: targetParent,
+                    virtualTarget: targetParent
                 });
                 this.injectComponent.initComponent(component, componentClass, nodeData);
                 this.injectComponent.run(component, componentClass, nodeData);

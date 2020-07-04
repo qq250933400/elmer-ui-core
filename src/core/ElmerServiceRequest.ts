@@ -110,10 +110,10 @@ export class ElmerServiceRequest extends Common {
                 const postData = JSON.stringify(allData);
                 method = method.toUpperCase();
                 // tslint:disable:no-console
-                console.info("-------Ajax Request---------");
-                console.info("   url: ", reqUrl);
-                console.info("method: ", method);
-                console.info("  data: ", option.data);
+                // console.info("-------Ajax Request---------");
+                // console.info("   url: ", reqUrl);
+                // console.info("method: ", method);
+                // console.info("  data: ", option.data);
                 if(!this.isEmpty(option.type)) {
                     method = option.type.toUpperCase();
                 }
@@ -148,20 +148,20 @@ export class ElmerServiceRequest extends Common {
                                         endPoint,
                                         headers: data.headers,
                                         request: option,
-                                        respose: data
-                                    });
-                                    typeof option.complete === "function" && option.complete({
-                                        request: option,
-                                        respose: data
+                                        response: data
                                     });
                                     typeof this.success === "function" && this.success(result, {
                                         endPoint,
                                         headers: data.headers,
                                         request: option,
-                                        respose: data
+                                        response: data
+                                    });
+                                    typeof option.complete === "function" && option.complete({
+                                        request: option,
+                                        response: data
                                     });
                                     this.requestCompleteCheck();
-                                    resolve(result, comResponse);
+                                    resolve(result, comResponse, option);
                                 } else {
                                     reject({
                                         status: data.status,

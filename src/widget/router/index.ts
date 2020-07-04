@@ -224,7 +224,7 @@ export class Router extends Component {
         if(this.router) {
             initRouterCode = `<${this.router.component} ex:props="{{router.props}}" />`;
         }
-        return   initRouterCode+
+        return   initRouterCode +
         '<div em:if="state.isNeedAjax && state.isAjaxLoading" class="eui-router-progress"><div style="width:{{state.loadingPercent}};"></div></div>';
     }
 }
