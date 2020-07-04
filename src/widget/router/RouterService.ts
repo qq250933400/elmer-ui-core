@@ -275,7 +275,7 @@ export class RouterService extends Common {
         const myState = getGlobalState("euiRouter");
         const pushState = history.pushState;
         // tslint:disable-next-line: only-arrow-functions
-        const onHashChangedHandler = function() {
+        const onHashChangedHandler = function(): void {
             const euiRouterObj = getGlobalState("euiRouter");
             const listener = euiRouterObj.routerListener;
             if(listener) {
@@ -362,4 +362,3 @@ export class RouterService extends Common {
         }
     }
 }
-
