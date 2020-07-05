@@ -246,9 +246,7 @@ export class RouterService extends Common {
                             }
                         }
                     }).then((resp:any) => {
-                        setTimeout(() => {
-                            _resolve(resp);
-                        }, 3000);
+                        _resolve(resp);
                     }).catch((error:any) => {
                         _reject(error);
                     });

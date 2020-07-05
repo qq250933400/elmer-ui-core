@@ -60,7 +60,7 @@ export function declareComponent(options: IDeclareComponentOptions): Function {
         // 使用defineReadonlyProperty定义属性，防止用户自定义方法重复定义
         defineReadonlyProperty(__contructor.prototype, "injectModel",options.model);
         defineReadonlyProperty(__contructor.prototype, "injectService",options.service);
-        defineReadonlyProperty(__contructor.prototype, "reduxParams",options.connect);
+        defineReadonlyProperty(__contructor.prototype, "connect",options.connect);
         defineReadonlyProperty(__contructor.prototype, "i18nConfig",options.i18n);
         defineReadonlyProperty(__contructor.prototype, "template",options.template);
         options.components && defineReadonlyProperty(__contructor.prototype, "components", options.components);

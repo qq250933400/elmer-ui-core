@@ -119,7 +119,7 @@ export abstract class Component extends Common implements IComponent {
     public $resize?(): void;
     public $dispose?(): void;
     public redirect(path:string, params?: any):void{};
-    public getChildrenContext():any {return null;}
+    public getChildContext():any {return null;}
     public $didMount?():void; // 第一次挂载程序
     public $didUpdate?():void;
     public $willMount?():void;

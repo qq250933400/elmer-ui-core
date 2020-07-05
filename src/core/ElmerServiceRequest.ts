@@ -78,10 +78,13 @@ export class ElmerServiceRequest extends Common {
         if(this.isEmpty(nameSpace)) {
             endPoint = this.getValue(this.config.endPoints, endPointID);
         } else {
-            endPoint = this.getValue(this.getValue(this.config, nameSpace), endPointID);
+            const namespaceData:any = this.getValue(this.config, nameSpace);
+            endPoint = namespaceData ? this.getValue(namespaceData.endPoints, endPointID) : null;
         }
         if(endPoint) {
-            return this.getRequestUrl(endPoint);
+            return this.getRequestUrl(endPoint, {
+                namespace: nameSpace,
+            });
         }
         return "";
     }
@@ -316,6 +319,12 @@ export class ElmerServiceRequest extends Common {
             }
         }
         namespaceData = null;
+        const regMatch = reqUrl.match(/^http[s]{0,1}\:\/\//);
+        if(regMatch) {
+            reqUrl = reqUrl.replace(/^http[s]{0,1}\:\/\//, "");
+            reqUrl = reqUrl.replace(/\/\//g,"/");
+            reqUrl = regMatch[0] + reqUrl;
+        }
         return reqUrl;
     }
     private responseDataCheck(data: any): void {

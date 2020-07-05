@@ -38,7 +38,7 @@ export class InjectComponent extends Common {
     initComponent(targetComponent:IComponent, ComponentClass: any, nodeData:IVirtualElement): void {
         // 创建component执行一次
         this.i18nController.initI18nTranslate(targetComponent);
-        const reduxParam = ComponentClass.prototype.reduxParams;
+        const reduxParam = ComponentClass.prototype.connect;
         if(reduxParam && (reduxParam.mapStateToProps || reduxParam.mapDispatchToProps)) {
            this.reduxController.checkInitComponents(targetComponent, ComponentClass.prototype.selector, nodeData);
         }
@@ -69,8 +69,12 @@ export class InjectComponent extends Common {
         this.setDefaultValue(props, ComponentClass.propType);
     }
     beforeInitComponent(ComponentClass: any,props: any, nodeData: IVirtualElement): void {
-        const reduxParam = ComponentClass.prototype.reduxParams;
+        const reduxParam = ComponentClass.prototype.connect;
         if(reduxParam && (reduxParam.mapStateToProps || reduxParam.mapDispatchToProps)) {
+            // model,service,或自定义模块未定义selector会导致redux.connect失效，默认初始化一个参数
+            if(this.isEmpty(ComponentClass.prototype.selector)) {
+                this.defineReadOnlyProperty(ComponentClass.prototype, "selector", this.guid().replace(/\-/g, ""));
+            }
             // 在初始化Component的时候在做connect操作，防止没有使用的组件但是定义了connect,在declareComponent的时候增加不必要的redux watch
             connect(ComponentClass,reduxParam.mapStateToProps, reduxParam.mapDispatchToProps, getGlobalState, defineGlobalState);
 

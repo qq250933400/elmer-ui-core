@@ -81,6 +81,19 @@ export class ElmerRender extends Common {
     }
     render(isFirstRender?: boolean): void {
         try {
+            if(!isFirstRender) {
+                // 修改context
+                let getChildContext = this.renderComponent.getChildContext;
+                let contextData = typeof getChildContext === "function" ? getChildContext.call(this.renderComponent) : null;
+                if(contextData) {
+                    const storeData = JSON.parse(JSON.stringify(this.contextStore));
+                    this.extend(this.renderComponent.context, contextData);
+                    this.extend(storeData, contextData);
+                    this.contextStore = storeData;
+                }
+                getChildContext = null;
+                contextData = null;
+            }
             if (this.isFunction((this.renderComponent)["$before"])) {
                 // tslint:disable-next-line: no-unnecessary-type-assertion
                 const isUpdate = (<any>this.renderComponent)["$before"]();
@@ -263,7 +276,6 @@ export class ElmerRender extends Common {
     renderHtml(): void {
         let sourceDom = this.virtualDom.create("VirtualRoot");
         let oldDom:IVirtualElement = this.nodeData || this.virtualDom.create("VirtualRoot");
-
         if(!this.htmlParseData || this.isNeedParse) {
             if(!this.isEmpty(this.htmlCode)) {
                 if(this.isString(this.htmlCode)) {
@@ -601,6 +613,20 @@ export class ElmerRender extends Common {
                     const prevSibling: HTMLElement|SVGSVGElement|Element|Text|Comment = this.getPrevDom(nodeData);
                     const contentChangeOnly = nodeData.status === VirtualElementOperate.NORMAL;
                     this.renderUserComponent(defineComponent, nodeData, <HTMLElement>parent, prevSibling, isFirstLevel, contentChangeOnly);
+                } else {
+                    // 当没有children 修改时检测context是否修改
+                    if(defineComponent["contextType"]) {
+                        const oldVirtualDom = this.virtualDomList[nodeData.virtualID];
+                        if(oldVirtualDom) {
+                            const contextData = getContext(this, defineComponent["contextType"]);
+                            const isContextChange = JSON.stringify(oldVirtualDom.component.context) !== JSON.stringify(contextData);
+                            if(isContextChange) {
+                                typeof oldVirtualDom.component["$contextChange"] === "function" && oldVirtualDom.component["$contextChange"](contextData, JSON.parse(JSON.stringify(oldVirtualDom.component.context)));
+                            }
+                            delete oldVirtualDom.component.context;
+                            this.defineReadOnlyProperty(oldVirtualDom.component, "context", contextData);
+                        }
+                    }
                 }
             }
         }
@@ -620,13 +646,22 @@ export class ElmerRender extends Common {
                 if(oldVirtualDom && oldVirtualDom.component) {
                     const dataProps = nodeData.props||{};
                     const props = {};
+                    // 定义有contextType规则的component执行更新context内容
+                    if(componentClass["contextType"]) {
+                        const contextData = getContext(this, componentClass["contextType"]);
+                        const isContextChange = JSON.stringify(oldVirtualDom.component.context) !== JSON.stringify(contextData);
+                        if(isContextChange) {
+                            typeof oldVirtualDom.component["$contextChange"] === "function" && oldVirtualDom.component["$contextChange"](contextData, JSON.parse(JSON.stringify(oldVirtualDom.component.context)));
+                        }
+                        delete oldVirtualDom.component.context;
+                        this.defineReadOnlyProperty(oldVirtualDom.component, "context", contextData);
+                    }
+                    // 开始检查props是否与变化，有变化触发onPropsChanged回调函数
                     this.defineReadOnlyProperty(props, "children", this.getComponentChildren(nodeData));
                     this.extend(props, dataProps, true);
                     this.extend(props, this.getUserComponentEvents(nodeData), true);
-
                     // 在更新已存在的组件时先调用此方法，以便做扩展
                     this.injectComponent.beforeUpdateComponent(oldVirtualDom.component, componentClass, props, nodeData);
-
                     // 确认props有新的变化后再执行渲染过程，减少渲染次数
                     if(!this.isEqual(oldVirtualDom.component.props, props)) {
                         const oldProps:any = oldVirtualDom.component.props;
@@ -649,8 +684,8 @@ export class ElmerRender extends Common {
                 this.injectComponent.beforeInitComponent(componentClass, props, nodeData);
 
                 const component: IComponent = new (<any>componentClass)(props, getContext(this, (<any>componentClass).contextType), "contextStore");
-                let getChildrenContext = (<any>component).getChildrenContext;
-                let mapContextData = typeof getChildrenContext === "function" ? getChildrenContext() : null;
+                let getChildrenContext = (<any>component).getChildContext;
+                let mapContextData = typeof getChildrenContext === "function" ? getChildrenContext.call(component) : null;
                 let childContextData = mapContextData ? defineContext(this, {
                     contextData: mapContextData,
                     saveAttrKey: "contextStore"

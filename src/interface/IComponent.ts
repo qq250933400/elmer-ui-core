@@ -11,7 +11,7 @@ export interface IComponent {
     domList: any;
     dom: any;
     htmlCode?: string;
-    reduxParams?: IDeclareConnect;
+    connect?: IDeclareConnect;
     i18nConfig?: IDeclareI18n;
     i18nLocale?: string;
     i18nRegion?: string;
@@ -29,6 +29,7 @@ export interface IComponent {
     render():any;
     insertAdjacentElement(refElement:HTMLElement|Element|Node, newElement:HTMLElement|Element|Node, InsertMethod: string):void;
     checkPropTypes?(checkPropTypesConfig: any): void;
+    $contextData?(context:any): void;
     $onPropsChanged?(propData: any,oldProps: any): void;
     $init?(): void;
     $inject?(): void;
