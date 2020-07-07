@@ -504,9 +504,13 @@ export class ElmerRender extends Common {
                                             attrList.push(`${key}=${JSON.stringify(codeChild.props[key])}`);
                                         }
                                     }
-                                    codeResult += `<${codeChild.tagName} ${attrList.join(" ")}>`;
+                                    if(codeChild.tagName !== "text") {
+                                        codeResult += `<${codeChild.tagName} ${attrList.join(" ")}>`;
+                                    }
                                     codeResult += codeChild.innerHTML;
-                                    codeResult += `</${codeChild.tagName}>`;
+                                    if(codeChild.tagName !== "text") {
+                                        codeResult += `</${codeChild.tagName}>`;
+                                    }
                                 });
                                 if(nextParent) {
                                     nextParent.innerHTML = codeResult;
@@ -1192,52 +1196,70 @@ export class ElmerRender extends Common {
             }
         }
     }
+    /**
+     * 渲染自定义组件在父组件定义的子组件内容
+     * context不能和content[A-Z\-\_][A-Za-z0-9]{1,}共同使用,只能选择其一做配置
+     * @param checkItem 检测组件
+     * @param children 父组件定义的子组件内容
+     */
     private replaceContent(checkItem:IVirtualElement, children: IVirtualElement[]): void {
         // 当前component接收到children的时候才需要执行此方法，为减少循环提升性能
+        // if(this.renderComponent.selector === "eui-win-form") {
+        //     debugger;
+        // }
         if(children && children.length>0) {
+            const contextWrapperReg = /^context([A-Z\-\_][0-9a-zA-Z]{1,})$/;
             for(let i=0;i<checkItem.children.length;i++) {
                 const uItem = checkItem.children[i];
                 if(uItem.status !== "DELETE") {
                     // --- 检测Item是否包含Content元素，检测到，替换为children
                     if(
-                        /\<content[0-9]*\s*\>\S*\<\/content[0-9]*\s*\>/i.test(uItem.innerHTML) ||
-                        /\<content[0-9]*\s*\/\>/i.test(uItem.innerHTML) ||
-                        /^content[0-9]*$/i.test(uItem.tagName) ||
-                        /\<context[0-9]*\s*\>\S*\<\/context[0-9]*\s*\>/i.test(uItem.innerHTML) ||
-                        /\<context[0-9]*\s*\/\>/i.test(uItem.innerHTML) ||
-                        /^context[0-9]*$/i.test(uItem.tagName) ||
-                        /^context[A-Z\-][0-9a-zA-Z]*$/.test(uItem.tagName) ||
-                        uItem.tagName === "content") {
+                        /\<context\s*>\s*\S*\<\/context\s*\>/i.test(uItem.innerHTML) ||
+                        /\<context\s*\/\>/i.test(uItem.innerHTML) ||
+                        uItem.tagName === "context" ||
+                        /\<content\s*>\s*\S*\<\/content\s*\>/i.test(uItem.innerHTML) ||
+                        /\<content\s*\/\>/i.test(uItem.innerHTML) ||
+                        uItem.tagName === "content" ||
+                        /\<context[A-Z\-\_][0-9a-zA-Z]{1,}\s*\/\>/.test(uItem.innerHTML) ||
+                        /\<context[A-Z\-\_][0-9a-zA-Z]{1,}\s*\>\s*\S*\<\/context[A-Z\-\_][0-9a-zA-Z]{1,}\s*\>/.test(uItem.innerHTML) ||
+                        contextWrapperReg.test(uItem.tagName)) {
                         // 检测到当前dom是content元素或者包含content元素，
                         // 其他dom结构不用再做，
-                        if(uItem.tagName === "content" || uItem.tagName === "context") {
+                        if(uItem.tagName.toLowerCase() === "content" || uItem.tagName.toLowerCase() === "context") {
+                            let isContextKey = false;
+                            let renderKeyReg = /([A-Z\-\_][0-9a-zA-Z]{1,})$/;
                             for(let j=0,mLen = children.length;j<mLen;j++) {
+                                let renderKeyMatch = children[j].tagName.match(renderKeyReg);
+                                if(renderKeyMatch) {
+                                    const contextRegKey = "ChildrenWrapper" + renderKeyMatch[1];
+                                    if(contextRegKey === children[j].tagName) {
+                                        isContextKey = true;
+                                        break;
+                                    }
+                                    renderKeyMatch = null;
+                                }
                                 children[j].isContent = true;
                             }
-                            this.virtualDom.init(checkItem);
-                            this.virtualDom.replaceAt(children, i);
-                            this.virtualDom.clear();
-                            break;
+                            renderKeyReg = null;
+                            if(!isContextKey) {
+                                this.virtualDom.init(checkItem);
+                                this.virtualDom.replaceAt(children, i);
+                                this.virtualDom.clear();
+                                break;
+                            }
                         } else {
-                            if(/^content[0-9]{1,}$/.test(uItem.tagName) ||
-                                /^context[0-9]{1,}$/.test(uItem.tagName) ||
-                                /^context[A-Z\-][0-9a-zA-Z]*$/.test(uItem.tagName)
-                            ) {
+                            const contextMatch = uItem.tagName.match(contextWrapperReg);
+                            if(contextMatch) {
+                                const contextKey = "ChildrenWrapper" + contextMatch[1];
                                 for(let j=0, mLen = children.length; j< mLen; j++) {
-                                    let nMatch = uItem.tagName.match(/^context([A-Z\-][0-9a-zA-Z]*)$/) || uItem.tagName.match(/([0-9]*)$/);
-                                    if(nMatch) {
-                                        const num = nMatch[1];
-                                        const contextKey = "ChildrenWrapper" + num;
-                                        if(contextKey.toLowerCase() === children[j].tagName.toLowerCase()) {
-                                            for(let z=0,zLen = children[j].children.length;z<zLen;z++) {
-                                                children[j].children[z].isContent = true;
-                                            }
-                                            this.virtualDom.init(checkItem);
-                                            this.virtualDom.replaceAt(children[j].children, i);
-                                            break;
+                                    if(contextKey === children[j].tagName) {
+                                        for(let z=0,zLen = children[j].children.length;z<zLen;z++) {
+                                            children[j].children[z].isContent = true;
                                         }
+                                        this.virtualDom.init(checkItem);
+                                        this.virtualDom.replaceAt(children[j].children, i);
+                                        break;
                                     }
-                                    nMatch = null;
                                 }
                             } else {
                                 // 执行下一层搜索

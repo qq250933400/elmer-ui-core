@@ -100,7 +100,7 @@ export class ReduxProvider extends Component {
         delete this.reduxController.reducers;
     }
     render(): string {
-        return "<div class='eui-redux-provider'><content></content></div>";
+        return "<div class='eui-redux-provider'><context /></div>";
     }
     private initState(reducer: any, stateData: any, nodeKey: string): any {
         if (this.isFunction(reducer)) {
