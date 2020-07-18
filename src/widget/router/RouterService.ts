@@ -26,6 +26,7 @@ export class RouterService extends Common {
     static className:string = "RouterService";
     routers: IRouter[];
     toUrl: string;
+    C404: string = "eui-404";
 
     public hashRouter: boolean = true;
 
@@ -117,7 +118,7 @@ export class RouterService extends Common {
             }
         }
         return {
-            component: "eui-404",
+            component: this.C404,
             path: "/404",
             props: {
                 if: true

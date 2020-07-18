@@ -41,5 +41,5 @@ export type TypeGlobalConfig<AppServiceNamespaceConfig,AppServiceConfigEndPointO
     router?: TypeRouterConfig<RouterServiceConfig, RouterServiceConfigEndPointOptions>;
     service?: TypeServiceConfig<AppServiceNamespaceConfig, AppServiceConfigEndPointOptions>;
     i18n?: TypeI18nConfig<I18nData, I18nLocales, I18nConvert>;
-    env?: TypeServiceEnv & ENV;
+    env?: any;
 };

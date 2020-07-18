@@ -13,6 +13,7 @@ type TypeRouterPropRule = {
     hashRouter: IPropCheckRule;
     url: IPropCheckRule;
     param: IPropCheckRule;
+    C404: IPropCheckRule;
 };
 type TypeRouterProps = {[P in keyof TypeRouterPropRule]: any} & {
     children: IVirtualElement[];
@@ -56,6 +57,11 @@ type TypeRouterContext = {
 })
 export class Router extends Component {
     static propType:TypeRouterPropRule = {
+        C404: {
+            defaultValue: "eui-404",
+            description: "修改404默认页面",
+            rule: PropTypes.string
+        },
         hashRouter: {
             defaultValue: true,
             description: "开启hash路由",
@@ -131,9 +137,10 @@ export class Router extends Component {
         // tslint:disable-next-line:no-console
         console.log("Router对象model注入成功，初始化Route参数");
         const linkUrl = undefined !== this.state.url && null !== this.state.url ? this.state.url : (location.href || "");
+        this.model.data.C404 = this.props.C404;
         this.model.data.initConfig(this.sourceRouters, this.props.hashRouter);
         this.model.data.setBindRouteComponent(this);
-        this.model.data.refreshUrl(this.state.url);
+        this.model.data.refreshUrl(linkUrl);
         this.model.data.dispatch = (state:any): Promise<any> => {
             return this.redux.dispatch(state);
         };

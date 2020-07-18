@@ -142,8 +142,10 @@ export class ElmerRender extends Common {
                 this.afterRender(isFirstRender);
             }
         } catch (e) {
+            // define error elements
+            const pathStr = this.path ? this.path.join("->") + "->" : "";
             // tslint:disable-next-line:no-console
-            console.error(e, this.path.join("->") + "->" + this.renderComponent.selector);
+            console.error(e, pathStr + this.renderComponent.selector);
         }
     }
     afterRender(isFirstRender: boolean):void {
@@ -1204,9 +1206,6 @@ export class ElmerRender extends Common {
      */
     private replaceContent(checkItem:IVirtualElement, children: IVirtualElement[]): void {
         // 当前component接收到children的时候才需要执行此方法，为减少循环提升性能
-        // if(this.renderComponent.selector === "eui-win-form") {
-        //     debugger;
-        // }
         if(children && children.length>0) {
             const contextWrapperReg = /^context([A-Z\-\_][0-9a-zA-Z]{1,})$/;
             for(let i=0;i<checkItem.children.length;i++) {

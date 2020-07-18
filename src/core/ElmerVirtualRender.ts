@@ -119,6 +119,7 @@ export class ElmerVirtualRender extends Common {
                                     ((currentData, delAttrKey) => {
                                         const newNode: IVirtualElement = this.virtualDom.clone();
                                         delete newNode.props[delAttrKey];
+                                        newNode.data["index"] = i;
                                         this.updateElementDataToAllChild(newNode, currentData);
                                         result.push(newNode);
                                     })(updateValue, subKey);
