@@ -105,18 +105,19 @@ export class ElmerServiceRequest extends Common {
                     // "Access-Control-Allow-Origin": "*",
                     ...this.getRequestHeader(endPoint, option)
                 };
-                const allData = {
-                    ...(endPoint && this.isObject(endPoint.data) ? endPoint.data : {}),
-                    ...(option && this.isObject(option.data) ? option.data : {})
-                };
+                let allData:any;
+                const contentType = !this.isEmpty(header["Content-Type"]) ? header["Content-Type"] : (header["content-Type"] || header["content-type"]);
+                if(/multipart\/form-data/.test(contentType)) {
+                    allData = option.data;
+                } else {
+                    allData = {
+                        ...(endPoint && this.isObject(endPoint.data) ? endPoint.data : {}),
+                        ...(option && this.isObject(option.data) ? option.data : {})
+                    };
+                }
                 const timeout = option.timeout || 30000;
                 const postData = JSON.stringify(allData);
                 method = method.toUpperCase();
-                // tslint:disable:no-console
-                // console.info("-------Ajax Request---------");
-                // console.info("   url: ", reqUrl);
-                // console.info("method: ", method);
-                // console.info("  data: ", option.data);
                 if(!this.isEmpty(option.type)) {
                     method = option.type.toUpperCase();
                 }

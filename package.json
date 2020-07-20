@@ -1,6 +1,6 @@
 {
     "name": "elmer-ui-core",
-    "version": "1.2.20",
+    "version": "1.2.21",
     "description": "web app framework",
     "typings": "lib/index.d.ts",
     "main": "lib/index.js",
