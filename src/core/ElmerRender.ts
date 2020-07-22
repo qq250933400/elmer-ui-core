@@ -145,7 +145,7 @@ export class ElmerRender extends Common {
             // define error elements
             const pathStr = this.path ? this.path.join("->") + "->" : "";
             // tslint:disable-next-line:no-console
-            console.error(e, pathStr + this.renderComponent.selector);
+            console.error(e, pathStr + this.getValue(this,"renderComponent.selector"));
         }
     }
     afterRender(isFirstRender: boolean):void {
