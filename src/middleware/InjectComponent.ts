@@ -51,7 +51,9 @@ export class InjectComponent extends Common {
      */
     releaseComponent(targetComponent: any, nodeData:IVirtualElement): void {
         // 从reduxController把已经释放的组件移除引用
-        this.reduxController.removeComponent(targetComponent.selector, nodeData);
+        if(targetComponent) {
+            this.reduxController.removeComponent(targetComponent.selector, nodeData);
+        }
     }
     /**
      * Before Component Update
