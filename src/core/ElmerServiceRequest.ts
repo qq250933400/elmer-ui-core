@@ -106,17 +106,18 @@ export class ElmerServiceRequest extends Common {
                     ...this.getRequestHeader(endPoint, option)
                 };
                 let allData:any;
+                let postData:any;
                 const contentType = !this.isEmpty(header["Content-Type"]) ? header["Content-Type"] : (header["content-Type"] || header["content-type"]);
                 if(/multipart\/form-data/.test(contentType)) {
-                    allData = option.data;
+                    postData = option.data;
                 } else {
                     allData = {
                         ...(endPoint && this.isObject(endPoint.data) ? endPoint.data : {}),
                         ...(option && this.isObject(option.data) ? option.data : {})
                     };
+                    postData = JSON.stringify(allData);
                 }
                 const timeout = option.timeout || 30000;
-                const postData = JSON.stringify(allData);
                 method = method.toUpperCase();
                 if(!this.isEmpty(option.type)) {
                     method = option.type.toUpperCase();
