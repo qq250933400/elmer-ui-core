@@ -473,6 +473,11 @@ export class ElmerVirtualRender extends Common {
                     }
                 }
             });
+            if(result["ex:props"]) {
+                const exProps = result["ex:props"];
+                this.merge(result, exProps);
+                delete result["ex:props"];
+            }
         } catch (e) {
             // tslint:disable-next-line:no-console
             console.error(e, nodeData, this.renderComponent);

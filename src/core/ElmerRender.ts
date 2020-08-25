@@ -674,7 +674,12 @@ export class ElmerRender extends Common {
                         delete  oldVirtualDom.component.props;
                         this.defineReadOnlyProperty(oldVirtualDom.component, "props", props);
                         this.injectComponent.run(oldVirtualDom.component, componentClass, nodeData);
-                        typeof oldVirtualDom.component["$onPropsChanged"] === "function" && oldVirtualDom.component["$onPropsChanged"](props, oldProps);
+                        if(typeof oldVirtualDom.component["$willReceiveProps"] === "function") {
+                            typeof oldVirtualDom.component["$willReceiveProps"] === "function" && oldVirtualDom.component["$willReceiveProps"](props, oldProps);
+                        } else {
+                            // 兼容旧版本的代码
+                            typeof oldVirtualDom.component["$onPropsChanged"] === "function" && oldVirtualDom.component["$onPropsChanged"](props, oldProps);
+                        }
                     }
                 }
             } else if(nodeData.status === VirtualElementOperate.APPEND) {

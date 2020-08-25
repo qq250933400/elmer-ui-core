@@ -1,6 +1,6 @@
 {
     "name": "elmer-ui-core",
-    "version": "1.2.24",
+    "version": "1.2.27",
     "description": "web app framework",
     "typings": "lib/index.d.ts",
     "main": "lib/index.js",
@@ -80,10 +80,11 @@
         "colors": "^1.3.3",
         "core-js": "^2.5.7",
         "decorator": "^0.0.1",
-        "elmer-redux": "^1.0.10",
+        "elmer-common": "^0.1.8",
+        "elmer-redux": "^1.0.11",
         "elmer-validation": "^1.0.7",
-        "elmer-virtual-dom": "^1.0.6",
-        "elmer-worker": "^1.0.5",
+        "elmer-virtual-dom": "^1.0.7",
+        "elmer-worker": "^1.0.6",
         "eslint-plugin-typescript": "^0.12.0",
         "path": "^0.12.7",
         "promise": "^8.0.3",
@@ -93,7 +94,5 @@
         "typescript-eslint-parser": "^18.0.0",
         "zone.js": "^0.8.26"
     },
-    "peerDependencies": {
-        "elmer-validation": "^1.0.7"
-    }
+    "peerDependencies": {}
 }

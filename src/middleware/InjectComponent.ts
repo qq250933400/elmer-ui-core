@@ -151,7 +151,7 @@ export class InjectComponent extends Common {
         this.isFunction(checkCallBack) && checkCallBack(propValue, {
             error: (msg: any, type:any) => {
                 const tagName = target.humpToStr(target["selector"]);
-                const sMsg = "组件【eui-"+tagName+"】属性【"+propertyKey+"】设置错误：" + msg;
+                const sMsg = "组件【"+tagName+"】属性【"+propertyKey+"】设置错误：" + msg;
                 // tslint:disable-next-line:no-console
                 console.error(sMsg, type);
             },

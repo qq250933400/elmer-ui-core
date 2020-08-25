@@ -1,3 +1,4 @@
+// tslint:disable-next-line: no-implicit-dependencies
 import { Common } from "elmer-common";
 import { IVirtualElement } from "elmer-virtual-dom";
 import { autoInit, autowired } from "../inject";
@@ -10,7 +11,7 @@ import { ElmerServiceRequest } from "./ElmerServiceRequest";
 /**
  * 所有的组件必须继承次类
  */
-export abstract class Component extends Common implements IComponent {
+export abstract class Component<T = Object,S = Object, C = Object> extends Common implements IComponent<T,S,C> {
     static propType:any = {};
     static contextType:any = {};
     /**
@@ -19,14 +20,14 @@ export abstract class Component extends Common implements IComponent {
     domList: any = {};
     dom: any = {};
     domData: IVirtualElement;
-    props: any = {};
-    context: any = {};
-    state: any = {};
+    props: T = <any>{};
+    context: C = <any>{};
+    state: S = <any>{};
     id: string = "";
     model?: any;
     service?: any;
     private templateCode: string;
-    constructor(props?: any, context?: any) {
+    constructor(props?: T, context?: C) {
         super();
         // 此处不能使用父类定义方法，防止在原生写法出现未完成继承父类导致出现错误
         const getRandomID =():string => {
@@ -111,7 +112,7 @@ export abstract class Component extends Common implements IComponent {
     public $afterDiff?(dom?:IVirtualElement): void;
     public $beforeVirtualRender?(dom?:IVirtualElement): void;
     public $beforeDiff?(dom?:IVirtualElement): void;
-    public $onPropsChanged(propData: any,oldProps: any): void {}
+    public $willReceiveProps(newProps: any,oldProps: any): void {}
     public $init?(): void;
     public $inject?(): void;
     public $before?(): void;
@@ -186,5 +187,5 @@ export abstract class Component extends Common implements IComponent {
     }
 }
 
-withRouter<Component>(Component, autoInit);
+withRouter<Component<unknown,unknown,unknown>>(Component, autoInit);
 // tslint:enable:no-empty
