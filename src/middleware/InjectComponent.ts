@@ -1,5 +1,5 @@
 import { Common } from "elmer-common";
-import { connect, ReduxController } from "elmer-redux";
+import { ReduxController } from "elmer-redux";
 import { IVirtualElement } from "elmer-virtual-dom";
 import { I18nController } from "../i18n/i18nController";
 import { defineGlobalState, getGlobalState } from "../init/globalUtil";
@@ -18,6 +18,7 @@ export class InjectComponent extends Common {
     constructor() {
         super();
         this.reduxController.checkInitStateData(getGlobalState, defineGlobalState);
+        this.reduxController.setNotifyCallback(["$onPropsChanged", "$willReceiveProps"]);
     }
     /**
      * 运行第三方插件，此方法在Component创建时执行
@@ -78,7 +79,7 @@ export class InjectComponent extends Common {
                 this.defineReadOnlyProperty(ComponentClass.prototype, "selector", this.guid().replace(/\-/g, ""));
             }
             // 在初始化Component的时候在做connect操作，防止没有使用的组件但是定义了connect,在declareComponent的时候增加不必要的redux watch
-            connect(ComponentClass,reduxParam.mapStateToProps, reduxParam.mapDispatchToProps, getGlobalState, defineGlobalState);
+            this.reduxController.connect(ComponentClass.prototype.selector, reduxParam.mapStateToProps, reduxParam.mapDispatchToProps);
 
             const stateValue = this.reduxController.getStateByConnectSelector(ComponentClass.prototype.selector);
             const dispatchValue= this.reduxController.getDispatchByConnectSelector(ComponentClass.prototype.selector);
