@@ -112,14 +112,14 @@ export abstract class Component<T = Object,S = Object, C = Object> extends Commo
     public $afterDiff?(dom?:IVirtualElement): void;
     public $beforeVirtualRender?(dom?:IVirtualElement): void;
     public $beforeDiff?(dom?:IVirtualElement): void;
-    public $willReceiveProps(newProps: any,oldProps: any): void {}
+    public $willReceiveProps?(newProps: any,oldProps: any): void;
     public $init?(): void;
     public $inject?(): void;
     public $before?(): void;
     public $after?(): void;
     public $resize?(): void;
     public $dispose?(): void;
-    public redirect(path:string, params?: any):void{};
+    public redirect?(path:string, params?: any):void;
     public getChildContext():any {return null;}
     public $didMount?():void; // 第一次挂载程序
     public $didUpdate?():void;
@@ -129,7 +129,7 @@ export abstract class Component<T = Object,S = Object, C = Object> extends Commo
      * @param theme 全局样式名称
      * @param themeConfig 保存theme的信息的对象，为自动清除旧样式用
      */
-    setTheme<T>(theme: keyof T | keyof TypeThemeDefault, themeConfig?: T): void {
+    setTheme<TH>(theme: keyof TH | keyof TypeThemeDefault, themeConfig?: TH): void {
         const innerTheme:TypeThemeDefault = {
             default: "elmerThemeDefault",
             themePink: "elmerThemePink"
