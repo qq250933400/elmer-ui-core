@@ -21,6 +21,12 @@ export interface IServiceRequest<ServiceRequestOptions> {
     downloadProgress?(event:ProgressEvent, requestData?: IServiceRequest<ServiceRequestOptions>): void;
 }
 
+type TypeServiceConfigEventOptions<TypeServiceEndPointOptions> = {
+    env?: string;
+    option?: IServiceRequest<any>;
+    endPoint?: IServiceEndPoint<TypeServiceEndPointOptions>;
+};
+
 export interface IServiceConfig<TypeServiceEndPoints, TypeServiceEndPointOptions> {
     baseUrl: string;
     dummy?: boolean;
@@ -28,6 +34,7 @@ export interface IServiceConfig<TypeServiceEndPoints, TypeServiceEndPointOptions
     endPoints: {[P in keyof TypeServiceEndPoints]: IServiceEndPoint<TypeServiceEndPointOptions>};
     envUrls?: {};
     proxy?: string;
+    getDomain?(options: TypeServiceConfigEventOptions<TypeServiceEndPointOptions>): string;
 }
 
 export interface IServiceEndPoint<TypeOptions> {
