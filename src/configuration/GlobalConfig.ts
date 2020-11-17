@@ -64,11 +64,15 @@ export const defineGlobalConfiguration = <
                 // 如果已经通过其他方式注册配置request.service.config下的namespace信息，使用extend 方法，保留原有的数据
                 for(const key in configData.router.service.config) {
                     if(saveConfigData.router.service.config) {
-                        if(!saveConfigData.router.service.config[key].endPoints) {
-                            saveConfigData.router.service.config[key].endPoints = <any>{};
+                        if(saveConfigData.router.service.config[key]) {
+                            if(!saveConfigData.router.service.config[key].endPoints) {
+                                saveConfigData.router.service.config[key].endPoints = <any>{};
+                            } else {
+                                StaticCommon.extend(saveConfigData.router.service.config[key], configData.router.service.config[key], true, ["endPoints"]);
+                                StaticCommon.extend(saveConfigData.router.service.config[key].endPoints, configData.router.service.config[key].endPoints);
+                            }
                         } else {
-                            StaticCommon.extend(saveConfigData.router.service.config[key], configData.router.service.config[key], true, ["endPoints"]);
-                            StaticCommon.extend(saveConfigData.router.service.config[key].endPoints, configData.router.service.config[key].endPoints);
+                            saveConfigData.router.service.config[key] = configData.router.service.config[key];
                         }
                     } else {
                         saveConfigData.router.service.config = configData.router.service.config;
