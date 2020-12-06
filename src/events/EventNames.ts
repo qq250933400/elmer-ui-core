@@ -1,4 +1,4 @@
-export const bindEvents = [
+export const EventNames = [
     "abort",
     "activate",
     "beforeactivate",

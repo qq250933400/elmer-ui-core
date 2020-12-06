@@ -1,11 +1,16 @@
-// import { global } from "../global";
+const GLOBAL_STATE_KEY_FOR_ELMERUI = "__elmerUI__";
 
-export default class GlobalUtils {
-    isDev():boolean {
-        return true;
+export const globalVar = () => {
+    if(!globalThis[GLOBAL_STATE_KEY_FOR_ELMERUI]) {
+        globalThis[GLOBAL_STATE_KEY_FOR_ELMERUI] = {
+            classPool: [],
+            components: [],
+            elmerState: {},
+            objPool: {}
+        };
     }
-}
-
+    return globalThis[GLOBAL_STATE_KEY_FOR_ELMERUI];
+};
 /**
  * 定义全局状态，通过此方法定义，防止被其他模块定义混乱而被覆盖掉
  * @param stateKey  stateKey
@@ -13,8 +18,9 @@ export default class GlobalUtils {
  * @param ignoreError [boolean] if ignoreError === false then throw error
  */
 export const defineGlobalState = (stateKey: string, stateValue: any, ignoreError?: boolean) => {
+    const globalState = globalVar();
     if(stateKey !== undefined && stateKey !== null && stateKey.length>0) {
-        Object.defineProperty(elmerData.elmerState, stateKey, {
+        Object.defineProperty(globalState.elmerState, stateKey, {
             configurable: false,
             enumerable: true,
             value: stateValue,
@@ -28,7 +34,7 @@ export const defineGlobalState = (stateKey: string, stateValue: any, ignoreError
 };
 
 export const getGlobalState = (stateKey: string): any => {
-    return elmerData.elmerState[stateKey];
+    return globalVar().elmerState[stateKey];
 };
 /**
  * 定义全局变量，保存到window对象
@@ -37,7 +43,7 @@ export const getGlobalState = (stateKey: string): any => {
  */
 export const defineGlobalVar = (varKey:string, varValue: any) => {
     if(varKey !== undefined && varKey !== null && varKey.length>0) {
-        Object.defineProperty(window, varKey, {
+        Object.defineProperty(globalThis, varKey, {
             configurable: false,
             enumerable: true,
             value: varValue,
@@ -49,29 +55,28 @@ export const defineGlobalVar = (varKey:string, varValue: any) => {
 };
 
 export const getGlobalVar = (varkey:string): any => {
-    return window[varkey];
+    return globalThis[varkey];
 };
 
 export const addToClassPool = (className: string, factory: Function, fn?:Function): void => {
     if(factory) {
+        const elmerData = globalVar();
         let hasExists = false;
         factory.prototype.className = className;
-        if(typeof window !== "undefined" && window["elmerData"]) {
-            for(const tmpClass of elmerData.classPool) {
-                if(tmpClass.prototype.className === className) {
-                    hasExists = true;
-                    break;
-                }
+        for(const tmpClass of elmerData.classPool) {
+            if(tmpClass.prototype.className === className) {
+                hasExists = true;
+                break;
             }
-            if(!hasExists) {
-                typeof fn === "function" && fn();
-                elmerData.classPool.push(factory);
-            }
+        }
+        if(!hasExists) {
+            typeof fn === "function" && fn();
+            elmerData.classPool.push(factory);
         }
     }
 };
 // tslint:disable 
-export const __extends = (this && this.__extends) || (function () {
+export const __extends = (function () {
     const ignorePropKeys = ["selector", "template", "model","service","i18n", "connect","setData","setState", "render"]; // 忽略属性是不需要继承的组件特殊属性
     const extendStatics = Object.setPrototypeOf ||
         ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||

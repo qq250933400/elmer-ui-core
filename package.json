@@ -15,7 +15,7 @@
         "build": "tsc",
         "static": "node ./bin/index.js --static",
         "update": "elmer-cli uv",
-        "testReport": "mocha ./test/index.test.js ./test/**/*.test.js --reporter mochawesome"
+        "start": "elmer-cli start -e ./example/index.ts -t ./example/index.html"
     },
     "keywords": [
         "web framework",
@@ -52,10 +52,10 @@
         "@types/loader-utils": "^1.1.3",
         "@types/node": "^12.12.24",
         "babel-loader": "^7.1.5",
-        "babel-preset-env": "^1.7.0",
         "babel-plugin-transform-class-properties": "^6.24.1",
-        "extract-text-webpack-plugin": "^4.0.0-beta.0",
+        "babel-preset-env": "^1.7.0",
         "eslint-plugin-typescript": "^0.12.0",
+        "extract-text-webpack-plugin": "^4.0.0-beta.0",
         "jsdom": "^15.2.0",
         "loader-utils": "^1.2.3",
         "mocha": "^6.2.1",
@@ -63,9 +63,10 @@
         "nyc": "^14.1.1",
         "progress-bar-webpack-plugin": "^1.11.0",
         "schema-utils": "^2.5.0",
-        "ts-loader": "^5.2.2",
+        "ts-loader": "^4.4.2",
         "tslint": "^5.11.0",
-        "typescript": "^2.9.2"
+        "tslint-loader": "^3.5.4",
+        "typescript": "^4.0.2"
     },
     "dependencies": {
         "@abraham/reflection": "^0.4.2",
@@ -81,19 +82,24 @@
         "colors": "^1.3.3",
         "core-js": "^2.5.7",
         "decorator": "^0.0.1",
-        "path": "^0.12.7",
+        "elmer-common": "^0.1.10",
+        "elmer-loader": "^1.0.2",
+        "elmer-redux": "^1.1.2",
+        "elmer-validation": "^1.0.8",
+        "elmer-virtual-dom": "^2.0.0",
+        "elmer-worker": "^1.0.7",
         "promise": "^8.0.3",
         "reflect-metadata": "^0.1.12",
         "source-map": "^0.7.3",
-        "ts-node": "^7.0.1",
         "typescript-eslint-parser": "^18.0.0",
         "zone.js": "^0.8.26"
     },
     "peerDependencies": {
         "elmer-common": "^0.1.10",
+        "elmer-loader": "^1.0.2",
         "elmer-redux": "^1.1.2",
         "elmer-validation": "^1.0.8",
-        "elmer-virtual-dom": "^1.0.10",
+        "elmer-virtual-dom": "^2.0.0",
         "elmer-worker": "^1.0.7"
     }
 }

@@ -22,4 +22,3 @@ export interface IElmerBindEvent extends IElmerEvent  {
 export interface IElmerMouseEvent extends IElmerEvent {
     nativeEvent: MouseEvent;
 }
-

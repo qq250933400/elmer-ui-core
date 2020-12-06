@@ -1,8 +1,8 @@
 // tslint:disable-next-line: no-implicit-dependencies
 import { Common } from "elmer-common";
 import { IVirtualElement } from "elmer-virtual-dom";
+import { EnumHTMLElementInsertMethod, IComponent, TypeThemeDefault } from "../component/IComponent";
 import { autoInit, autowired } from "../inject";
-import { EnumHTMLElementInsertMethod, IComponent, TypeThemeDefault } from "../interface/IComponent";
 import { withRouter } from "../widget/router/withRoter";
 import { ElmerServiceRequest } from "./ElmerServiceRequest";
 
@@ -11,7 +11,7 @@ import { ElmerServiceRequest } from "./ElmerServiceRequest";
 /**
  * 所有的组件必须继承次类
  */
-export abstract class Component<T = Object,S = Object, C = Object> extends Common implements IComponent<T,S,C> {
+export abstract class Component<P = {},S = {}, C = {}> extends Common implements IComponent<P,S,C> {
     static propType:any = {};
     static contextType:any = {};
     /**
@@ -20,14 +20,14 @@ export abstract class Component<T = Object,S = Object, C = Object> extends Commo
     domList: any = {};
     dom: any = {};
     domData: IVirtualElement;
-    props: T = <any>{};
+    props: P = <any>{};
     context: C = <any>{};
     state: S = <any>{};
     id: string = "";
     model?: any;
     service?: any;
     private templateCode: string;
-    constructor(props?: T, context?: C) {
+    constructor(props?: P, context?: C) {
         super();
         // 此处不能使用父类定义方法，防止在原生写法出现未完成继承父类导致出现错误
         const getRandomID =():string => {
@@ -103,7 +103,7 @@ export abstract class Component<T = Object,S = Object, C = Object> extends Commo
     public setData(data: object, refresh?: boolean): void {
         throw new Error("Component类未通过ElmerRender类做初始化！");
     }
-    public setState(data: object, refresh?: boolean): void {
+    public setState<T>(data: T & S, refresh?: boolean): void {
         throw new Error("setState方法未通过ElmerRender类做初始化！");
     }
     public render(): string {throw new Error("【render】方法未通过ElmerRender类做初始化！");}

@@ -1,10 +1,10 @@
 import { Common } from "elmer-common";
 import { ReduxController } from "elmer-redux";
 import { IVirtualElement } from "elmer-virtual-dom";
+import { IComponent } from "../component/IComponent";
 import { I18nController } from "../i18n/i18nController";
 import { defineGlobalState, getGlobalState } from "../init/globalUtil";
 import { autowired, Injectable } from "../inject/injectable";
-import { IComponent } from "../interface/IComponent";
 import { IPropCheckRule } from "../propsValidation";
 
 @Injectable("InjectComponent")

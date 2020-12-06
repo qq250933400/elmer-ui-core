@@ -1,6 +1,6 @@
 import { Common } from "elmer-common";
+import { IComponent } from "../component/IComponent";
 import { addToClassPool, getGlobalState } from "../init/globalUtil";
-import { IComponent } from "../interface/IComponent";
 import { IDeclareI18n } from "../interface/IDeclareComponentOptions";
 
 export class I18nController extends Common {

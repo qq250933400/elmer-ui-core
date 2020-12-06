@@ -1,5 +1,6 @@
 import { Common } from "elmer-common";
-import { globalClassFactory, Injectable } from "../inject";
+import { createClassFactory } from "../inject/createClassFactory";
+import { Injectable } from "../inject/injectable";
 
 @Injectable("InjectModel")
 export class InjectModel extends Common {
@@ -21,7 +22,7 @@ export class InjectModel extends Common {
                 if(!this.isEmpty(tmpKey)) {
                     const tmpFactory: Function = <Function>models[tmpKey];
                     if(typeof tmpFactory === "function") {
-                        const tmpObj = !isAutowired ? (new (<any>tmpFactory)(target)) : globalClassFactory(<any>tmpFactory);
+                        const tmpObj = !isAutowired ? (new (<any>tmpFactory)(target)) : createClassFactory(<any>tmpFactory);
                         if(!this.isEmpty(propertyKey)) {
                             target[propertyKey][tmpKey] = tmpObj;
                         } else {

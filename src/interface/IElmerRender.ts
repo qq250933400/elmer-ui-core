@@ -1,4 +1,4 @@
-import { IComponent } from "./IComponent";
+import { IComponent } from "../component/IComponent";
 
 export type TypeUIRenderOptions = {
     isRSV?: boolean; // Render first init

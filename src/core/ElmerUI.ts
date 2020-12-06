@@ -1,7 +1,7 @@
 import { Common } from "elmer-common";
 import { defineGlobalState, getGlobalState } from "../init/globalUtil";
 import { autowired } from "../inject/injectable";
-import { IComponent } from "../interface/IComponent";
+import { IComponent } from "../component/IComponent";
 import { TypeUIRenderOptions } from "../interface/IElmerRender";
 import { Component } from "./Component";
 // tslint:disable-next-line:ordered-imports

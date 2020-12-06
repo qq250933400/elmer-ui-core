@@ -1,5 +1,6 @@
 import { StaticCommon } from "elmer-common";
 import "reflect-metadata";
+import { globalVar } from "../init/globalUtil";
 
 export type TypeAutowiredOptions = {
     className?: string;
@@ -7,7 +8,8 @@ export type TypeAutowiredOptions = {
 };
 // 实例化工厂
 // tslint:disable-next-line:variable-name
-export function globalClassFactory<T>(_constructor: new(...args:any[]) =>T, options?: string | TypeAutowiredOptions):T {
+export function createClassFactory<T>(_constructor: new(...args:any[]) =>T, options?: string | TypeAutowiredOptions):T {
+    const elmerData = globalVar();
     let className = _constructor.prototype.className;
 
     const paramTypes:Function[] = Reflect.getMetadata("design:paramtypes",_constructor);
@@ -42,10 +44,10 @@ export function globalClassFactory<T>(_constructor: new(...args:any[]) =>T, opti
             if(elmerData.classPool.indexOf(val) === -1) {
                 throw new Error(`${val}没有被注册[${className}]`);
             } else {
-                return globalClassFactory(val as any);
+                return createClassFactory(val as any);
             }
         }) : [];
-        const obj = new _constructor(...(Array.concat(paramInstance, argv)));
+        const obj = new _constructor(...paramInstance, ...argv);
         elmerData.objPool[className] = obj;
         return obj;
     } else {
@@ -53,4 +55,4 @@ export function globalClassFactory<T>(_constructor: new(...args:any[]) =>T, opti
     }
 }
 
-export const autoInit = globalClassFactory​​;
+export const autoInit = createClassFactory;

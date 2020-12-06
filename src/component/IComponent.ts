@@ -1,5 +1,5 @@
 import { IVirtualElement } from "elmer-virtual-dom";
-import { IDeclareConnect, IDeclareI18n } from "./IDeclareComponentOptions";
+import { IDeclareConnect, IDeclareI18n } from "../interface/IDeclareComponentOptions";
 
 export type TypeThemeDefault = {
     default: string;
@@ -8,7 +8,7 @@ export type TypeThemeDefault = {
 
 export interface IComponent<P=Object, S=Object, C=Object> {
     parent?:HTMLElement;
-    domList: any;
+    virtualDom?: IVirtualElement;
     dom: any;
     htmlCode?: string;
     connect?: IDeclareConnect;
@@ -29,20 +29,16 @@ export interface IComponent<P=Object, S=Object, C=Object> {
      * 注入service对象，注入的service对象在整个app只保存一个变量
      */
     service?: any;
-    render():any;
-    insertAdjacentElement(refElement:HTMLElement|Element|Node, newElement:HTMLElement|Element|Node, InsertMethod: string):void;
-    checkPropTypes?(checkPropTypesConfig: any): void;
+    render?():any;
     $contextData?(context:any): void;
     $willReceiveProps?(propData: any,oldProps: any): void;
     $init?(): void;
     $inject?(): void;
     $before?(): void;
     $beforeVirtualRender?(dom?:IVirtualElement): void;
-    $beforeDiff?(dom?:IVirtualElement): void;
     $beforeRender?(): boolean;
     $after?(): void;
     $afterVirtualRender?(dom?:IVirtualElement): void;
-    $afterDiff?(dom?:IVirtualElement): void;
     $resize?(): void;
     $dispose?(): void;
     $didMount?():void;
@@ -56,12 +52,7 @@ export interface IComponent<P=Object, S=Object, C=Object> {
      * @param data any 修改state
      * @param refresh boolean 强制重绘，用于解决修改地址引用变量导致无法检查出state有没有更新
      */
-    setState(data: object, refresh?: boolean): void;
-    /**
-     * 修改全局样式
-     * @param theme string 样式className
-     */
-    setTheme<T>(theme: keyof T | keyof TypeThemeDefault, themeConfig?: T): void;
+    setState<T>(data: T & P, refresh?: boolean): void;
     /**
      * 使用withRouter执行过的对象挂载的方法，用于触发router跳转
      * @param path string 跳转路径

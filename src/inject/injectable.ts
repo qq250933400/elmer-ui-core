@@ -4,7 +4,7 @@ import { I18nController } from "../i18n/i18nController";
 import { addToClassPool } from "../init/globalUtil";
 import { IDeclareComponentOptions } from "../interface/IDeclareComponentOptions";
 import { withRouter } from "../widget/router/withRoter";
-import { globalClassFactory, TypeAutowiredOptions } from "./globalClassFactory";
+import { createClassFactory } from "./createClassFactory";
 // tslint:disable:variable-name
 
 export const defineReadonlyProperty = (target:any, propertyKey: string, propertyValue: any) => {
@@ -45,9 +45,12 @@ export function Injectable(className: string): any {
  * @param _constructor 初始化类
  * @param classPoolName 全局类唯一识别名称，当类没有使用Injectable时，通过此参数做注册
  */
-export function autowired<T>(_constructor:new(...args:any[]) =>T, options?: string | TypeAutowiredOptions): any {
+export function autowired<T>(_constructor:new(...args:any[]) =>T, className?: string, ...argv:any[]): any {
     return (target: any, propertyKey: string): void => {
-          target[propertyKey] = globalClassFactory(_constructor, options);
+          target[propertyKey] = createClassFactory(_constructor, {
+              argv,
+              className
+          });
     };
 }
 
@@ -55,7 +58,7 @@ export function declareComponent(options: IDeclareComponentOptions): Function {
     // tslint:disable-next-line:typedef
     // tslint:disable-next-line:variable-name
     return (__contructor:Function): void => {
-        const i18nController:I18nController = globalClassFactory(I18nController);
+        const i18nController:I18nController = createClassFactory(I18nController);
         __contructor.prototype.selector = formatSelector(options.selector || "");
         // 使用defineReadonlyProperty定义属性，防止用户自定义方法重复定义
         defineReadonlyProperty(__contructor.prototype, "injectModel",options.model);
@@ -71,7 +74,7 @@ export function declareComponent(options: IDeclareComponentOptions): Function {
             }).bind({htmlCode: options.template.htmlCode}));
         }
         if(options.withRouter) {
-           withRouter(__contructor, globalClassFactory);
+           withRouter(__contructor, createClassFactory);
         }
         registerComponent(__contructor, options.selector);
     };

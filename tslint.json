@@ -58,7 +58,7 @@
         "no-parameter-reassignment": true,
         "no-angle-bracket-type-assertion": false,
         "no-reference": true,
-        "no-unnecessary-type-assertion": true,
+        "no-unnecessary-type-assertion": false,
         "no-var-requires": true,
         "ban-types": false,
         "only-arrow-functions": [
@@ -124,7 +124,7 @@
         "no-duplicate-super": true,
         "no-empty": true,
         "no-eval": false,
-        "no-floating-promises": true,
+        "no-floating-promises": false,
         "no-for-in-array": false,
         "no-implicit-dependencies": true,
         "no-inferred-empty-object-type": false,

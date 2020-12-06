@@ -1,10 +1,10 @@
 ﻿import { Common } from "elmer-common";
 import { defineContext, getContext } from "elmer-redux";
 import { HtmlParse, IVirtualElement, VirtualElement, VirtualElementOperate, VirtualElementsDiff } from "elmer-virtual-dom";
+import { IComponent } from "../component/IComponent";
 import { SvgConfig } from "../configuration/SvgConfig";
 import { autowired } from "../inject";
-import { globalClassFactory } from "../inject/globalClassFactory";
-import { IComponent } from "../interface/IComponent";
+import { createClassFactory } from "../inject/createClassFactory";
 import { IDeclareComponent } from "../interface/IDeclareComponentOptions";
 import { IElmerRenderParams, TypeRenderEventData, TypeUIRenderOptions } from "../interface/IElmerRender";
 import { InjectModel } from "../middleware";
@@ -54,9 +54,7 @@ export class ElmerRender extends Common {
 
     @autowired(VirtualElement)
     private virtualDom:VirtualElement;
-    @autowired(VirtualElementsDiff, {
-        argv: [globalClassFactory(VirtualElement)]
-    })
+    @autowired(VirtualElementsDiff, "VirtualElementsDiff", createClassFactory(VirtualElement))
     private virtualDiff: VirtualElementsDiff;
     @autowired(ElmerVirtualRender)
     private virtualRender:ElmerVirtualRender;
@@ -1326,8 +1324,8 @@ export class ElmerRender extends Common {
      * 释放被标记为删除的节点
      */
     private deleteElements(nodeData:IVirtualElement): void {
-        if(nodeData.delElements && nodeData.delElements.length>0) {
-            nodeData.delElements.map((delItem:IVirtualElement) => {
+        if(nodeData.deleteElements && nodeData.deleteElements.length>0) {
+            nodeData.deleteElements.map((delItem:IVirtualElement) => {
                 if(delItem.dom) {
                     this.dom.unbind(<HTMLElement>delItem.dom);
                     delItem.dom.parentElement && delItem.dom.parentElement.removeChild(delItem.dom);
@@ -1341,8 +1339,8 @@ export class ElmerRender extends Common {
                         delete this.virtualDomList[delItem.virtualID];
                     }
                 }
-                delete nodeData.delElements;
-                nodeData.delElements = [];
+                delete nodeData.deleteElements;
+                nodeData.deleteElements = [];
                 this.releaseNodeDataChildren(delItem);
             });
         }

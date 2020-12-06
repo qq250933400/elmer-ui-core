@@ -1,3 +1,5 @@
+import { globalVar } from "../init/globalUtil";
+
 export const formatSelector = (selectorName: string): string => {
     let dName = selectorName.replace(/([A-Z])/g, "-$1").replace(/^([a-z])/i, "-$1").toLowerCase();
     dName = /^\-/.test(dName) ? dName : "-" + dName;
@@ -10,6 +12,7 @@ export const registerComponent = (widgets: object | Function, domName?: string) 
         // tslint:disable-next-line:no-shadowed-variable
         const domName = widgetFactory.toString();
         const fMatch = domName.match(/^function\s*([a-z0-9_\-]*)\s*\(/i);
+        const elmerData = globalVar();
         if (fMatch) {
             let dName = fMatch[1];
             dName = domNameValue && domNameValue.length>0 ? domNameValue :  dName;

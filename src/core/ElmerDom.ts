@@ -1,10 +1,10 @@
 import { ElmerAnimation, TypeAnimationChangeEvent, TypeElmerAnimationType } from "../animation/ElmerAnimation";
 import animationMethod, { TypeAnimationProperty } from "../animation/ElmerAnimationProperty";
+import { EventNames } from "../events/EventNames";
 import { Injectable } from "../inject/index";
 import { autowired } from "../inject/injectable";
 import { MDomModel } from "../middleware/MDomModel";
 import { ElmerDomEvent } from "./ElmerDomEvent";
-import { bindEvents } from "./ElmerDomEvents";
 import { ElmerDomQuery, IElmerDomSelector } from "./ElmerDomQuery";
 
 type TypeAnimationOption = {
@@ -59,7 +59,7 @@ export interface IElmerDOMEvent {
 
 @Injectable("ElmerDOM")
 export class ElmerDOM extends ElmerDomQuery {
-    bindEvents:string[] = bindEvents;
+    bindEvents:string[] = EventNames;
     supportCss3: boolean = false;
     contains:Function;
     listener: any[] = [];
@@ -235,7 +235,7 @@ export class ElmerDOM extends ElmerDomQuery {
         this.addEvent(dom, eventName, callBack, options);
     }
     addEvent(dom: any | HTMLElement, eventName: string, callBack: Function, options?: AddEventListenerOptions): void {
-        if(this.isDOM(dom)) {
+        if(this.isDOM(dom) || this.getType(dom) === "[object Window]") {
             const eventListener:IElmerDOMEvent[] = (<any>dom).eventListeners || [];
             const profillEventName = "on" + eventName;
             const eventData:IElmerDOMEvent = {

@@ -1,4 +1,4 @@
-import { autoInit as autoInitFn,globalClassFactory as GlobalClassFactory } from "./globalClassFactory";
+import { autoInit as autoInitFn  } from "./createClassFactory";
 import { autowired as Autowired, declareComponent as DeclareComponent, Injectable as injectableFn } from "./injectable";
 
 export const autowired = Autowired;
@@ -8,7 +8,7 @@ export const declareComponent = DeclareComponent;
  * Duplicate todo
  */
 export const Injectable = injectableFn;
-export const globalClassFactory = GlobalClassFactory;
+// export const globalClassFactory = GlobalClassFactory;
 export const autoInit = autoInitFn;
 
 export default {
