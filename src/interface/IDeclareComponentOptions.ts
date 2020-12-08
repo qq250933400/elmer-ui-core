@@ -47,7 +47,7 @@ export interface IDeclareComponentOptions {
      * Redux定义参数
      */
     connect?: IDeclareConnect;
-    components?: IDeclareComponent[];
+    components?: IDeclareComponent[]|any;
     /**
      * 定义i18n特殊设置
      */

@@ -13,16 +13,18 @@ export class ElmerUI extends Common {
     onReady(fn:Function): void {
         this.$.addEvent(window, "load", fn);
     }
-    render(target:HTMLElement, htmlCode: string|VirtualElement, rootApp:any, options?:TypeUIRenderOptions): ElmerRender {
+    render(target:HTMLElement, rootApp:any, options?:TypeUIRenderOptions): ElmerRender {
         // elmer
         const entryComponent = rootApp || {};
         const ignorePropKeys = ["selector", "template", "model","service","i18n", "connect","setData","setState", "render",
             "$after", "$onPropsChanged", "$afterVirtualRender", "$beforeVirtualRender","$init",
             "$inject", "$before", "$resize", "$dispose"];
         const defaultProps = entryComponent.props || {};
-        entryComponent.$render = () => {
-            return htmlCode;
-        };
+        if(typeof entryComponent.$render !== "function" && typeof entryComponent.render !== "function") {
+            entryComponent.$render = () => {
+                return options ? options.htmlCode : "<span>Missing render lifecycle method in rootApp object.</span>";
+            };
+        }
         this.extend(entryComponent, EComponent.prototype, true, ignorePropKeys);
         this.defineReadOnlyProperty(entryComponent, "props", defaultProps);
         const renderObj = new ElmerRender({
@@ -30,7 +32,7 @@ export class ElmerUI extends Common {
             container: target,
             renderOptions: options
         });
-        renderObj.render().then(() => {
+        renderObj.render(true).then(() => {
             typeof entryComponent["$didMount"] === "function" && entryComponent["$didMount"]();
         }).catch((err) => {
             typeof entryComponent["$error"] === "function" && entryComponent["$error"](err);

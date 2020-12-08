@@ -4,7 +4,7 @@ export const globalVar = () => {
     if(!globalThis[GLOBAL_STATE_KEY_FOR_ELMERUI]) {
         globalThis[GLOBAL_STATE_KEY_FOR_ELMERUI] = {
             classPool: [],
-            components: [],
+            components: {},
             elmerState: {},
             objPool: {}
         };
