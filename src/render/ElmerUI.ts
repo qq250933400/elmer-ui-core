@@ -1,7 +1,10 @@
+import "../polyfill";
+// tslint:disable-next-line: ordered-imports
 import { Common } from "elmer-common";
-import { VirtualElement } from "elmer-virtual-dom";
+import { ElmerWorker } from "elmer-worker";
 import { EComponent } from "../component/EComponent";
 import { ElmerDOM } from "../core/ElmerDom";
+import { ElmerEvent } from "../events/ElmerEvent";
 import { autowired } from "../inject/injectable";
 import { ElmerRender, TypeUIRenderOptions } from "./ElmerRender";
 
@@ -9,6 +12,15 @@ export class ElmerUI extends Common {
 
     @autowired(ElmerDOM)
     private $:ElmerDOM;
+    @autowired(ElmerWorker, "ElmerWorker")
+    private worker: ElmerWorker;
+    // 虚拟事件处理模块，只在最顶层做事件监听，减少对dom的操作
+    private eventObj: ElmerEvent;
+
+    constructor() {
+        super();
+        this.eventObj = new ElmerEvent(this.worker);
+    }
 
     onReady(fn:Function): void {
         this.$.addEvent(window, "load", fn);
@@ -30,13 +42,15 @@ export class ElmerUI extends Common {
         const renderObj = new ElmerRender({
             component: entryComponent,
             container: target,
+            event: this.eventObj,
             renderOptions: options
         });
-        renderObj.render(true).then(() => {
-            typeof entryComponent["$didMount"] === "function" && entryComponent["$didMount"]();
-        }).catch((err) => {
+        renderObj.render(true).catch((err) => {
             typeof entryComponent["$error"] === "function" && entryComponent["$error"](err);
         });
         return renderObj;
+    }
+    dispose(): void {
+        this.eventObj.dispose();
     }
 }

@@ -1,4 +1,4 @@
-import "../profil/string.profill";
+import "../polyfill";
 
 export const initGlobalVars = ()=> {
     if(window && (!(<any>window)["elmerData"] || !(<any>window)["elmerData"]["version"])) {

@@ -1,6 +1,6 @@
 import "colors";
 import { Common } from "elmer-common";
-import "../profil/string.profill";
+import "../polyfill";
 
 export enum EnumLogType {
     INFO = "INFO",

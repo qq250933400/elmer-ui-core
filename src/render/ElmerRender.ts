@@ -1,6 +1,7 @@
 import { Common, queueCallFunc, TypeQueueCallParam } from "elmer-common";
 import { HtmlParse, IVirtualElement, VirtualElement, VirtualRender } from "elmer-virtual-dom";
 import { EComponent } from "../component/EComponent";
+import { ElmerEvent } from "../events/ElmerEvent";
 import { globalVar } from "../init/globalUtil";
 import { autowired } from "../inject";
 
@@ -14,6 +15,7 @@ type TypeElmerRenderOptions = {
     container: HTMLElement;
     renderOptions: TypeUIRenderOptions;
     userComponents?: EComponent[];
+    event: ElmerEvent;
 };
 
 export class ElmerRender extends Common {
@@ -29,6 +31,8 @@ export class ElmerRender extends Common {
     private sourceDom: IVirtualElement;
     private oldDom: IVirtualElement;
     private userComponents: any[] = [];
+    private eventObj: ElmerEvent;
+    private subscribeEvents: any = {};
     constructor(options: TypeElmerRenderOptions) {
         super();
         let userComponents = (options.component as any).components || {};
@@ -44,6 +48,7 @@ export class ElmerRender extends Common {
         }
         this.options = options;
         this.userComponents = {...userComponents, ...fromParentComponents};
+        this.eventObj = options.event;
         typeof this.options?.component?.$init === "function" && this.options?.component?.$init();
     }
     async render(firstRender?: boolean):Promise<any> {
@@ -84,11 +89,26 @@ export class ElmerRender extends Common {
                 queueCallFunc(renderParams, ({}, params):any => {
                     return this.renderVirtualDom(params.parent, params.vdom, params.vdomParent);
                 }).then(() => {
+                    if(firstRender) {
+                        typeof this.options.component["$didMount"] === "function" && this.options.component["$didMount"]();
+                    } else {
+                        typeof this.options.component.$didUpdate === "function" && this.options.component.$didUpdate();
+                    }
                     resolve({});
                 }).catch((err) => {
+                    if(firstRender) {
+                        typeof this.options.component["$didMount"] === "function" && this.options.component["$didMount"]();
+                    } else {
+                        typeof this.options.component.$didUpdate === "function" && this.options.component.$didUpdate();
+                    }
                     reject(err);
                 });
             } catch(e) {
+                if(firstRender) {
+                    typeof this.options.component["$didMount"] === "function" && this.options.component["$didMount"]();
+                } else {
+                    typeof this.options.component.$didUpdate === "function" && this.options.component.$didUpdate();
+                }
                 // tslint:disable-next-line: no-console
                 console.error(e);
                 reject({
@@ -222,6 +242,7 @@ export class ElmerRender extends Common {
         const prevIndex = index - 1;
         const prevDom = vdomParent.children[prevIndex];
         const newDom = document.createElement(vdom.tagName);
+        (newDom as any).path = vdom.path;
         if(prevDom) {
             // 查找到前一个节点，需要插入到前一个节点后面，紧跟着上一个节点，防止节点位置错误
             if(prevDom.dom) {
@@ -249,8 +270,14 @@ export class ElmerRender extends Common {
             }
         }
         this.renderDomAttribute(newDom, vdom);
+        this.bindDOMEvents(newDom, vdom);
         vdom.dom = newDom;
     }
+    /**
+     * 渲染dom属性值
+     * @param dom 真实dom节点
+     * @param vdom 虚拟dom节点
+     */
     private renderDomAttribute(dom:HTMLElement, vdom:IVirtualElement): void {
         if(vdom.tagName === "text") {
             dom.textContent = vdom.innerHTML;
@@ -271,6 +298,36 @@ export class ElmerRender extends Common {
                     }
                 });
             }
+        }
+    }
+    /**
+     * 绑定事件监听
+     * @param dom 真实dom节点
+     * @param vdom 虚拟dom节点数据
+     */
+    private bindDOMEvents(dom:HTMLElement, vdom:IVirtualElement): void {
+        if(vdom.events && vdom.tagName !== "text") {
+            Object.keys(vdom.events).map((eventName: string) => {
+                const eventCallback = vdom.events[eventName];
+                if(typeof eventCallback === "function") {
+                    // 找到存在的回调函数再做事件监听绑定
+                    const eventListener = ((vdomEvent:IVirtualElement,myEventName:string,callback:Function, handler: any) => {
+                        return (evt:Event) => {
+                            const newEvent:any = {
+                                data: vdomEvent.data,
+                                dataSet: vdomEvent.dataSet,
+                                nativeEvent: evt,
+                            };
+                            if(myEventName === "input" && vdomEvent.dom) {
+                                newEvent.value = (vdomEvent.dom as HTMLInputElement).value;
+                            }
+                            callback.call(handler, newEvent);
+                        };
+                    })(vdom, eventName, eventCallback, this.options.component);
+                    const eventId = this.eventObj.subscribe(eventName,vdom.path, eventListener);
+                    this.subscribeEvents[eventId] = eventListener;
+                }
+            });
         }
     }
 }
