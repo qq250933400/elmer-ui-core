@@ -9,13 +9,16 @@
         "elmerUIBuilder": "bin/index.js"
     },
     "scripts": {
-        "test": "mocha  --reporter mochawesome",
+        "test": "mocha -t 30000  --reporter mochawesome",
         "cover": "nyc --reporter=html mocha",
         "lib": "tsc -w",
-        "build": "tsc",
         "static": "node ./bin/index.js --static",
         "update": "elmer-cli uv",
-        "start": "elmer-cli start -e ./example/index.ts -t ./example/index.html"
+        "start": "elmer-cli start -e ./example/index.ts -t ./example/index.html",
+        "build": "elmer-cli build -e ./example/index.ts -t ./example/index.html"
+    },
+    "elmer-cli-webpack-config": {
+        "hash": false
     },
     "keywords": [
         "web framework",
@@ -64,6 +67,7 @@
         "progress-bar-webpack-plugin": "^1.11.0",
         "schema-utils": "^2.5.0",
         "ts-loader": "^4.4.2",
+        "ts-node": "^9.1.1",
         "tslint": "^5.11.0",
         "tslint-loader": "^3.5.4",
         "typescript": "^4.0.2"

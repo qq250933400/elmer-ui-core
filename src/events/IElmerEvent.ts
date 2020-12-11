@@ -4,6 +4,7 @@ export interface IElmerEvent {
     data: any;
     dataSet:any;
     target:HTMLElement;
+    cancelBubble?: boolean;
 }
 export interface IElmerKeyboardEvent extends IElmerEvent {
     nativeEvent: KeyboardEvent;

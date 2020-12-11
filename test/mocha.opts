@@ -3,4 +3,4 @@
 --recursive
 --full-trace
 --bail
-test/**/*.test.ts test/**/*.test.js
+test/**/*.test.ts
