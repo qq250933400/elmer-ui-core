@@ -1,4 +1,5 @@
 import { IVirtualElement } from "elmer-virtual-dom";
+import { IElmerEvent } from "../events/IElmerEvent";
 import { IDeclareConnect, IDeclareI18n } from "../interface/IDeclareComponentOptions";
 
 export type TypeThemeDefault = {
@@ -8,7 +9,7 @@ export type TypeThemeDefault = {
 
 export interface IComponent<P=Object, S=Object, C=Object> {
     parent?:HTMLElement;
-    virtualDom?: IVirtualElement;
+    vdom: IVirtualElement;
     dom: any;
     htmlCode?: string;
     connect?: IDeclareConnect;
@@ -39,7 +40,7 @@ export interface IComponent<P=Object, S=Object, C=Object> {
     $beforeRender?(): boolean;
     $after?(): void;
     $afterVirtualRender?(dom?:IVirtualElement): void;
-    $resize?(): void;
+    $resize?(event:IElmerEvent): void;
     $dispose?(): void;
     $didMount?():void;
     $didUpdate?():void;

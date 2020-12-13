@@ -21,17 +21,7 @@ export class InjectComponent extends Common {
         this.reduxController.setNotifyCallback(["$onPropsChanged", "$willReceiveProps"]);
     }
     /**
-     * 运行第三方插件，此方法在Component创建时执行
-     * @param targetComponent object 创建的组件
-     * @param ComponentClass Class 创建组件类
-     * @param nodeData 创建组件的虚拟dom数据
-     */
-    run(targetComponent:IComponent, ComponentClass: any, nodeData:IVirtualElement): void {
-        // ----运行第三方插件
-        this.checkPropTypes(targetComponent, ComponentClass); // 运行属性检查
-    }
-    /**
-     * 初始化组件完成后执行
+     * 初始化组件完成后执行,挂载组件示例到redux,用于数据更新以后通知组件
      * @param targetComponent object 创建的组件
      * @param ComponentClass  Class 创建组件类
      * @param nodeData 创建组件的虚拟dom数据
@@ -43,6 +33,7 @@ export class InjectComponent extends Common {
         if(reduxParam && (reduxParam.mapStateToProps || reduxParam.mapDispatchToProps)) {
            this.reduxController.checkInitComponents(targetComponent, ComponentClass.prototype.selector, nodeData);
         }
+        this.checkPropTypes(targetComponent, ComponentClass); // 运行属性检查
     }
     /**
      * 当自定义component被销毁时执行此方法，一些插件需要依赖component的，需要在此做释放，否则导致挂载变量销毁不了
@@ -71,6 +62,12 @@ export class InjectComponent extends Common {
         this.isObject(dispatchValue) && this.extend(props, dispatchValue, true);
         this.setDefaultValue(props, ComponentClass.propType);
     }
+    /**
+     * 创建component前执行此方法，设置props默认值，可从redux中获取默认数据
+     * @param ComponentClass 
+     * @param props 
+     * @param nodeData 
+     */
     beforeInitComponent(ComponentClass: any,props: any, nodeData: IVirtualElement): void {
         const reduxParam = ComponentClass.prototype.connect;
         if(reduxParam && (reduxParam.mapStateToProps || reduxParam.mapDispatchToProps)) {
@@ -88,7 +85,7 @@ export class InjectComponent extends Common {
         }
         this.setDefaultValue(props, ComponentClass.propType);  // 在创建组件object之前对props做默认值检查
     }
-    setDefaultValue(props:any, checkRules: any): void {
+    private setDefaultValue(props:any, checkRules: any): void {
         if(this.isObject(props) && this.isObject(checkRules)) {
             // const propsKey = Object.keys(props);
             Object.keys(checkRules).map((propKey:string) => {
@@ -111,14 +108,14 @@ export class InjectComponent extends Common {
             });
         }
     }
-    checkPropTypes(targetComponent:IComponent, ComponentClass:any): void {
+    private checkPropTypes(targetComponent:IComponent, ComponentClass:any): void {
         const propTypes = ComponentClass["propType"] || {};
         const propKeys = Object.keys(propTypes) || [];
         if(propKeys.length>0) {
             this.checkPropTypesCallBack(targetComponent, propTypes);
         }
     }
-    protected checkPropTypesCallBack(target: any,checkRules: any): void {
+    private checkPropTypesCallBack(target: any,checkRules: any): void {
         Object.keys(checkRules).map((tmpKey: any) => {
             let checkRuleData:IPropCheckRule|Function  = checkRules[tmpKey];
             if(this.isFunction(checkRuleData)) {
@@ -147,7 +144,7 @@ export class InjectComponent extends Common {
      * @param propertyKey prop属性关键词
      * @param checkCallBack 数据类型检查规则
      */
-    protected doCheckPropType(target: any, propertyKey: string, checkCallBack: Function): void {
+    private doCheckPropType(target: any, propertyKey: string, checkCallBack: Function): void {
         const propValue = target.props[propertyKey];
         this.isFunction(checkCallBack) && checkCallBack(propValue, {
             error: (msg: any, type:any) => {

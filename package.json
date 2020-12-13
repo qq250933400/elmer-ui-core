@@ -5,20 +5,21 @@
     "typings": "lib/index.d.ts",
     "main": "lib/index.js",
     "module": "lib/index.js",
-    "bin": {
-        "elmerUIBuilder": "bin/index.js"
-    },
     "scripts": {
         "test": "mocha -t 30000  --reporter mochawesome",
         "cover": "nyc --reporter=html mocha",
         "lib": "tsc -w",
-        "static": "node ./bin/index.js --static",
         "update": "elmer-cli uv",
         "start": "elmer-cli start -e ./example/index.ts -t ./example/index.html",
         "build": "elmer-cli build -e ./example/index.ts -t ./example/index.html"
     },
-    "elmer-cli-webpack-config": {
-        "hash": false
+    "elmer-cli": {
+        "hash": false,
+        "devtool": "source-map",
+        "static": {
+            "src": "./src",
+            "des": "./lib"
+        }
     },
     "keywords": [
         "web framework",

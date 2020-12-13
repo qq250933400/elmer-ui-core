@@ -1,4 +1,4 @@
-import { Component } from "../core/Component";
+import { EComponent } from "../component/EComponent";
 import { defineGlobalState } from "../init/globalUtil";
 import { declareComponent } from "../inject/injectable";
 import { IPropCheckRule, propTypes } from "../propsValidation";
@@ -6,7 +6,7 @@ import { IPropCheckRule, propTypes } from "../propsValidation";
 @declareComponent({
     selector: "i18n"
 })
-export class I18nProvider extends Component {
+export class I18nProvider extends EComponent {
     static propTypes:any = {
         // tslint:disable-next-line:no-object-literal-type-assertion
         data: <IPropCheckRule>{

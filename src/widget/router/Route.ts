@@ -1,9 +1,10 @@
-import { Component, declareComponent, IPropCheckRule, propTypes } from "../../index";
+import { declareComponent, IPropCheckRule, propTypes } from "../../index";
+import { EComponent } from "../../component/EComponent";
 
 @declareComponent({
     selector: "route"
 })
-export class Route extends Component {
+export class Route extends EComponent {
     static propType: any = {
         // tslint:disable-next-line:no-object-literal-type-assertion
         component: <IPropCheckRule>{

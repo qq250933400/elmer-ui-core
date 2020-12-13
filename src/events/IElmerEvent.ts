@@ -21,3 +21,9 @@ export interface IElmerMouseEvent extends IElmerEvent {
 export interface IElmerInputEvent extends IElmerEvent {
     value: string;
 }
+export interface IElmerResizeEvent extends IElmerEvent {
+    width: number;
+    height: number;
+    outWidth: number;
+    outHeight: number;
+}

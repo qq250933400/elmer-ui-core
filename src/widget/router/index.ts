@@ -1,6 +1,6 @@
 import { ReduxController } from "elmer-redux";
 import { IVirtualElement } from "elmer-virtual-dom";
-import { Component } from "../../core/Component";
+import { EComponent } from "../../component/EComponent";
 import { defineGlobalState, getGlobalState } from "../../init/globalUtil";
 import { autowired, declareComponent } from "../../inject/injectable";
 import { IRouter } from "../../interface/IDeclareComponentOptions";
@@ -55,7 +55,7 @@ type TypeRouterContext = {
         }
     }
 })
-export class Router extends Component {
+export class Router extends EComponent {
     static propType:TypeRouterPropRule = {
         C404: {
             defaultValue: "eui-404",
@@ -200,17 +200,17 @@ export class Router extends Component {
                     onCompleted:():void => {
                         this.setState({
                             isAjaxLoading: false
-                        }, true);
+                        });
                     },
                     onDownloadProgress: (event) => {
                         this.setState({
                             loadingPercent: parseInt(((event.loaded/event.total)*100).toString(), 10) + "%"
-                        }, true);
+                        });
                     }
                 }).then(() => {
                     this.setState({
                         isAjaxLoading: false
-                    }, true);
+                    });
                 }).catch((option:any) => {
                     // option.obj?.setState({
                     //     isAjaxLoading: false
@@ -220,7 +220,7 @@ export class Router extends Component {
                 this.setState({
                     isAjaxLoading: false,
                     isNeedAjax: false
-                }, true);
+                });
             }
             ApiData = null;
             skipResult = null;

@@ -1,4 +1,4 @@
-import { Component } from "../../core/Component";
+import { EComponent } from "../../component/EComponent";
 import { declareComponent } from "../../inject";
 import { propTypes } from "../../propsValidation";
 import "./styles/index.less";
@@ -6,7 +6,7 @@ import "./styles/index.less";
 @declareComponent({
     selector: "404"
 })
-export class Page404 extends Component {
+export class Page404 extends EComponent {
     static propType:any = {
         title: {
             defaultValue: "页面不存在",

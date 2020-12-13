@@ -8,13 +8,15 @@ import { ElmerEvent } from "../events/ElmerEvent";
 import { autowired } from "../inject/injectable";
 import { ElmerRender, TypeUIRenderOptions } from "./ElmerRender";
 import EventInWorker from "../events/EventInWorker";
+import { HtmlParse } from "elmer-virtual-dom";
 
 export class ElmerUI extends Common {
 
     @autowired(ElmerDOM)
     private $:ElmerDOM;
     @autowired(ElmerWorker, "ElmerWorker", {
-        elmerEvent: new EventInWorker()
+        elmerEvent: new EventInWorker(),
+        htmlParse: new HtmlParse()
     })
     private worker: ElmerWorker;
     // 虚拟事件处理模块，只在最顶层做事件监听，减少对dom的操作
@@ -47,6 +49,7 @@ export class ElmerUI extends Common {
             component: entryComponent,
             container: target,
             event: this.eventObj,
+            worker: this.worker,
             renderOptions: options,
             path: [0]
         });

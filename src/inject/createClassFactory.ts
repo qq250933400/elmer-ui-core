@@ -10,7 +10,7 @@ export type TypeAutowiredOptions = {
 // tslint:disable-next-line:variable-name
 export function createClassFactory<T>(_constructor: new(...args:any[]) =>T, options?: string | TypeAutowiredOptions):T {
     const elmerData = globalVar();
-    let className = _constructor.prototype.className;
+    let className = _constructor.prototype.className || (_constructor as any).className;
 
     const paramTypes:Function[] = Reflect.getMetadata("design:paramtypes",_constructor);
     let argv: any[] = [];

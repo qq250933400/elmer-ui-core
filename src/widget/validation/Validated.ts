@@ -1,5 +1,6 @@
 import { UseValidation, ValidateErrorOptions, ValidationComponent } from "elmer-validation";
-import { Component, declareComponent, IPropCheckRule, propTypes } from "../../index";
+import { declareComponent, IPropCheckRule, propTypes } from "../../index";
+import { EComponent } from "../../component/EComponent";
 
 @UseValidation({
     sectionId: "AutoValidation"
@@ -7,7 +8,7 @@ import { Component, declareComponent, IPropCheckRule, propTypes } from "../../in
 @declareComponent({
     selector: "validated"
 })
-export class Validated extends Component {
+export class Validated extends EComponent {
     static propTypes: any = {
         options:  <IPropCheckRule> {
             description: "IValidatorOptions, 验证扩展参数",
