@@ -1,13 +1,13 @@
 import { Common, queueCallFunc, TypeQueueCallParam } from "elmer-common";
-import { HtmlParse, IVirtualElement, VirtualElement, VirtualRender } from "elmer-virtual-dom";
+import { HtmlParse, IVirtualElement, VirtualNode, VirtualRender } from "elmer-virtual-dom";
 import { ElmerWorker } from "elmer-worker";
-import { EComponent, CONST_CLASS_COMPONENT_FLAG } from "../component/EComponent";
+import { CONST_CLASS_COMPONENT_FLAG, EComponent } from "../component/EComponent";
 import { ElmerEvent } from "../events/ElmerEvent";
 import { IElmerEvent } from "../events/IElmerEvent";
 import { globalVar } from "../init/globalUtil";
 import { autowired } from "../inject";
-import { RenderQueue, TypeRenderQueueOptions } from "./RenderQueue";
 import { InjectComponent } from "../middleware/InjectComponent";
+import { RenderQueue, TypeRenderQueueOptions } from "./RenderQueue";
 
 export type TypeUIRenderOptions = {
     isRSV?: boolean; // Render first init
@@ -28,12 +28,10 @@ type TypeElmerRenderOptions = {
 
 export class ElmerRender extends Common {
 
-    @autowired(VirtualRender, "VirtualRender", new VirtualElement())
+    @autowired(VirtualRender, "VirtualRender")
     private virtualRender: VirtualRender;
-    @autowired(HtmlParse)
-    private htmlParse: HtmlParse;
-    @autowired(VirtualElement)
-    private virtualElement: VirtualElement;
+    @autowired(VirtualNode)
+    private virtualElement: VirtualNode;
     @autowired(RenderQueue)
     private renderQueue: RenderQueue;
     @autowired(InjectComponent)
@@ -61,6 +59,7 @@ export class ElmerRender extends Common {
             });
             userComponents = covertComponents;
         }
+        this.virtualRender.setVirtualElement(this.virtualElement);
         this.virtualId = this.guid() + "_" + (new Date()).getTime().toString(); // 当前自定义组件节点ID
         this.options = options;
         this.userComponents = {...userComponents, ...fromParentComponents};
@@ -97,7 +96,7 @@ export class ElmerRender extends Common {
         }
     }
     destroy(): void {
-        this.eventObj.unsubscribeByPath(this.options.path);
+        this.unbindAllEvents();
         if(this.newDom) {
             this.newDom.children.map((itemDom:IVirtualElement) => {
                 itemDom?.dom?.parentElement.removeChild(itemDom.dom);
@@ -122,7 +121,8 @@ export class ElmerRender extends Common {
                 }
                 resolve({});
             }).catch((err) => {
-                console.error(err);
+                // tslint:disable-next-line: no-console
+                console.error(err.stack || err.message || err);
                 if(option.firstRender) {
                     typeof this.options.component.$didMount === "function" && this.options.component.$didMount();
                 } else {
@@ -148,7 +148,6 @@ export class ElmerRender extends Common {
                     .then((resp) => {
                         resolve(resp.data);
                     }).catch((err) => {
-                        console.error(vdom);
                         reject(err);
                     });
             } else {
@@ -169,10 +168,17 @@ export class ElmerRender extends Common {
                     if(options.data) {
                         this.extend(this.options.component, options.data);
                     }
-                    this.replaceContent(this.sourceDom, this.options.children);
                     // 准备渲染虚拟dom，做数据绑定和diff运算
                     typeof this.options.component.$beforeVirtualRender === "function" && this.options.component.$beforeVirtualRender(this.sourceDom);
-                    const renderDom = this.virtualRender.render(this.sourceDom, this.oldDom, this.options.component);
+                    const renderEventId = this.virtualRender.bind(this.virtualId, "onBeforeRender", (evt) => {
+                        this.replaceContent(evt.vdom, this.options.children);
+                        evt.cancelBubble = true;
+                    });
+                    const renderDom = this.virtualRender.render(this.sourceDom, this.oldDom, this.options.component, {
+                        rootPath: this.options.path,
+                        sessionId: this.virtualId
+                    });
+                    this.virtualRender.unBind(this.virtualId, "onBeforeRender", renderEventId); // render 结束移除监听事件
                     typeof this.options.component.$afterVirtualRender === "function" && this.options.component.$afterVirtualRender(renderDom);
                     typeof this.options.component.$beforeRender === "function" && this.options.component.$beforeRender();
                     // 准备渲染数据
@@ -187,22 +193,27 @@ export class ElmerRender extends Common {
                             }
                         });
                     });
+                    this.unbindAllEvents(); // 清空上一次的注册的事件，重新添加
+                    this.deleteVDomOutOfLogic(renderDom.deleteElements); // 删除dom diff算法计算出需要手动删除的节点
                     queueCallFunc(renderParams, (option, params):any => {
                         let prevDom:any = option.lastResult ? option.lastResult.prevDom : null;
                         if(option.id === "virtualRender_0") {
                             prevDom = <any>this.options.prevDom;
                         }
                         return this.renderVirtualDom(params.parent, params.vdom, params.vdomParent, prevDom);
+                    }, {
+                        throwException: true
                     }).then(() => {
-                        // this.newDom = renderDom; // 渲染结束更新节点到对应的属性
                         resolve({});
                     }).catch((err) => {
-                        // this.newDom = renderDom; // 渲染结束更新节点到对应的属性
-                        reject(err);
+                        reject({
+                            message: err.message,
+                            stack: this.isObject(err.exception) ? err.exception.stack : err.stack,
+                            statusCode: err.statusCode
+                        });
                     });
                     this.newDom = renderDom; // 渲染结束更新节点到对应的属性
                     this.options.component.vdom = renderDom;
-                    this.deleteVDomOutOfLogic(renderDom.deleteElements); // 删除dom diff算法计算出需要手动删除的节点
                 }).catch((err) => {
                     reject(err);
                 });
@@ -215,6 +226,18 @@ export class ElmerRender extends Common {
                 });
             }
         });
+    }
+    /**
+     * 移除所有事件监听
+     */
+    private unbindAllEvents(): void {
+        if(this.subscribeEvents) {
+            Object.keys(this.subscribeEvents).map((evtId: string) => {
+                const eventObj = this.subscribeEvents[evtId];
+                const eventName = eventObj.eventName;
+                this.eventObj.unsubscribe(eventName, evtId);
+            });
+        }
     }
     private async setComponentState(state:any): Promise<any> {
         return new Promise((resolve, reject) => {
@@ -237,8 +260,8 @@ export class ElmerRender extends Common {
                 }
                 if(dataChanged) {
                     this.render({
-                        state,
-                        firstRender: false
+                        firstRender: false,
+                        state
                     }).then(() => {
                         resolve({});
                     }).catch((err) => {
@@ -255,11 +278,13 @@ export class ElmerRender extends Common {
     }
     /**
      * 对比当前组件所有属性, 当前方法不建议使用
+     * @deprecated
      * @param data 对比数据
      * @param fn 重新渲染结束回调
      */
     private async setComponentData(data:any): Promise<any> {
         return new Promise<any>((resolve, reject) => {
+            // tslint:disable-next-line: no-console
             console.warn("The SetData method is not recommended. Use setstate instead。");
             if(this.isObject(data)) {
                 const component = this.options.component;
@@ -340,9 +365,9 @@ export class ElmerRender extends Common {
                             }
                             renderKeyReg = null;
                             if(!isContextKey) {
-                                this.virtualElement.init(checkItem);
-                                this.virtualElement.replaceAt(children, i);
-                                this.virtualElement.clear();
+                                const sessionId = this.virtualElement.init(checkItem);
+                                this.virtualElement.replaceAt(sessionId, children, i);
+                                this.virtualElement.clear(sessionId);
                                 break;
                             }
                         } else {
@@ -354,8 +379,9 @@ export class ElmerRender extends Common {
                                         for(let z=0,zLen = children[j].children.length;z<zLen;z++) {
                                             children[j].children[z].isContent = true;
                                         }
-                                        this.virtualElement.init(checkItem);
-                                        this.virtualElement.replaceAt(children[j].children, i);
+                                        const sessionId = this.virtualElement.init(checkItem);
+                                        this.virtualElement.replaceAt(sessionId, children[j].children, i);
+                                        this.virtualElement.clear(sessionId);
                                         break;
                                     }
                                 }
@@ -371,23 +397,30 @@ export class ElmerRender extends Common {
     }
     private renderVirtualDom(container:HTMLElement, vdom: IVirtualElement, vdomParent: IVirtualElement, prevDom?:HTMLElement|Text): Promise<any> {
         return new Promise<any>((resolve, reject) => {
-            try{
+            try {
                 const elmerData = globalVar();
                 const components = elmerData.components || {};
                 vdom.isDiff = false;
                 if(this.isEmpty(vdom.tagName)) {
                     reject({
-                        statusCode: "VR_404",
-                        message: "virtual dom node is not correct, missing tagName attribute"
+                        message: "virtual dom node is not correct, missing tagName attribute",
+                        statusCode: "VR_404"
                     });
                 } else {
                     const UserComponent = this.userComponents[vdom.tagName] || components[vdom.tagName];
+                    if(vdom.deleteElements && vdom.deleteElements.length>0) {
+                        debugger;
+                    }
                     if(typeof UserComponent === "function") {
                         this.renderUserComponent(UserComponent, container, vdom, vdomParent).then(() => {
                             resolve({});
                         }).catch((err) => {
-                            reject(err);
-                        })
+                            reject({
+                                message: err.message,
+                                stack: this.isObject(err.exception) ? err.exception.stack : err.stack,
+                                statusCode: err.statusCode
+                            });
+                        });
                     } else {
                         // 渲染浏览器标准元素
                         // vdom.status === "NORMAL"  不需要做任何操作
@@ -416,6 +449,7 @@ export class ElmerRender extends Common {
                             }
                         }
                         if(vdom.status !== "DELETE") {
+                            this.subscribeEventAction(vdom);
                             if(vdom.children && vdom.children.length > 0) {
                                 // 当status为delete时删除父节点并移除事件监听就行，不需要在对子节点循环删除
                                 const renderParams: TypeQueueCallParam[] = [];
@@ -431,13 +465,18 @@ export class ElmerRender extends Common {
                                 });
                                 queueCallFunc(renderParams, ({}, params):any => {
                                     return this.renderVirtualDom(params.parent, params.vdom, params.vdomParent);
+                                }, {
+                                    throwException: true
                                 }).then(() => {
                                     resolve({
                                         prevDom: vdom.dom
                                     });
                                 }).catch((err) => {
-                                    console.error(err);
-                                    reject(err);
+                                    reject({
+                                        message: err.message,
+                                        stack: this.isObject(err.exception) ? err.exception.stack : err.stack,
+                                        statusCode: err.statusCode
+                                    });
                                 });
                             } else {
                                 resolve({
@@ -449,7 +488,7 @@ export class ElmerRender extends Common {
                             if(vdom.status === "DELETE") {
                                 // 当节点被标记为删除时，移除dom元素，并销毁事件监听和虚拟dom对象
                                 // todo release all user defined component
-                                this.eventObj.unsubscribeByPath([...this.options.path, ...vdom.path]);
+                                this.eventObj.unsubscribeByPath(vdom.path);
                                 if(vdom.dom) {
                                     vdom.dom.parentElement && vdom.dom.parentElement.removeChild(vdom.dom);
                                 }
@@ -460,14 +499,14 @@ export class ElmerRender extends Common {
                             });
                         }
                     }
-                    // 删除不必要的元素，不需要等待返回
+                    // 删除不必要的元素，非异步过程不需要等待返回
                     this.deleteVDomOutOfLogic(vdom.deleteElements);
                 }
-            }catch(e) {
+            } catch (e) {
                 reject({
-                    statusCode: "RT_500",
+                    exception: e,
                     message: e.message,
-                    exception: e
+                    statusCode: "RT_500"
                 });
             }
         });
@@ -491,21 +530,23 @@ export class ElmerRender extends Common {
                     // 高阶组件，即是一个函数的静态组件
                     component = {
                         props,
+                        // tslint:disable-next-line: object-literal-sort-keys
                         __factory: UserComponent,
-                        render: function() {
+                        // tslint:disable-next-line: object-literal-shorthand
+                        render: function():any {
                             return this["__factory"](this.props);
                         }
                     };
                 }
                 const vRender = new ElmerRender({
+                    children: vdom.children,
                     component,
                     container,
-                    children: vdom.children,
-                    path: [...this.options.path, ...vdom.path],
                     event: this.eventObj,
-                    worker: this.options.worker,
+                    path: vdom.path,
+                    prevDom: prevDom ? prevDom.dom as any : null,
                     renderOptions: this.options.renderOptions,
-                    prevDom: prevDom ? prevDom.dom as any : null
+                    worker: this.options.worker
                 });
                 vdom.virtualID = virtualId;
                 this.injectComponent.initComponent(component, UserComponent, vdom);
@@ -551,15 +592,38 @@ export class ElmerRender extends Common {
                 delete this.renderComponents[vdom.virtualID];
                 resolve({});
             } else {
-                resolve({});
+                if(this.checkVirtualNodeChange(vdom)) {
+                    const vRender:ElmerRender = this.renderComponents[vdom.virtualID];
+                    vRender.options.children = vdom.children;
+                    vRender.render({
+                        firstRender: false
+                    }).finally(() => {
+                        resolve({});
+                    });
+                } else {
+                    resolve({});
+                }
             }
         });
     }
+    private checkVirtualNodeChange(vdom:IVirtualElement): boolean|null {
+        if(vdom.status !== "NORMAL") {
+            return true;
+        } else {
+            if(vdom.children && vdom.children.length > 0) {
+                for(const item of vdom.children) {
+                    if(this.checkVirtualNodeChange(item)) {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
     /**
      * 新节点位置变化，需要做移动操作
-     * @param container 
-     * @param vdom 
-     * @param vdomParent 
+     * @param container
+     * @param vdom
+     * @param vdomParent
      */
     private vdomMove(container:HTMLElement, vdom:IVirtualElement, vdomParent:IVirtualElement): void {
         const index = vdom.path[vdom.path.length - 1];
@@ -580,13 +644,22 @@ export class ElmerRender extends Common {
                 container.appendChild(vdom.dom);
             }
         }
-        (vdom.dom as any).path = [...this.options.path, ...vdom.path];
+        (vdom.dom as any).path = vdom.path;
+    }
+    private createDomByVdom(vdom:IVirtualElement): HTMLElement|Text|Comment {
+        if(vdom.tagName === "text") {
+            return document.createTextNode(vdom.innerHTML);
+        } else if(vdom.tagName === "<!--") {
+            return document.createComment(vdom.innerHTML);
+        } else {
+            return document.createElement(vdom.tagName);
+        }
     }
     private vdomAppendRender(container:HTMLElement,vdom:IVirtualElement, vdomParent:IVirtualElement, prevSlideDom?: HTMLElement|Text): void {
         const prevDom = this.getPrevDom(vdom, vdomParent);
-        const newDom = vdom.tagName !== "text" ? document.createElement(vdom.tagName) : document.createTextNode(vdom.innerHTML);
-        (newDom as any).path = [...this.options.path, ...vdom.path];
-        (newDom as any).virtualId = this.virtualId;
+        const newDom = this.createDomByVdom(vdom);
+        (newDom as any).path = vdom.path;
+        (newDom as any).virtualId = this.virtualId; // 给所有需要做事件绑定元素绑定当前层级上虚拟节点id，用于区分不同的节点
         if(prevDom) {
             // 查找到前一个节点，需要插入到前一个节点后面，紧跟着上一个节点，防止节点位置错误
             let prevDomElement = prevDom.dom;
@@ -631,10 +704,9 @@ export class ElmerRender extends Common {
                 }
             }
         }
-        if(vdom.tagName !== "text") {
+        if(!["text", "<!--"].indexOf(vdom.tagName)) {
             // 文本节点不需要做事件绑定和属性渲染
             this.renderDomAttribute(newDom as HTMLElement, vdom);
-            this.bindDOMEvents(newDom as HTMLElement, vdom);
         }
         vdom.dom = newDom;
     }
@@ -675,34 +747,33 @@ export class ElmerRender extends Common {
      * @param dom 真实dom节点
      * @param vdom 虚拟dom节点数据
      */
-    private bindDOMEvents(dom:HTMLElement, vdom:IVirtualElement): void {
-        if(vdom.events && vdom.tagName !== "text") {
-            (dom as any).virtualId = this.virtualId; // 给所有需要做事件绑定元素绑定当前层级上虚拟节点id，用于区分不同的节点
-            Object.keys(vdom.events).map((eventName: string) => {
+    private subscribeEventAction(vdom:IVirtualElement): void {
+        if(vdom.events) {
+            Object.keys(vdom.events).map((eventName: string): void => {
                 const eventCallback = vdom.events[eventName];
                 if(typeof eventCallback === "function") {
                     // 找到存在的回调函数再做事件监听绑定
-                    const eventListener = ((vdomEvent:IVirtualElement,myEventName:string,callback:Function, handler: any) => {
-                        return async(evt:IElmerEvent) => {
+                    const eventListener = ((callback:Function, handler: any) => {
+                        return (function(evt:IElmerEvent): any{
                             const newEvent:any = {
-                                data: vdomEvent.data,
-                                dataSet: vdomEvent.dataSet,
-                                nativeEvent: evt.nativeEvent,
-                                cancelBubble: false
+                                cancelBubble: false,
+                                data: this.vdom.data,
+                                dataSet: this.vdom.dataSet,
+                                nativeEvent: evt.nativeEvent
                             };
-                            if(myEventName === "input" && vdomEvent.dom) {
-                                newEvent.value = (vdomEvent.dom as HTMLInputElement).value;
-                            }
-                            const eventResult = callback.call(handler, newEvent);
+                            const eventResult = callback(newEvent);
                             evt.cancelBubble = newEvent.cancelBubble;
                             return eventResult;
-                        };
-                    })(vdom, eventName, eventCallback, this.options.component);
-                    const currentPath = [...this.options.path,...vdom.path];
+                        }).bind({
+                            owner: handler,
+                            vdom
+                        });
+                    })(eventCallback, this.options.component);
+                    const currentPath = vdom.path;
                     const eventId = this.eventObj.subscribe(eventName, currentPath, eventListener);
                     this.subscribeEvents[eventId] = {
-                        eventName,
-                        callback: eventListener
+                        callback: eventListener,
+                        eventName
                     };
                 }
             });
@@ -737,6 +808,12 @@ export class ElmerRender extends Common {
      * @param vdom
      */
     private deleteVirtualDom(vdom:IVirtualElement): void {
+        if(vdom?.tagAttrs?.isComponent) {
+            if(this.renderComponents[vdom.virtualID]) {
+                (this.renderComponents[vdom.virtualID] as ElmerRender).destroy();
+                delete this.renderComponents[vdom.virtualID];
+            }
+        }
         vdom.status === "DELETE";
         vdom.dom = null;
         vdom.events = null;
@@ -750,7 +827,7 @@ export class ElmerRender extends Common {
     /**
      * 删除通过diff运算检测出在旧dom树存在节点，但是在新dom树没有出现节点的元素
      * 这种元素在新dom树无法标记，所以需要手动删除
-     * @param deleteVdoms 
+     * @param deleteVdoms
      */
     private deleteVDomOutOfLogic(deleteVdoms: IVirtualElement[]): void {
         if(deleteVdoms && deleteVdoms.length > 0) {
@@ -759,7 +836,7 @@ export class ElmerRender extends Common {
                     const dRender = <ElmerRender>this.renderComponents[delDom.virtualID];
                     dRender && dRender.destroy();
                     delete this.renderComponents[delDom.virtualID];
-                }else {
+                } else {
                     if(delDom.dom) {
                         delDom.dom.parentElement && delDom.dom.parentElement.removeChild(delDom.dom);
                         this.eventObj.unsubscribeByPath(delDom.path);

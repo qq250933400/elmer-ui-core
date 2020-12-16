@@ -2,7 +2,7 @@ import { Common, queueCallFunc, TypeQueueCallParam } from "elmer-common";
 import { getRouterConfig } from "../../configuration/RouterServiceConfig";
 import { ElmerServiceRequest } from "../../core/ElmerServiceRequest";
 import { defineGlobalState, getGlobalState } from "../../init/globalUtil";
-import { IRouter } from "../../interface/IDeclareComponentOptions";
+import { IRouter } from "../../interface/IDeclareComponent";
 import { IServiceEndPoint, IServiceRequest } from "../../interface/IElmerService";
 
 export type TypeRouterServiceOptions = {

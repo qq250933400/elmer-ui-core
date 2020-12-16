@@ -48,8 +48,8 @@ export class RenderQueue extends Common {
                 actionId,
                 isRended: false,
                 options,
-                resolve,
-                reject
+                reject,
+                resolve
             });
             this.runActions(sessionId);
         });
@@ -78,8 +78,8 @@ export class RenderQueue extends Common {
                 renderSession.lastActionIndex = actionLength - 1;
                 renderSession.actionRuning = true;
                 renderSession.render({
-                    state: updateState,
-                    data: updateData
+                    data: updateData,
+                    state: updateState
                 }).then(() => {
                     // 将当前执行的数据都
                     this.checkSessionStatus(sessionId, false);

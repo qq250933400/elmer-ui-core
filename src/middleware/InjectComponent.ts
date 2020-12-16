@@ -1,10 +1,11 @@
 import { Common } from "elmer-common";
-import { ReduxController } from "elmer-redux";
+import { ReduxController, defineReducer, attachReducerToController } from "elmer-redux";
 import { IVirtualElement } from "elmer-virtual-dom";
 import { IComponent } from "../component/IComponent";
 import { I18nController } from "../i18n/i18nController";
 import { defineGlobalState, getGlobalState } from "../init/globalUtil";
 import { autowired, Injectable } from "../inject/injectable";
+import { IReduxConnect } from "../interface/IDeclareComponent";
 import { IPropCheckRule } from "../propsValidation";
 
 @Injectable("InjectComponent")
@@ -69,19 +70,34 @@ export class InjectComponent extends Common {
      * @param nodeData 
      */
     beforeInitComponent(ComponentClass: any,props: any, nodeData: IVirtualElement): void {
-        const reduxParam = ComponentClass.prototype.connect;
-        if(reduxParam && (reduxParam.mapStateToProps || reduxParam.mapDispatchToProps)) {
-            // model,service,或自定义模块未定义selector会导致redux.connect失效，默认初始化一个参数
-            if(this.isEmpty(ComponentClass.prototype.selector)) {
-                this.defineReadOnlyProperty(ComponentClass.prototype, "selector", this.guid().replace(/\-/g, ""));
+        const reduxParam:IReduxConnect = ComponentClass.prototype.connect;
+        if(reduxParam) {
+            if(reduxParam.reducers && reduxParam.reducers.length > 0) {
+                reduxParam.reducers.map((tmpReducer) => {
+                    if(typeof tmpReducer.callback === "function") {
+                        defineReducer(this.reduxController, tmpReducer.name, tmpReducer.callback as any);
+                    } else {
+                        console.error("Redux's reducer callback should be an function");
+                    }
+                });
+                if(!this.reduxController.reducers) {
+                    this.reduxController.reducers = {};
+                }
+                attachReducerToController(this.reduxController);
             }
-            // 在初始化Component的时候在做connect操作，防止没有使用的组件但是定义了connect,在declareComponent的时候增加不必要的redux watch
-            this.reduxController.connect(ComponentClass.prototype.selector, reduxParam.mapStateToProps, reduxParam.mapDispatchToProps);
+            if(reduxParam.mapStateToProps || reduxParam.mapDispatchToProps) {
+                // model,service,或自定义模块未定义selector会导致redux.connect失效，默认初始化一个参数
+                if(this.isEmpty(ComponentClass.prototype.selector)) {
+                    this.defineReadOnlyProperty(ComponentClass.prototype, "selector", this.guid().replace(/\-/g, ""));
+                }
+                // 在初始化Component的时候在做connect操作，防止没有使用的组件但是定义了connect,在declareComponent的时候增加不必要的redux watch
+                this.reduxController.connect(ComponentClass.prototype.selector, reduxParam.mapStateToProps, reduxParam.mapDispatchToProps);
 
-            const stateValue = this.reduxController.getStateByConnectSelector(ComponentClass.prototype.selector);
-            const dispatchValue= this.reduxController.getDispatchByConnectSelector(ComponentClass.prototype.selector);
-            stateValue && this.extend(props, stateValue, true);
-            dispatchValue && this.extend(props, dispatchValue, true);
+                const stateValue = this.reduxController.getStateByConnectSelector(ComponentClass.prototype.selector);console.log(stateValue);
+                const dispatchValue= this.reduxController.getDispatchByConnectSelector(ComponentClass.prototype.selector);
+                stateValue && this.extend(props, stateValue, true);
+                dispatchValue && this.extend(props, dispatchValue, true);
+            }
         }
         this.setDefaultValue(props, ComponentClass.propType);  // 在创建组件object之前对props做默认值检查
     }

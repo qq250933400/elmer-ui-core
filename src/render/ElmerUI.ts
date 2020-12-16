@@ -46,12 +46,13 @@ export class ElmerUI extends Common {
         this.extend(entryComponent, EComponent.prototype, true, ignorePropKeys);
         this.defineReadOnlyProperty(entryComponent, "props", defaultProps);
         const renderObj = new ElmerRender({
+            children: [],
             component: entryComponent,
             container: target,
             event: this.eventObj,
-            worker: this.worker,
+            path: [0],
             renderOptions: options,
-            path: [0]
+            worker: this.worker
         });
         renderObj.render({
             firstRender: true

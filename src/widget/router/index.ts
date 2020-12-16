@@ -3,7 +3,7 @@ import { IVirtualElement } from "elmer-virtual-dom";
 import { EComponent } from "../../component/EComponent";
 import { defineGlobalState, getGlobalState } from "../../init/globalUtil";
 import { autowired, declareComponent } from "../../inject/injectable";
-import { IRouter } from "../../interface/IDeclareComponentOptions";
+import { IRouter } from "../../interface/IDeclareComponent";
 import { TypeUIRenderOptions } from "../../interface/IElmerRender";
 import { IPropCheckRule, PropTypes } from "../../propsValidation";
 import "./Route";

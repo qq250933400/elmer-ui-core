@@ -1,6 +1,6 @@
 import { IVirtualElement } from "elmer-virtual-dom";
 import { IElmerEvent } from "../events/IElmerEvent";
-import { IDeclareConnect, IDeclareI18n } from "../interface/IDeclareComponentOptions";
+import { IReduxConnect, IDeclareI18n } from "../interface/IDeclareComponent";
 
 export type TypeThemeDefault = {
     default: string;
@@ -12,7 +12,7 @@ export interface IComponent<P=Object, S=Object, C=Object> {
     vdom: IVirtualElement;
     dom: any;
     htmlCode?: string;
-    connect?: IDeclareConnect;
+    connect?: IReduxConnect;
     i18nConfig?: IDeclareI18n;
     i18nLocale?: string;
     i18nRegion?: string;
@@ -32,7 +32,7 @@ export interface IComponent<P=Object, S=Object, C=Object> {
     service?: any;
     render?():any;
     $contextData?(context:any): void;
-    $willReceiveProps?(propData: any,oldProps: any): void;
+    $willReceiveProps?(propData: P,oldProps: P): void;
     $init?(): void;
     $inject?(): void;
     $before?(): void;
@@ -47,13 +47,13 @@ export interface IComponent<P=Object, S=Object, C=Object> {
     $willMount?(): void;
     addEvent?(handle: any, dom: HTMLElement|Element|Node,eventName: string, callBack:Function, options?:AddEventListenerOptions):void;
     animationEnd?(dom: HTMLElement|Element|Node,callBack:Function):void;
-    setData(data: object, refresh?: boolean): void;
+    setData(data: object, refresh?: boolean): Promise<any>;
     /**
      * 修改组件state触发组件重绘
      * @param data any 修改state
      * @param refresh boolean 强制重绘，用于解决修改地址引用变量导致无法检查出state有没有更新
      */
-    setState<T>(data: T & P, refresh?: boolean): void;
+    setState<T>(data: T & P, refresh?: boolean): Promise<any>;
     /**
      * 使用withRouter执行过的对象挂载的方法，用于触发router跳转
      * @param path string 跳转路径

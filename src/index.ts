@@ -7,26 +7,21 @@ import "./widget/style/index.less";
 import { getGlobalVar, defineGlobalVar, __extends } from "./init/globalUtil";
 import { defineReduxProvider as defineReduxProviderFn, createReducer,defineStateOperateAction,defineReducer,ReduxController } from "elmer-redux";
 import { declareComponent,Injectable, autowired } from "./inject/injectable";
-import { connect } from "./widget/redux/connect";
 import { propTypes } from "./propsValidation";
 import { setServiceEnv } from "./configuration/GlobalConfig";
 import { ElmerServiceRequest } from "./core/ElmerServiceRequest";
 
 export const defineReduxProvider = defineReduxProviderFn;
-export const redux = {
-    ReduxController,
-    connect,
-    createReducer,
-    defineReducer,
-    defineReduxProvider,
-    defineStateOperateAction
-};
+// export const redux = {
+//     ReduxController,
+//     createReducer,
+//     defineReducer,
+//     defineReduxProvider,
+//     defineStateOperateAction
+// };
 export * from "./init/globalUtil";
 export * from "./core/ElmerDom";
-export * from "./core/ElmerResize";
-export * from "./core/IElmerInterface";
 export * from "./core/elmerRegister";
-export * from "./core/ElmerVirtualRender";
 export * from "./inject";
 export * from "./propsValidation";
 export * from "./core/ElmerServiceRequest";
@@ -43,5 +38,5 @@ elmerData.autowired = autowired;
 elmerData.Injectable = Injectable;
 elmerData.declareComponent = declareComponent;
 elmerData.ServiceHelper = ElmerServiceRequest;
-elmerData["redux"] = redux;
+// elmerData["redux"] = redux;
 elmerData.setEnv = setServiceEnv;

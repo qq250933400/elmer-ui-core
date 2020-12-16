@@ -1,12 +1,22 @@
+export type TypeReduxAction<T> = {
+    type: string;
+    data: T;
+};
+export type TypeReduxReducer<T> = {
+    name: string;
+    callback: { [P in keyof T]: <A>(state:any, action:TypeReduxAction<A>) => any }
+}
+
 export interface IRouter {
     path: string | RegExp;
     props?: any;
     component?: string;
 }
 
-export interface IDeclareConnect {
+export interface IReduxConnect<T={}> {
     mapStateToProps?: Function;
     mapDispatchToProps?: Function;
+    reducers?: TypeReduxReducer<T>[];
 }
 export interface IDeclareI18nData {
     en?: object;
@@ -46,7 +56,7 @@ export interface IDeclareComponentOptions {
     /**
      * Redux定义参数
      */
-    connect?: IDeclareConnect;
+    connect?: IReduxConnect;
     components?: IDeclareComponent[]|any;
     /**
      * 定义i18n特殊设置
