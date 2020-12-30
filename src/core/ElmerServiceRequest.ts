@@ -249,7 +249,12 @@ export class ElmerServiceRequest extends Common {
             // throw new Error("Please call init first");
         }
         if(this.isEmpty(option.namespace) && this.config) {
-            return this.getValue(this.config.endPoints, option.endPoint);
+            const arr = option.endPoint.split(".");
+            if(arr.length > 1) {
+                return this.getValue(this.config[arr[0]].endPoints, arr[1]);
+            } else {
+                return this.getValue(this.config.endPoints, option.endPoint);
+            }
         } else {
             const nameSpace:IServiceConfig<any, any> = this.getValue(this.config, option.namespace);
             if(nameSpace) {
@@ -283,8 +288,9 @@ export class ElmerServiceRequest extends Common {
         return header;
     }
     private getRequestUrl(endPoint:IServiceEndPoint<any>, option?:IServiceRequest<any>): string {
+        const endArr = (option.endPoint || "").split(".");
         let reqUrl = "";
-        let namespaceData:IServiceConfig<any, any> = this.isEmpty(option.namespace) ? this.config : this.getValue(this.config, option.namespace);
+        let namespaceData:IServiceConfig<any, any> = this.isEmpty(option.namespace) ? (endArr.length > 1 ? this.config[endArr[0]] : this.config) : this.getValue(this.config, option.namespace);
         if(namespaceData.dummy) {
             reqUrl = namespaceData.dummyPath + (endPoint ? endPoint.dummy : "undefined");
         } else {

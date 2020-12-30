@@ -170,15 +170,16 @@ export class ElmerRender extends Common {
                     }
                     // 准备渲染虚拟dom，做数据绑定和diff运算
                     typeof this.options.component.$beforeVirtualRender === "function" && this.options.component.$beforeVirtualRender(this.sourceDom);
-                    const renderEventId = this.virtualRender.bind(this.virtualId, "onBeforeRender", (evt) => {
-                        this.replaceContent(evt.vdom, this.options.children);
-                        evt.cancelBubble = true;
-                    });
+                    // const renderEventId = this.virtualRender.bind(this.virtualId, "onBeforeRender", (evt) => {
+                    //     this.replaceContent(evt.vdom, this.options.children);
+                    //     evt.cancelBubble = true;
+                    // });
                     const renderDom = this.virtualRender.render(this.sourceDom, this.oldDom, this.options.component, {
                         rootPath: this.options.path,
-                        sessionId: this.virtualId
+                        sessionId: this.virtualId,
+                        children: this.options.children
                     });
-                    this.virtualRender.unBind(this.virtualId, "onBeforeRender", renderEventId); // render 结束移除监听事件
+                    // this.virtualRender.unBind(this.virtualId, "onBeforeRender", renderEventId); // render 结束移除监听事件
                     typeof this.options.component.$afterVirtualRender === "function" && this.options.component.$afterVirtualRender(renderDom);
                     typeof this.options.component.$beforeRender === "function" && this.options.component.$beforeRender();
                     // 准备渲染数据
@@ -408,9 +409,6 @@ export class ElmerRender extends Common {
                     });
                 } else {
                     const UserComponent = this.userComponents[vdom.tagName] || components[vdom.tagName];
-                    if(vdom.deleteElements && vdom.deleteElements.length>0) {
-                        debugger;
-                    }
                     if(typeof UserComponent === "function") {
                         this.renderUserComponent(UserComponent, container, vdom, vdomParent).then(() => {
                             resolve({});
@@ -514,9 +512,18 @@ export class ElmerRender extends Common {
     private renderUserComponent(UserComponent: any,container:HTMLElement, vdom: IVirtualElement, vdomParent: IVirtualElement):Promise<any> {
         return new Promise<any>((resolve, reject) => {
             const prevDom = this.getPrevDom(vdom, vdomParent);
+            const doUpdateAction = (vRender:ElmerRender, vRDom: IVirtualElement, prevDom:HTMLElement) => {
+                const props = {};
+                vRender.options.prevDom = prevDom;
+                this.extend(props, vRender.options.component.props, true);
+                this.extend(props, vRDom.changeAttrs, true);
+                this.injectComponent.beforeUpdateComponent(vRender.options.component, UserComponent, props, vRDom);
+                typeof vRender.options.component.$willReceiveProps === "function" && vRender.options.component.$willReceiveProps(props, vRender.options.component.props);
+            };
             vdom.tagAttrs = {
                 isComponent: true
             };
+            console.log(vdom.tagName, vdom.status);
             if(vdom.status === "APPEND") {
                 const flag = (<any>UserComponent).flag;
                 const props = vdom.props;
@@ -561,31 +568,64 @@ export class ElmerRender extends Common {
             } else if(vdom.status === "UPDATE") {
                 const vRender:ElmerRender = this.renderComponents[vdom.virtualID];
                 if(vRender) {
-                    const props = {};
-                    vRender.options.prevDom = prevDom ? prevDom.dom as any : null;
-                    this.extend(props, vRender.options.component.props, true);
-                    this.extend(props, vdom.changeAttrs, true);
-                    this.injectComponent.beforeUpdateComponent(vRender.options.component, UserComponent, props, vdom);
-                    typeof vRender.options.component.$willReceiveProps === "function" && vRender.options.component.$willReceiveProps(props, vRender.options.component.props);
+                    const rPrevDom = prevDom ? prevDom.dom as any : null;
+                    if(this.checkVirtualNodeChange(vdom)) {
+                        // 如果子节点有变化，先执行render方法往下执行渲染
+                        // 由于触发willReciveProps方法未必会执行渲染动作，所以先执行子节点的渲染在触发willReciveProps事件
+                        vRender.options.children = vdom.children;
+                        vRender.render({
+                            firstRender: false
+                        }).finally(() => {
+                            doUpdateAction(vRender, vdom, rPrevDom);
+                            resolve({});
+                        });
+                    } else {
+                        doUpdateAction(vRender, vdom, rPrevDom);
+                        resolve({});
+                    }
                     // 预留执行其他方法
+                } else {
+                    resolve({});
                 }
-                resolve({});
             } else if(vdom.status === "MOVE") {
                 this.moveComponentPosition(container ,vdom, vdomParent);
-                resolve({});
+                const vRender:ElmerRender = this.renderComponents[vdom.virtualID];
+                if(this.checkVirtualNodeChange(vdom)) {
+                    const rPrevDom = prevDom ? prevDom.dom as any : null;
+                    // 如果子节点有变化，先执行render方法往下执行渲染
+                    // 由于触发willReciveProps方法未必会执行渲染动作，所以先执行子节点的渲染在触发willReciveProps事件
+                    vRender.options.children = vdom.children;
+                    vRender.render({
+                        firstRender: false
+                    }).finally(() => {
+                        doUpdateAction(vRender, vdom, rPrevDom);
+                        resolve({});
+                    });
+                } else {
+                    resolve({});
+                }
             } else if(vdom.status === "MOVEUPDATE") {
                 this.moveComponentPosition(container, vdom, vdomParent);
                 const vRender:ElmerRender = this.renderComponents[vdom.virtualID];
                 if(vRender) {
-                    const props = {};
-                    vRender.options.prevDom = prevDom ? prevDom.dom as any : null;
-                    this.extend(props, vRender.options.component.props, true);
-                    this.extend(props, vdom.changeAttrs, true);
-                    this.injectComponent.beforeUpdateComponent(vRender.options.component, UserComponent, props, vdom);
-                    typeof vRender.options.component.$willReceiveProps === "function" && vRender.options.component.$willReceiveProps(props, vRender.options.component.props);
-                    // 预留执行其他方法
+                    const rPrevDom = prevDom ? prevDom.dom as any : null;
+                    if(this.checkVirtualNodeChange(vdom)) {
+                        // 如果子节点有变化，先执行render方法往下执行渲染
+                        // 由于触发willReciveProps方法未必会执行渲染动作，所以先执行子节点的渲染在触发willReciveProps事件
+                        vRender.options.children = vdom.children;
+                        vRender.render({
+                            firstRender: false
+                        }).finally(() => {
+                            doUpdateAction(vRender, vdom, rPrevDom);
+                            resolve({});
+                        });
+                    } else {
+                        doUpdateAction(vRender, vdom, rPrevDom);
+                        resolve({});
+                    }
+                } else {
+                    resolve({});
                 }
-                resolve({});
             } else if(vdom.status === "DELETE") {
                 const vRender:ElmerRender = this.renderComponents[vdom.virtualID];
                 vRender && vRender.destroy();
@@ -595,6 +635,7 @@ export class ElmerRender extends Common {
                 if(this.checkVirtualNodeChange(vdom)) {
                     const vRender:ElmerRender = this.renderComponents[vdom.virtualID];
                     vRender.options.children = vdom.children;
+                    console.log(vdom.tagName, "--Normal--", vdom.children);
                     vRender.render({
                         firstRender: false
                     }).finally(() => {
@@ -704,7 +745,7 @@ export class ElmerRender extends Common {
                 }
             }
         }
-        if(!["text", "<!--"].indexOf(vdom.tagName)) {
+        if(["text", "<!--"].indexOf(vdom.tagName)<0) {
             // 文本节点不需要做事件绑定和属性渲染
             this.renderDomAttribute(newDom as HTMLElement, vdom);
         }
