@@ -26,7 +26,6 @@ export * from "./inject";
 export * from "./propsValidation";
 export * from "./core/ElmerServiceRequest";
 export * from "./configuration";
-export * from "./i18n";
 export * from "./animation/ElmerAnimation";
 export * from "./configuration";
 // ---------import widget 注册所有组件 ----------

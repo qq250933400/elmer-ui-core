@@ -1,12 +1,12 @@
 import { Common } from "elmer-common";
-import { ReduxController, defineReducer, attachReducerToController } from "elmer-redux";
+import { attachReducerToController, defineReducer, ReduxController } from "elmer-redux";
 import { IVirtualElement } from "elmer-virtual-dom";
 import { IComponent } from "../component/IComponent";
-import { I18nController } from "../i18n/i18nController";
 import { defineGlobalState, getGlobalState } from "../init/globalUtil";
 import { autowired, Injectable } from "../inject/injectable";
 import { IReduxConnect } from "../interface/IDeclareComponent";
 import { IPropCheckRule } from "../propsValidation";
+import { I18nController } from "../widget/i18n/i18nController";
 
 @Injectable("InjectComponent")
 export class InjectComponent extends Common {
@@ -65,9 +65,9 @@ export class InjectComponent extends Common {
     }
     /**
      * 创建component前执行此方法，设置props默认值，可从redux中获取默认数据
-     * @param ComponentClass 
-     * @param props 
-     * @param nodeData 
+     * @param ComponentClass
+     * @param props
+     * @param nodeData
      */
     beforeInitComponent(ComponentClass: any,props: any, nodeData: IVirtualElement): void {
         const reduxParam:IReduxConnect = ComponentClass.prototype.connect;
@@ -77,6 +77,7 @@ export class InjectComponent extends Common {
                     if(typeof tmpReducer.callback === "function") {
                         defineReducer(this.reduxController, tmpReducer.name, tmpReducer.callback as any);
                     } else {
+                        // tslint:disable-next-line: no-console
                         console.error("Redux's reducer callback should be an function");
                     }
                 });
@@ -93,7 +94,7 @@ export class InjectComponent extends Common {
                 // 在初始化Component的时候在做connect操作，防止没有使用的组件但是定义了connect,在declareComponent的时候增加不必要的redux watch
                 this.reduxController.connect(ComponentClass.prototype.selector, reduxParam.mapStateToProps, reduxParam.mapDispatchToProps);
 
-                const stateValue = this.reduxController.getStateByConnectSelector(ComponentClass.prototype.selector);console.log(stateValue);
+                const stateValue = this.reduxController.getStateByConnectSelector(ComponentClass.prototype.selector);
                 const dispatchValue= this.reduxController.getDispatchByConnectSelector(ComponentClass.prototype.selector);
                 stateValue && this.extend(props, stateValue, true);
                 dispatchValue && this.extend(props, dispatchValue, true);

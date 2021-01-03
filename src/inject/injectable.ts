@@ -1,8 +1,8 @@
 import "reflect-metadata";
 import { formatSelector, registerComponent } from "../core/elmerRegister";
-import { I18nController } from "../i18n/i18nController";
 import { addToClassPool } from "../init/globalUtil";
 import { IDeclareComponentOptions } from "../interface/IDeclareComponent";
+import { I18nController } from "../widget/i18n/i18nController";
 import { withRouter } from "../widget/router/withRoter";
 import { createClassFactory } from "./createClassFactory";
 // tslint:disable:variable-name

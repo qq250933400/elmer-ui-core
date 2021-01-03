@@ -33,6 +33,10 @@ export const defineGlobalState = (stateKey: string, stateValue: any, ignoreError
     }
 };
 
+export const setGlobalState = (stateKey: string, stateValue: any, ignoreError?: boolean) => {
+    defineGlobalState(stateKey, stateValue, ignoreError);
+};
+
 export const getGlobalState = (stateKey: string): any => {
     return globalVar().elmerState[stateKey];
 };

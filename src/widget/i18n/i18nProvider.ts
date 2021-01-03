@@ -1,7 +1,7 @@
-import { EComponent } from "../component/EComponent";
-import { defineGlobalState } from "../init/globalUtil";
-import { declareComponent } from "../inject/injectable";
-import { IPropCheckRule, propTypes } from "../propsValidation";
+import { EComponent } from "../../component/EComponent";
+import { defineGlobalState } from "../../init/globalUtil";
+import { declareComponent } from "../../inject/injectable";
+import { IPropCheckRule, propTypes } from "../../propsValidation";
 
 @declareComponent({
     selector: "i18n"
