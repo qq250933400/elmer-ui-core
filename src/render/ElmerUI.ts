@@ -1,14 +1,14 @@
 import "../polyfill";
 // tslint:disable-next-line: ordered-imports
 import { Common } from "elmer-common";
+import { HtmlParse } from "elmer-virtual-dom";
 import { ElmerWorker } from "elmer-worker";
 import { EComponent } from "../component/EComponent";
 import { ElmerDOM } from "../core/ElmerDom";
 import { ElmerEvent } from "../events/ElmerEvent";
+import EventInWorker from "../events/EventInWorker";
 import { autowired } from "../inject/injectable";
 import { ElmerRender, TypeUIRenderOptions } from "./ElmerRender";
-import EventInWorker from "../events/EventInWorker";
-import { HtmlParse } from "elmer-virtual-dom";
 
 export class ElmerUI extends Common {
 
@@ -50,9 +50,10 @@ export class ElmerUI extends Common {
             component: entryComponent,
             container: target,
             event: this.eventObj,
+            nodePath: "rootNode",
             path: [0],
             renderOptions: options,
-            worker: this.worker
+            worker: this.worker,
         });
         renderObj.render({
             firstRender: true

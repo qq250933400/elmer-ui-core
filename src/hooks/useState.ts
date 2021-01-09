@@ -1,5 +1,4 @@
 import { StaticCommon as utils } from "elmer-common";
-import { getGlobalState, setGlobalState } from "../init/globalUtil";
 
 export const HOOKS_USE_STATE_SSID = "USE-EFFECT-d5603e60-632c-a1ac-06c1-dc45569f";
 
@@ -9,7 +8,7 @@ export const useState = (StaticComponentOptions:any, defaultState?: any) => {
         hooks: [],
         index: 0
     };
-    let stateValue, setStateCallback;
+    let setStateCallback;
     if(!StaticComponentOptions || StaticComponentOptions.useStateSSID !== HOOKS_USE_STATE_SSID) {
         throw new Error("useState只能在函数组件使用并且需要传递函数组件第二个参数");
     }

@@ -24,6 +24,7 @@ type TypeElmerRenderOptions = {
     userComponents?: EComponent[];
     event: ElmerEvent;
     worker: ElmerWorker;
+    nodePath: string;
     path: number[];
     prevDom?: HTMLElement;
 };
@@ -92,8 +93,14 @@ export class ElmerRender extends Common {
         this.options.component.setData = this.setComponentData.bind(this); // 当前方法由于需要变量所有属性影响性能不建议使用，使用setState会更好，兼容旧代码
         typeof this.options?.component?.$init === "function" && this.options?.component?.$init();
         if(typeof this.options.component.$resize === "function") {
-            this.eventObj.subscribe("resize", this.options.path, this.options.component.$resize);
+            this.eventObj.subscribe({
+                callback: this.options.component.$resize,
+                eventName: "resize",
+                path: this.options.path,
+                vNodePath: this.options.nodePath
+            });
         }
+        this.eventObj.nodeRegister(options.nodePath);
     }
     /**
      * 获取最后一个渲染的真实元素
@@ -134,9 +141,6 @@ export class ElmerRender extends Common {
         }
         this.newDom = null;
         this.oldDom = null;
-    }
-    updatePath(): void {
-
     }
     async render(option: TypeRenderQueueOptions): Promise<any> {
         return new Promise<any>((resolve, reject) => {
@@ -557,6 +561,7 @@ export class ElmerRender extends Common {
                     component,
                     container,
                     event: this.eventObj,
+                    nodePath: this.isEmpty(this.options.nodePath) ? virtualId : this.options.nodePath + "." + virtualId,
                     path: vdom.path,
                     prevDom: this.getPrevDomByVirtualNode(prevDom) as HTMLElement,
                     renderOptions: this.options.renderOptions,
@@ -784,7 +789,12 @@ export class ElmerRender extends Common {
                         });
                     })(eventCallback, this.options.component);
                     const currentPath = vdom.path;
-                    const eventId = this.eventObj.subscribe(eventName, currentPath, eventListener);
+                    const eventId = this.eventObj.subscribe({
+                        callback: eventListener,
+                        eventName,
+                        path: currentPath,
+                        vNodePath:this.options.nodePath,
+                    });
                     this.subscribeEvents[eventId] = {
                         callback: eventListener,
                         eventName

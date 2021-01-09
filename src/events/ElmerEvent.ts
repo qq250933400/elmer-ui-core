@@ -5,22 +5,53 @@ type TypeEventIdMapping = {
     eventId: string;
     path: number[];
 };
+type TypeSubscribeEvent = {
+    callback: Function;
+    eventName: string;
+    vNodePath: string;
+    path: number[];
+};
 
 export class ElmerEvent {
     eventListeners: any = {};
 
     private worker: ElmerWorker;
     private sortReady: boolean;
+    private nodeMap: any = {};
     constructor(worker: ElmerWorker) {
         this.worker = worker;
     }
     /**
-     * 注册事件监听
-     * @param eventName 事件类型
-     * @param path dom元素路径
-     * @param callback 事件回调
+     * mount node to the event object
+     * @param path node path
      */
-    subscribe(eventName: string,path: string[]|number[], callback: Function): string {
+    nodeRegister(path:string): void {
+        const pathReg = /\.([a-z0-9\-\_]{1,})$/i;
+        const pMatch = path.match(pathReg);
+        const parentPath = pMatch ? path.replace(pathReg, "") : null;
+        const currentPath = pMatch ? pMatch[1] : path;
+        if(!utils.isEmpty(parentPath)) {
+            const parentPathKey = parentPath.replace(/\./g, ".nodes.");
+            const pNode:any = utils.getValue(this.nodeMap, parentPathKey);
+            pNode.nodes[currentPath] = {
+                events: [],
+                nodes: {},
+                parent: "",
+            };
+        } else {
+            this.nodeMap[currentPath] = {
+                events: [],
+                nodes: {},
+                parent: "",
+            };
+        }
+    }
+    /**
+     * 注册事件监听
+     * @param options 注册事件监听参数
+     */
+    subscribe(options: TypeSubscribeEvent): string {
+        const { path, eventName, callback, vNodePath } = options;
         const evtId = "evt_" + utils.guid();
         const pathStr = path.join(",");
         const eventPathList:string[] = this.eventListeners[eventName] ? this.eventListeners[eventName]["eventPaths"] : [];
@@ -95,22 +126,6 @@ export class ElmerEvent {
                     eventPaths: [],
                     mapEventId: []
                 };
-                if(eventName !== "resize") {
-                    this.addEvent(document.body,eventName, eventCallback);
-                    if(eventName === "animationEnd") {
-                        this.addEvent(document.body,"webkitAnimationEnd", eventCallback);
-                        this.addEvent(document.body,"mozAnimationEnd", eventCallback);
-                        this.addEvent(document.body,"msAnimationEnd", eventCallback);
-                        this.addEvent(document.body,"oAnimationEnd", eventCallback);
-                    } else if(eventName === "transitionEnd") {
-                        this.addEvent(document.body,"webkitTransitionEnd", eventCallback);
-                        this.addEvent(document.body,"mozTransitionEnd", eventCallback);
-                        this.addEvent(document.body,"msTransitionEnd", eventCallback);
-                        this.addEvent(document.body,"oTransitionEnd", eventCallback);
-                    }
-                } else {
-                    this.addEvent(window,eventName, eventCallback);
-                }
             }
             this.eventListeners[eventName]["eventListener"][evtId] = callback;
             this.eventListeners[eventName].mapEventId.push({
@@ -180,6 +195,24 @@ export class ElmerEvent {
             delete this.eventListeners[eventName];
         });
         this.eventListeners = {};
+    }
+    private addEventListener(eventName: string, eventCallback: Function): void {
+        if(eventName !== "resize") {
+            this.addEvent(document.body,eventName, eventCallback);
+            if(eventName === "animationEnd") {
+                this.addEvent(document.body,"webkitAnimationEnd", eventCallback);
+                this.addEvent(document.body,"mozAnimationEnd", eventCallback);
+                this.addEvent(document.body,"msAnimationEnd", eventCallback);
+                this.addEvent(document.body,"oAnimationEnd", eventCallback);
+            } else if(eventName === "transitionEnd") {
+                this.addEvent(document.body,"webkitTransitionEnd", eventCallback);
+                this.addEvent(document.body,"mozTransitionEnd", eventCallback);
+                this.addEvent(document.body,"msTransitionEnd", eventCallback);
+                this.addEvent(document.body,"oTransitionEnd", eventCallback);
+            }
+        } else {
+            this.addEvent(window,eventName, eventCallback);
+        }
     }
     private removeEventListen(eventName: string, callback:Function): void {
         if(eventName !== "resize") {
