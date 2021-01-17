@@ -5,16 +5,28 @@ type TypeEventIdMapping = {
     eventId: string;
     path: number[];
 };
+type TypeEventData = {
+    eventPathId: string[];
+    handler: Function;
+    listeners: any;
+    paths: TypeEventIdMapping[];
+};
+
 type TypeSubscribeEvent = {
     callback: Function;
     eventName: string;
     vNodePath: string;
     path: number[];
 };
+type TypeEventMapData = {
+    events: any;
+    nodes: any;
+    parent: string;
+    path: number[];
+};
 
 export class ElmerEvent {
-    eventListeners: any = {};
-
+    private eventListeners: any = {};
     private worker: ElmerWorker;
     private sortReady: boolean;
     private nodeMap: any = {};
@@ -25,25 +37,70 @@ export class ElmerEvent {
      * mount node to the event object
      * @param path node path
      */
-    nodeRegister(path:string): void {
+    nodeRegister(nodePath:string, path: number[]): void {
         const pathReg = /\.([a-z0-9\-\_]{1,})$/i;
-        const pMatch = path.match(pathReg);
-        const parentPath = pMatch ? path.replace(pathReg, "") : null;
-        const currentPath = pMatch ? pMatch[1] : path;
+        const pMatch = nodePath.match(pathReg);
+        const parentPath = pMatch ? nodePath.replace(pathReg, "") : null;
+        const currentPath = pMatch ? pMatch[1] : nodePath;
         if(!utils.isEmpty(parentPath)) {
             const parentPathKey = parentPath.replace(/\./g, ".nodes.");
             const pNode:any = utils.getValue(this.nodeMap, parentPathKey);
             pNode.nodes[currentPath] = {
-                events: [],
+                events: {},
                 nodes: {},
                 parent: "",
+                path
             };
         } else {
             this.nodeMap[currentPath] = {
-                events: [],
+                events: {},
                 nodes: {},
                 parent: "",
+                path
             };
+        }
+    }
+    /**
+     * 渲染之前调用此方法清除旧的事件监听，渲染的时候将新事件监听重新绑定
+     * 删除节点的时候通过回调从最底层节点开始删除
+     * @param path nodePath
+     * @param deleteNodeMap 是否删除虚拟节点
+     */
+    nodeUnRegister(path: string, deleteNodeMap?: boolean): void {
+        const eventNodePath = path.replace(/\./g, ".nodes.");
+        const parentNode = eventNodePath.replace(/\.[a-z0-9\-\_]{1,}$/i,"");
+        const nodePath = eventNodePath.match(/\.([a-z0-9\-\_]{1,})$/i);
+        const nodeObj:TypeEventMapData = utils.getValue(this.nodeMap, parentNode);
+        if(nodeObj) {
+            if(nodeObj.events) {
+                Object.keys(nodeObj.events).map((evtName) => {
+                    const handleData = this.eventListeners[evtName];
+                    const eventData:TypeEventData = nodeObj.events[evtName];
+                    if(handleData && eventData.paths) {
+                        const events = handleData.events;
+                        for(const evtData of eventData.paths) {
+                            delete events[evtData.eventId];
+                        }
+                        if(Object.keys(events).length <= 0) {
+                            this.removeEventListen(evtName, handleData.handler);
+                        }
+                        eventData.listeners = {};
+                        eventData.eventPathId = [];
+                        eventData.paths = [];
+                    }
+                });
+            }
+            if(parentNode !== path) {
+                deleteNodeMap && nodePath && delete nodeObj[nodePath[1]];
+            } else {
+                if(deleteNodeMap) {
+                    this.nodeMap[path] = {
+                        events: {},
+                        nodes: {},
+                        parent: "",
+                    };
+                }
+            }
         }
     }
     /**
@@ -54,137 +111,75 @@ export class ElmerEvent {
         const { path, eventName, callback, vNodePath } = options;
         const evtId = "evt_" + utils.guid();
         const pathStr = path.join(",");
-        const eventPathList:string[] = this.eventListeners[eventName] ? this.eventListeners[eventName]["eventPaths"] : [];
-        if(eventPathList.indexOf(pathStr) < 0) {
-            if(!this.eventListeners[eventName]) {
-                const eventCallback = (() => {
-                    return async(evt:Event) => {
-                        const tPath:any[] = (evt.target as any).path;
-                        const evtName = evt.type;
-                        const eventData = this.eventListeners[evtName];
-                        if((eventData && tPath) || evtName === "resize") {
-                            // 使用worker排序，将最深元素排前面，从最深节点开始检测事件
-                            // 当path长度小于或等于当前触发事件的path, 则认为监听的事件节点所处层级最高层
-                            // 去监听事件的path与最初触发事件节点的path对比，当监听事件path和触发节点的path前部分相等
-                            this.worker.callObjMethod("elmerEvent", "sortEventId", eventData.mapEventId).then((resp:any) => {
-                                if(/^200$/.test(resp.statusCode)) {
-                                    const width = window.innerWidth, height = window.innerHeight, outWidth = window.outerWidth, outHeight = window.outerHeight;
-                                    const evtIds: TypeEventIdMapping[] = resp.data || [];
-                                    const evtParams: TypeQueueCallParam[] = [];
-                                    for(const evtMap of evtIds) {
-                                        const bubbleEvent = {
-                                            cancelBubble: false,
-                                            nativeEvent: evt,
-                                            width,
-                                            // tslint:disable-next-line: object-literal-sort-keys
-                                            height,
-                                            outWidth,
-                                            outHeight
-                                        };
-                                        if(evtName !== "resize") {
-                                            if(evtMap.path && evtMap.path.length <= tPath.length) {
-                                                const forEvtIDS = evtMap.path.join(",");
-                                                const compareIDS = tPath.slice(0, evtMap.path.length).join(",");
-                                                if(forEvtIDS === compareIDS) {
-                                                    const evtCallback = eventData.eventListener[evtMap.eventId];
-                                                    evtParams.push({
-                                                        id: "evt_" + eventName + "_" + evtParams.length,
-                                                        params: {
-                                                            callback: evtCallback,
-                                                            event: bubbleEvent
-                                                        }
-                                                    });
-                                                }
-                                            }
-                                        } else {
-                                            const evtCallback = eventData.eventListener[evtMap.eventId];
-                                            evtParams.push({
-                                                id: "evt_" + eventName + "_" + evtParams.length,
-                                                params: {
-                                                    callback: evtCallback,
-                                                    event: bubbleEvent
-                                                }
-                                            });
-                                        }
-                                    }
-                                    queueCallFunc(evtParams, (option, myParam:any):any => {
-                                        return myParam.callback(myParam.event, option.lastResult);
-                                    });
-                                } else {
-                                    throw new Error(resp.message);
-                                }
-                            }).catch((err) => {
-                                // tslint:disable-next-line: no-console
-                                console.error(err);
-                            });
-                        }
+        const eventNodePath = vNodePath.replace(/\./g, ".nodes.");
+        let eventNode = utils.getValue<TypeEventMapData>(this.nodeMap, eventNodePath);
+        if(!utils.isEmpty(eventName)) {
+            if(!eventNode) {
+                this.nodeRegister(vNodePath, path);
+                eventNode = utils.getValue<TypeEventMapData>(this.nodeMap, eventNodePath);
+            }
+            // console.log(eventNode, vNodePath);return;
+            let evtObj:TypeEventData = eventNode.events[eventName];
+            if(!evtObj) {
+                const eventHandler = this.createEventHandler();
+                eventNode.events[eventName] = {
+                    eventPathId: [],
+                    listeners: {},
+                    paths: []
+                };
+                evtObj = eventNode.events[eventName];
+                if(!this.eventListeners[eventName]) {
+                    this.eventListeners[eventName] = {
+                        events: {},
+                        handler: eventHandler
                     };
-                })();
-                this.eventListeners[eventName] = {
-                    eventHandler: eventCallback,
-                    eventListener: {},
-                    eventPaths: [],
-                    mapEventId: []
+                    this.addEventListener(eventName, eventHandler);
+                }
+            }
+            if(evtObj.eventPathId.indexOf(pathStr)<0) {
+                // 当前path不存在事件监听列表中才能加入列表
+                evtObj.eventPathId.push(pathStr);
+                evtObj.listeners[evtId] = callback;
+                evtObj.paths.push({
+                    eventId: evtId,
+                    path
+                });
+                this.eventListeners[eventName].events[evtId] = {
+                    nodePath: vNodePath
                 };
             }
-            this.eventListeners[eventName]["eventListener"][evtId] = callback;
-            this.eventListeners[eventName].mapEventId.push({
-                eventId: evtId,
-                path
-            });
-            this.eventListeners[eventName].eventPaths.push(pathStr);
-            return evtId;
         }
+        return evtId;
     }
     unsubscribe(eventName: string, eventId: string): void {
         // remove event listen
         if(this.eventListeners[eventName]) {
-            delete this.eventListeners[eventName][eventId]; // 将事件监听回调函数从观察者列表移除
-            if(Object.keys(this.eventListeners[eventName]).length <= 0) {
-                // 当某个事件下没有监听回调函数时将从顶层级dom的事件监听移除
-                // 为了兼容resize事件，当时resize事件时事件监听的节点修改为window
-                const eventCallback = this.eventListeners[eventName].eventHandler;
-                this.removeEventListen(eventName, eventCallback);
-                delete this.eventListeners[eventName];
+            const eventData = this.eventListeners[eventName];
+            const events = eventData.events;
+            const eventHandleData = events[eventId];
+            if(eventHandleData) {
+                const vNodePath = eventHandleData.nodePath;
+                const eventNodePath = vNodePath.replace(/\./g, ".nodes.");
+                const eventNodeMap = utils.getValue<TypeEventMapData>(this.nodeMap, eventNodePath);
+                if(eventNodeMap) {
+                    const eventNodeData: TypeEventData = eventNodeMap.events[eventName];
+                    const newPath: string[] = [];
+                    const newPathData: any[] = [];
+                    for(let i=0;i<eventNodeData.paths.length;i++) {
+                        if(eventNodeData.paths[i].eventId !== eventId) {
+                            newPath.push(eventNodeData.paths[i].path.join(","));
+                            newPathData.push(eventNodeData.paths[i]);
+                        }
+                    }
+                    eventNodeData.eventPathId = newPath;
+                    eventNodeData.paths = newPathData;
+                }
+                delete eventData.events[eventId];
+                if(Object.keys(eventData.events).length <= 0) {
+                    this.removeEventListen(eventName, eventData.handler);
+                }
             }
         }
-    }
-    unsubscribeByPath(path: number[]): void {
-        Object.keys(this.eventListeners).map((eventName:string) => {
-            const eventData = this.eventListeners[eventName];
-            const mapEventIds: TypeEventIdMapping[] = eventData.mapEventId;
-            const newMapEventId = [];
-            const eventPaths:string[] = eventData.eventPaths || [];
-            // const newEventPaths = [];
-            let hasRemoved = false;
-            for(const mapEvtId of mapEventIds) {
-                if(mapEvtId.path.length >= path.length) {
-                    // 移除dom元素事件监听应该移除当前元素的子元素事件
-                    if(mapEvtId.path.slice(0,path.length).join(",") === path.join(",")) {
-                        const pathStr = mapEvtId.path.join(",");
-                        const pathIndex = eventPaths.indexOf(pathStr);
-                        pathIndex >=0 && eventPaths.splice(pathIndex ,1);
-                        // path suffix match
-                        delete eventData.eventListener[mapEvtId.eventId];
-                        hasRemoved = true;
-                    } else {
-                        newMapEventId.push(mapEvtId);
-                    }
-                } else {
-                    newMapEventId.push(mapEvtId);
-                }
-            }
-            if(hasRemoved) {
-                if(newMapEventId.length === 0 && Object.keys(eventData.eventListener).length === 0) {
-                    this.removeEventListen(eventName, eventData.eventHandler);
-                    delete this.eventListeners[eventName];
-                } else {
-                    // 重置所有的id数组
-                    this.eventListeners[eventName].mapEventId = newMapEventId;
-                    this.eventListeners[eventName].eventPaths = eventPaths;
-                }
-            }
-        });
     }
     dispose(): void {
         Object.keys(this.eventListeners).map((eventName: string): void => {
@@ -195,6 +190,85 @@ export class ElmerEvent {
             delete this.eventListeners[eventName];
         });
         this.eventListeners = {};
+    }
+    private callEventAction(evt:Event, eventName:string, path: number[], vNodePath: string):void {
+        const eventNodePath = vNodePath.replace(/\./g, ".nodes.");
+        const eventNode = utils.getValue<TypeEventMapData>(this.nodeMap, eventNodePath);
+        if(eventNode && eventNode.events) {
+            let eventData:TypeEventData = null;
+            // tslint:disable-next-line: forin
+            for(const evtName in eventNode.events) {
+                if(evtName === eventName) {
+                    eventData = eventNode.events[evtName];
+                    break;
+                }
+            }
+            // 当前节点没有事件handler,往上一级执行，一直到最上层元素，或则有事件触发cancelBubble事件属性
+            if(!eventData) {
+                const parentNode = vNodePath.replace(/\.[a-z0-9\-\_]{1,}$/i,"");
+                !utils.isEmpty(parentNode) && parentNode !== vNodePath && this.callEventAction(evt, eventName, eventNode.path, parentNode);
+            } else {
+                this.worker.callObjMethod("elmerEvent", "sortEventId", eventData.paths, path).then((resp:any) => {
+                    if(/^200$/.test(resp.statusCode)) {
+                        const respData = resp.data || {};
+                        const evtIds:TypeEventIdMapping[] = respData.allPathData || [];
+                        const width = window.innerWidth, height = window.innerHeight, outWidth = window.outerWidth, outHeight = window.outerHeight;
+                        const evtParams: TypeQueueCallParam[] = [];
+                        const curPath:number[] = respData.path;
+                        let isCancelBubble = false;
+                        for(const evtMap of evtIds) {
+                            const bubbleEvent = {
+                                cancelBubble: false,
+                                nativeEvent: evt,
+                                windowRect: {
+                                    height,
+                                    outHeight,
+                                    outWidth,
+                                    width,
+                                }
+                            };
+                            if(eventName !== "resize") {
+                                if(evtMap.path && evtMap.path.length <= curPath.length) {
+                                    const forEvtIDS = evtMap.path.join(",");
+                                    const compareIDS = curPath.slice(0, evtMap.path.length).join(",");
+                                    if(forEvtIDS === compareIDS) {
+                                        const evtCallback = eventData.listeners[evtMap.eventId];
+                                        evtCallback(bubbleEvent, evtParams);
+                                        if(bubbleEvent.cancelBubble) {
+                                            isCancelBubble = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                            } else {
+                                const evtCallback = eventData.listeners[evtMap.eventId];
+                                evtCallback(bubbleEvent, evtParams);
+                            }
+                        }
+                        if(!isCancelBubble) {
+                            const parentNode = vNodePath.replace(/\.[a-z0-9\-\_]{1,}$/i,"");
+                            !utils.isEmpty(parentNode) && parentNode !== vNodePath && this.callEventAction(evt, eventName, eventNode.path, parentNode);
+                        }
+                    } else {
+                        throw new Error(`执行事件回调出现错误:${resp.message}`);
+                    }
+                }).catch((error) => {
+                    error["from"] = "virtual event module";
+                    throw error;
+                });
+            }
+        }
+    }
+    private createEventHandler(): Function {
+        return (evt:Event) => {
+            const target = evt.target;
+            const path = (target as any).path;
+            const vNodePath = (target as any).vNodePath;
+            const eventName = evt.type;
+            if(!utils.isEmpty(path) && !utils.isEmpty(vNodePath)) {
+                this.callEventAction(evt, eventName, path, vNodePath);
+            }
+        };
     }
     private addEventListener(eventName: string, eventCallback: Function): void {
         if(eventName !== "resize") {

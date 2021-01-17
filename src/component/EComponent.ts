@@ -1,7 +1,7 @@
 import { Common } from "elmer-common";
 import { IVirtualElement } from "elmer-virtual-dom";
 import { IElmerEvent } from "../events/IElmerEvent";
-import { IReduxConnect, IDeclareI18n } from "../interface/IDeclareComponent";
+import { IDeclareI18n, IReduxConnect } from "../interface/IDeclareComponent";
 import { IPropCheckRule } from "../propsValidation";
 import { IComponent } from "./IComponent";
 
@@ -54,10 +54,13 @@ export abstract class EComponent<P={}, S={}, C={}> extends Common implements ICo
     setData<T>(data: {} & T, ...argv:any[]): Promise<any> {
         throw new Error("Method not implemented.");
     }
-    setState<T>(data: T & {[P in keyof S]?:S[P]}, ...argv:any[]): Promise<any> {
-        throw new Error("Method not implemented.");
-    }
-    redirect?(path: string, params?: any): void {
+    /**
+     * 更新数据，触发组件重新渲染，数据只更新到state属性
+     * @param data 更新数据
+     * @param argv 其他参数
+     * @returns {Promise<any>}
+     */
+    setState<T>(data: T & {[SP in keyof S]?:S[SP]}, ...argv:any[]): Promise<any> {
         throw new Error("Method not implemented.");
     }
 }

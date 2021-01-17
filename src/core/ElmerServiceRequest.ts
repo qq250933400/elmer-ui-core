@@ -95,7 +95,7 @@ export class ElmerServiceRequest extends Common {
         }
         return new Promise((resolve:Function, reject:Function) => {
             if(endPoint || !this.isEmpty(option.url)) {
-                let method: string = this.config.dummy ? "GET" : this.getRequestMethod(option, endPoint);
+                let method: any = this.config.dummy ? "GET" : this.getRequestMethod(option, endPoint);
                 const comBeforeResult = this.configData?.common?.onBefore?.(endPoint, option); // 执行配置的全局方法
                 endPoint && typeof endPoint.onBefore === "function" && endPoint.onBefore(option, endPoint);
                 const reqUrl = this.getRequestUrl(endPoint, option);

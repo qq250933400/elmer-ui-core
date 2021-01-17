@@ -68,7 +68,6 @@ export class ElmerRender extends Common {
     private oldDom: IVirtualElement; // 旧dom节点
     private userComponents: any = {}; // 当前组件引用的自定义组件
     private eventObj: ElmerEvent; // 事件处理模块，全局只有一个对象，从最顶层往下传递
-    private subscribeEvents: any = {}; // 当前已经设置事件监听的回调函数
     private virtualId: string;
     private renderComponents: any = {}; // 当前组件下的自定义组件渲染对象
     constructor(options: TypeElmerRenderOptions) {
@@ -100,7 +99,7 @@ export class ElmerRender extends Common {
                 vNodePath: this.options.nodePath
             });
         }
-        this.eventObj.nodeRegister(options.nodePath);
+        this.eventObj.nodeRegister(options.nodePath, this.options.path);
     }
     /**
      * 获取最后一个渲染的真实元素
@@ -127,7 +126,6 @@ export class ElmerRender extends Common {
         }
     }
     destroy(): void {
-        this.unbindAllEvents();
         if(this.newDom) {
             this.newDom.children.map((itemDom:IVirtualElement) => {
                 itemDom?.dom?.parentElement.removeChild(itemDom.dom);
@@ -139,6 +137,7 @@ export class ElmerRender extends Common {
                 vRender.destroy();
             });
         }
+        this.unbindAllEvents(true);
         this.newDom = null;
         this.oldDom = null;
     }
@@ -153,7 +152,7 @@ export class ElmerRender extends Common {
                 resolve({});
             }).catch((err) => {
                 // tslint:disable-next-line: no-console
-                console.error(err.stack || err.message || err);
+                console.error(err.stack || err);
                 if(option.firstRender) {
                     typeof this.options.component.$didMount === "function" && this.options.component.$didMount();
                 } else {
@@ -271,14 +270,8 @@ export class ElmerRender extends Common {
     /**
      * 移除所有事件监听
      */
-    private unbindAllEvents(): void {
-        if(this.subscribeEvents) {
-            Object.keys(this.subscribeEvents).map((evtId: string) => {
-                const eventObj = this.subscribeEvents[evtId];
-                const eventName = eventObj.eventName;
-                this.eventObj.unsubscribe(eventName, evtId);
-            });
-        }
+    private unbindAllEvents(deleteVNode?: boolean): void {
+        this.eventObj.nodeUnRegister(this.options.nodePath, deleteVNode);
     }
     private async setComponentState(state:any, force?: boolean): Promise<any> {
         return new Promise((resolve, reject) => {
@@ -330,7 +323,7 @@ export class ElmerRender extends Common {
     private async setComponentData(data:any): Promise<any> {
         return new Promise<any>((resolve, reject) => {
             // tslint:disable-next-line: no-console
-            console.warn("The SetData method is not recommended. Use setstate instead。");
+            console.warn("The SetData method is not recommended. Use setState instead。");
             if(this.isObject(data)) {
                 const component = this.options.component;
                 const dataKeys = Object.keys(data);
@@ -440,6 +433,7 @@ export class ElmerRender extends Common {
                         }
                         if(vdom.status !== "DELETE") {
                             (vdom.dom as any).path = vdom.path;
+                            (vdom.dom as any).vNodePath = this.options.nodePath;
                             this.subscribeEventAction(vdom);
                             if(vdom.children && vdom.children.length > 0) {
                                 // 当status为delete时删除父节点并移除事件监听就行，不需要在对子节点循环删除
@@ -486,7 +480,7 @@ export class ElmerRender extends Common {
                             if(vdom.status === "DELETE") {
                                 // 当节点被标记为删除时，移除dom元素，并销毁事件监听和虚拟dom对象
                                 // todo release all user defined component
-                                this.eventObj.unsubscribeByPath(vdom.path);
+                                // 删除事件监听已经在渲染前做删除，不需要在此处做操作
                                 if(vdom.dom) {
                                     vdom.dom.parentElement && vdom.dom.parentElement.removeChild(vdom.dom);
                                 }
@@ -767,38 +761,31 @@ export class ElmerRender extends Common {
      * @param vdom 虚拟dom节点数据
      */
     private subscribeEventAction(vdom:IVirtualElement): void {
-        if(vdom.events) {
+        const allEvents = vdom.events || {};
+        const eventKeys = Object.keys(vdom.events);
+        if(vdom.events && eventKeys.length > 0) {
             Object.keys(vdom.events).map((eventName: string): void => {
                 const eventCallback = vdom.events[eventName];
                 if(typeof eventCallback === "function") {
                     // 找到存在的回调函数再做事件监听绑定
-                    const eventListener = ((callback:Function, handler: any) => {
-                        return (function(evt:IElmerEvent): any{
-                            const newEvent:any = {
-                                cancelBubble: false,
-                                data: this.vdom.data,
-                                dataSet: this.vdom.dataSet,
-                                nativeEvent: evt.nativeEvent
-                            };
-                            const eventResult = callback(newEvent);
-                            evt.cancelBubble = newEvent.cancelBubble;
-                            return eventResult;
-                        }).bind({
-                            owner: handler,
-                            vdom
+                    ((evtDom: IVirtualElement,evtName: string, callback:Function, componenent:any) => {
+                        const eventId = this.eventObj.subscribe({
+                            callback: (event:IElmerEvent) => {
+                                const newEvent:any = {
+                                    ...event,
+                                    cancelBubble: false,
+                                    data: evtDom.data,
+                                    dataSet: evtDom.dataSet
+                                };
+                                const eventResult = callback.call(componenent, newEvent);
+                                event.cancelBubble = newEvent.cancelBubble;
+                                return eventResult;
+                            },
+                            eventName: evtName,
+                            path: evtDom.path,
+                            vNodePath: this.options.nodePath,
                         });
-                    })(eventCallback, this.options.component);
-                    const currentPath = vdom.path;
-                    const eventId = this.eventObj.subscribe({
-                        callback: eventListener,
-                        eventName,
-                        path: currentPath,
-                        vNodePath:this.options.nodePath,
-                    });
-                    this.subscribeEvents[eventId] = {
-                        callback: eventListener,
-                        eventName
-                    };
+                    })(vdom, eventName, eventCallback, this.options.component);
                 }
             });
         }
@@ -863,7 +850,9 @@ export class ElmerRender extends Common {
                 } else {
                     if(delDom.dom) {
                         delDom.dom.parentElement && delDom.dom.parentElement.removeChild(delDom.dom);
-                        this.eventObj.unsubscribeByPath(delDom.path);
+                        // 每次渲染前都会将事件监听清除，重新挂载新的事件监听, 不需要每次都做判断
+                        // 此操作对渲染功能影响是否需要在做处理，留到后续版本做更新
+                        // todo: Release event listener
                     }
                 }
             }

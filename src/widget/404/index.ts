@@ -20,10 +20,7 @@ export class Page404 extends EComponent {
         this.title = props.title;
     }
     handleOnClick(): void {
-        this.redirect("", {
-            page: "hahah",
-            state: "region"
-        });
+        console.log("Need goto another page");
     }
     $dispose():void {
         document.title = this.title;

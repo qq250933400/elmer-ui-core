@@ -4,7 +4,7 @@ export type TypeEventIdMapping = {
 };
 
 export default class EventInWorker {
-    sortEventId(mapData: TypeEventIdMapping[]):any {
+    sortEventId(mapData: TypeEventIdMapping[], eventPath: number[]):any {
         if(self["utils"].isArray(mapData)) {
             for(let i=0;i<mapData.length;i++) {
                 const checkItem = mapData[i];
@@ -16,9 +16,15 @@ export default class EventInWorker {
                     }
                 }
             }
-            return mapData;
+            return {
+                allPathData: mapData,
+                path: eventPath
+            };
         } else {
-            return [];
+            return {
+                allPathData: mapData,
+                path: eventPath
+            };
         }
     }
     isNextPath(path1: number[], path2: number[]): boolean {
