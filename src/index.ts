@@ -16,6 +16,7 @@ import { connect } from "./widget/redux/connect";
 import { propTypes } from "./propsValidation";
 import { Component } from "./core/Component";
 import { setServiceEnv } from "./configuration/GlobalConfig";
+import { ElmerServiceRequest } from "./core/ElmerServiceRequest";
 
 export const ElmerUI = ElmerUIClass;
 export const addResize = addResizeFn;
@@ -73,5 +74,6 @@ elmerData.Injectable = Injectable;
 elmerData.declareComponent = declareComponent;
 elmerData.createUI = createUI;
 elmerData.getUI = getUI;
+elmerData.ServiceHelper = ElmerServiceRequest;
 elmerData["redux"] = redux;
 elmerData.setEnv = setServiceEnv;

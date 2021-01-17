@@ -290,11 +290,20 @@ export class ElmerServiceRequest extends Common {
         } else {
             if(this.isEmpty(option.url)) {
                 const env = this.env;
+                const defineBaseUrl:any = typeof namespaceData.getDomain === "function" ? namespaceData.getDomain({
+                    endPoint,
+                    env,
+                    option
+                }) : null;
                 let baseUrl = namespaceData.baseUrl;
-                if(namespaceData.envUrls && !this.isEmpty(env)) {
-                    if(!this.isEmpty(namespaceData.envUrls[env])) {
-                        baseUrl = namespaceData.envUrls[env];
+                if(this.isEmpty(defineBaseUrl)) {
+                    if(namespaceData.envUrls && !this.isEmpty(env)) {
+                        if(!this.isEmpty(namespaceData.envUrls[env])) {
+                            baseUrl = namespaceData.envUrls[env];
+                        }
                     }
+                } else {
+                    baseUrl = defineBaseUrl;
                 }
                 reqUrl = baseUrl + (endPoint ? endPoint.url : "undefined");
             } else {

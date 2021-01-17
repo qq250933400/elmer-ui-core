@@ -31,6 +31,11 @@ export class ElmerRender extends Common {
     nodeData: IVirtualElement;
     oldData: IVirtualElement;
 
+    // isPropsChagneRefreshed
+    // 用于检测是否在$willReceiveProps或者$onPropsChanged这两个生命周期函数调用setState,setData重新渲染组件
+    // 如果未调用，并且children有变化需要自动重新渲染
+    private isPropsChagneRefreshed: boolean = false;
+
     private isNeedParse: boolean = true;
     private htmlParseData: IVirtualElement;
     private contextStore: any;
@@ -69,7 +74,7 @@ export class ElmerRender extends Common {
         this.previousSibling = props.previousSibling;
         this.contextStore = props.context;
         this.uiOptions = props.uiRenderOptions;
-        this.virtualId = props.virtualId;
+        this.virtualId = this.isEmpty(props.virtualId) ? this.guid() : props.virtualId;
         this.path = props.path;
         this.extend(this.renderComponent,{
             addEvent: this.bindDomEvent.bind(this),
@@ -614,11 +619,14 @@ export class ElmerRender extends Common {
                     ...(nodeData.tagAttrs || {}),
                     isComponent: true
                 };
-                const hasChildrenChanged = this.virtualDom.virtualElementHasChagne(nodeData); // 检测component子节点变化，当content内容有变化需要出发component的 onPropsChanged事件
+                const hasChildrenChanged = this.isNodeHasChange(nodeData); // 检测component子节点变化，当content内容有变化需要出发component的 onPropsChanged事件
+                // if(this.renderComponent.props.id === "appRightArea" || this.renderComponent.props.title==="UI编辑器") {
+                //     console.log(this.renderComponent.selector, hasChildrenChanged);
+                //     debugger;
+                // }
                 if(hasChildrenChanged) {
                     const prevSibling: HTMLElement|SVGSVGElement|Element|Text|Comment = this.getPrevDom(nodeData);
-                    const contentChangeOnly = nodeData.status === VirtualElementOperate.NORMAL;
-                    this.renderUserComponent(defineComponent, nodeData, <HTMLElement>parent, prevSibling, isFirstLevel, contentChangeOnly);
+                    this.renderUserComponent(defineComponent, nodeData, <HTMLElement>parent, prevSibling, isFirstLevel, hasChildrenChanged);
                 } else {
                     // 当没有children 修改时检测context是否修改
                     if(defineComponent["contextType"]) {
@@ -674,7 +682,17 @@ export class ElmerRender extends Common {
                         delete  oldVirtualDom.component.props;
                         this.defineReadOnlyProperty(oldVirtualDom.component, "props", props);
                         this.injectComponent.run(oldVirtualDom.component, componentClass, nodeData);
-                        typeof oldVirtualDom.component["$onPropsChanged"] === "function" && oldVirtualDom.component["$onPropsChanged"](props, oldProps);
+                        this.isPropsChagneRefreshed = false;
+                        if(typeof oldVirtualDom.component["$willReceiveProps"] === "function") {
+                            typeof oldVirtualDom.component["$willReceiveProps"] === "function" && oldVirtualDom.component["$willReceiveProps"](props, oldProps);
+                        } else {
+                            // 兼容旧版本的代码
+                            typeof oldVirtualDom.component["$onPropsChanged"] === "function" && oldVirtualDom.component["$onPropsChanged"](props, oldProps);
+                        }
+                        if(!this.isPropsChagneRefreshed && contentChangeOnly) {
+                            // props 有变换并且自定义组件children有变化，但是并未执行重绘操作时需要重新渲染组件
+                            oldVirtualDom.render.renderHtml();
+                        }
                     }
                 }
             } else if(nodeData.status === VirtualElementOperate.APPEND) {
@@ -839,6 +857,38 @@ export class ElmerRender extends Common {
             }
         }
     }
+    private isNodeHasChange(nodeData:IVirtualElement): boolean {
+        let result = false;
+        if(nodeData.status === "DELETE" || nodeData.status === "APPEND" || nodeData.status === "UPDATE") {
+            result = true;
+        } else {
+            // 只有当status为normal的时候需要做检测
+            if(nodeData.children.length > 0) {
+                const checkChangeTask:Function[] = [];
+                for(const item of nodeData.children) {
+                    if(item.status === "DELETE" || item.status === "APPEND" || item.status === "UPDATE") {
+                        result = true;
+                        break;
+                    } else {
+                        checkChangeTask.push(((checkItem:IVirtualElement) => {
+                            return () => {
+                                return this.isNodeHasChange(checkItem);
+                            };
+                        })(item));
+                    }
+                }
+                if(!result) {
+                    for(const runTask of checkChangeTask) {
+                        if(runTask()) {
+                            result = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        return result;
+    }
     private getComponentChildren(nodeData: IVirtualElement): any {
         const children:IVirtualElement[] = [];
         nodeData.children && nodeData.children.map((tmpItem:IVirtualElement) => {
@@ -892,6 +942,7 @@ export class ElmerRender extends Common {
                     // tslint:disable-next-line: no-floating-promises
                     render["render"]();
                 }
+                this.isPropsChagneRefreshed = true;
             }
         } else {
             throw new Error("setData action get an wrong data,it\"s must be an object!");
@@ -925,6 +976,7 @@ export class ElmerRender extends Common {
                     // tslint:disable-next-line: no-floating-promises
                     render["render"]();
                 }
+                this.isPropsChagneRefreshed = true;
             }
             dataChanged = null;
         } else {

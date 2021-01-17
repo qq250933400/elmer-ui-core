@@ -1,6 +1,6 @@
 {
     "name": "elmer-ui-core",
-    "version": "1.2.24",
+    "version": "1.2.36",
     "description": "web app framework",
     "typings": "lib/index.d.ts",
     "main": "lib/index.js",
@@ -53,7 +53,9 @@
         "@types/node": "^12.12.24",
         "babel-loader": "^7.1.5",
         "babel-preset-env": "^1.7.0",
+        "babel-plugin-transform-class-properties": "^6.24.1",
         "extract-text-webpack-plugin": "^4.0.0-beta.0",
+        "eslint-plugin-typescript": "^0.12.0",
         "jsdom": "^15.2.0",
         "loader-utils": "^1.2.3",
         "mocha": "^6.2.1",
@@ -71,20 +73,14 @@
         "@types/jquery": "^3.3.22",
         "ajv": "5.0.0",
         "autoprefixer": "^9.2.0",
-        "axios": "^0.18.0",
+        "axios": "^0.18.1",
         "babel-cli": "^6.26.0",
         "babel-core": "^6.26.3",
-        "babel-plugin-transform-class-properties": "^6.24.1",
         "babel-polyfill": "^6.26.0",
         "chalk": "^2.4.1",
         "colors": "^1.3.3",
         "core-js": "^2.5.7",
         "decorator": "^0.0.1",
-        "elmer-redux": "^1.0.10",
-        "elmer-validation": "^1.0.7",
-        "elmer-virtual-dom": "^1.0.6",
-        "elmer-worker": "^1.0.5",
-        "eslint-plugin-typescript": "^0.12.0",
         "path": "^0.12.7",
         "promise": "^8.0.3",
         "reflect-metadata": "^0.1.12",
@@ -94,6 +90,10 @@
         "zone.js": "^0.8.26"
     },
     "peerDependencies": {
-        "elmer-validation": "^1.0.7"
+        "elmer-common": "^0.1.10",
+        "elmer-redux": "^1.1.2",
+        "elmer-validation": "^1.0.8",
+        "elmer-virtual-dom": "^1.0.10",
+        "elmer-worker": "^1.0.7"
     }
 }

@@ -45,6 +45,7 @@ export class Validated extends Component {
         pass: true,
         theme: "",
     };
+    props: any;
     $init(): void {
         if(!this.isEmpty(this.props.sectionId)) {
             // 重新定义当前Validated section

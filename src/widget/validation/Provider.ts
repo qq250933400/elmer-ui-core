@@ -21,7 +21,7 @@ ValidationProvider.overrideGetState(() => {
  * 初始化validation state
  */
 export const validationInit = () => {
-    ValidationProvider.init();
+    // ValidationProvider.init();
 };
 
 export default {

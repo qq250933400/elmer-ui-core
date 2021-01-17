@@ -6,7 +6,7 @@ export type TypeThemeDefault = {
     themePink: string;
 };
 
-export interface IComponent {
+export interface IComponent<P=Object, S=Object, C=Object> {
     parent?:HTMLElement;
     domList: any;
     dom: any;
@@ -18,6 +18,9 @@ export interface IComponent {
     i18nRootKey?: string;
     i18nData?: any;
     propType?: any;
+    props?: P;
+    state?: S;
+    context?: C;
     /**
      * 注入model对象，每个组件都会初始化一个新对象
      */
@@ -30,7 +33,7 @@ export interface IComponent {
     insertAdjacentElement(refElement:HTMLElement|Element|Node, newElement:HTMLElement|Element|Node, InsertMethod: string):void;
     checkPropTypes?(checkPropTypesConfig: any): void;
     $contextData?(context:any): void;
-    $onPropsChanged?(propData: any,oldProps: any): void;
+    $willReceiveProps?(propData: any,oldProps: any): void;
     $init?(): void;
     $inject?(): void;
     $before?(): void;

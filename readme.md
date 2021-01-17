@@ -1,6 +1,10 @@
 #  elmer-ui-core web轻量前端框架
 
 #### 版本更新：
+    # v1.2.29
+	    * 修复自定义组件下引用多层自定义组件时当有更新时不能渲染子组件
+		* 修复状态管理器没有更新
+		* 更新elmer-common包，修复setValue传入callback没有获取到属性值
 	# v1.2.8
 		* 修改withRouter代码逻辑，通过declareComponent注册redirect方法
 		* 增加router配置在跳转前或页面加载前自动call API

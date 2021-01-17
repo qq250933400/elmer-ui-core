@@ -28,7 +28,8 @@ declare namespace ElmerUI {
         propTypes:any;
         Component:Function;
         setEnv: Function;
-        extends:ClassDecorator;
+        ServiceHelper: Function;
+        extends(a:any,b:any):void;
     }
 }
 

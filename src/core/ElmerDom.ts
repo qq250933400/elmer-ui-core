@@ -269,7 +269,7 @@ export class ElmerDOM extends ElmerDomQuery {
             (<any>dom).eventListeners = eventListener;
         }
     }
-    removeEvent(dom:any | HTMLElement, eventName:string, callBack: Function, options: any):void {
+    removeEvent(dom:any | HTMLElement, eventName:string, callBack: Function, options?: any):void {
         if(this.isDOM(dom)) {
             const eventListeners:IElmerDOMEvent[] = (<any>dom).eventListeners || [];
             if(eventListeners && eventListeners.length>0) {
