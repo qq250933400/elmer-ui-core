@@ -1,9 +1,5 @@
 import "reflect-metadata";
-import { formatSelector, registerComponent } from "../core/elmerRegister";
 import { addToClassPool } from "../init/globalUtil";
-import { IDeclareComponentOptions } from "../interface/IDeclareComponent";
-import { I18nController } from "../widget/i18n/i18nController";
-import { withRouter } from "../widget/router/withRoter";
 import { createClassFactory } from "./createClassFactory";
 // tslint:disable:variable-name
 
@@ -51,31 +47,5 @@ export function autowired<T>(_constructor:new(...args:any[]) =>T, className?: st
               argv,
               className
           });
-    };
-}
-
-export function declareComponent(options: IDeclareComponentOptions): Function {
-    // tslint:disable-next-line:typedef
-    // tslint:disable-next-line:variable-name
-    return (__contructor:Function): void => {
-        const i18nController:I18nController = createClassFactory(I18nController);
-        __contructor.prototype.selector = formatSelector(options.selector || "");
-        // 使用defineReadonlyProperty定义属性，防止用户自定义方法重复定义
-        defineReadonlyProperty(__contructor.prototype, "injectModel",options.model);
-        defineReadonlyProperty(__contructor.prototype, "injectService",options.service);
-        defineReadonlyProperty(__contructor.prototype, "connect",options.connect);
-        defineReadonlyProperty(__contructor.prototype, "i18nConfig",options.i18n);
-        defineReadonlyProperty(__contructor.prototype, "template",options.template);
-        options.components && defineReadonlyProperty(__contructor.prototype, "components", options.components);
-        i18nController.initI18n(__contructor, options.i18n);
-        if(options.template?.fromLoader) {
-            defineReadonlyProperty(__contructor.prototype, "render", (function(): any {
-                return this.htmlCode;
-            }).bind({htmlCode: options.template.htmlCode}));
-        }
-        if(options.withRouter) {
-           withRouter(__contructor, createClassFactory);
-        }
-        registerComponent(__contructor, options.selector);
     };
 }

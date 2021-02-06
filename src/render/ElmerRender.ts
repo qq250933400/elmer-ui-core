@@ -89,7 +89,8 @@ export class ElmerRender extends Common {
         this.userComponents = {...userComponents, ...fromParentComponents};
         this.eventObj = options.event;
         this.options.component.setState = this.setComponentState.bind(this);
-        this.options.component.setData = this.setComponentData.bind(this); // 当前方法由于需要变量所有属性影响性能不建议使用，使用setState会更好，兼容旧代码
+        this.options.component.setData = this.setComponentData.bind(this); // 当前方法由于需要遍历所有属性影响性能不建议使用，使用setState会更好，兼容旧代码
+        this.options.component.dom = {};
         typeof this.options?.component?.$init === "function" && this.options?.component?.$init();
         if(typeof this.options.component.$resize === "function") {
             this.eventObj.subscribe({
@@ -434,6 +435,9 @@ export class ElmerRender extends Common {
                         if(vdom.status !== "DELETE") {
                             (vdom.dom as any).path = vdom.path;
                             (vdom.dom as any).vNodePath = this.options.nodePath;
+                            if(!this.isEmpty(vdom.props.id)) {
+                                this.options.component.dom[vdom.props.id] = vdom.dom;
+                            }
                             this.subscribeEventAction(vdom);
                             if(vdom.children && vdom.children.length > 0) {
                                 // 当status为delete时删除父节点并移除事件监听就行，不需要在对子节点循环删除
@@ -485,6 +489,9 @@ export class ElmerRender extends Common {
                                     vdom.dom.parentElement && vdom.dom.parentElement.removeChild(vdom.dom);
                                 }
                                 this.deleteVirtualDom(vdom);
+                            }
+                            if(!this.isEmpty(vdom.props.id)) {
+                                delete this.options.component.dom[vdom.props.id]; // 移除当前dom
                             }
                             resolve({
                                 hasPathUpdate: hasPathChange,
@@ -571,6 +578,9 @@ export class ElmerRender extends Common {
                 }).catch((err) => {
                     reject(err);
                 });
+                if(!this.isEmpty(vdom.props.id)) {
+                    this.options.component.dom[vdom.props.id] = component;
+                }
             } else if(vdom.status === "UPDATE") {
                 const vRender:ElmerRender = this.renderComponents[vdom.virtualID];
                 if(vRender) {
@@ -636,6 +646,9 @@ export class ElmerRender extends Common {
                 const vRender:ElmerRender = this.renderComponents[vdom.virtualID];
                 vRender && vRender.destroy();
                 delete this.renderComponents[vdom.virtualID];
+                if(!this.isEmpty(vdom.props.id)) {
+                    delete this.options.component.dom[vdom.props.id];
+                }
                 resolve({});
             } else {
                 if(this.checkVirtualNodeChange(vdom)) {
@@ -843,6 +856,9 @@ export class ElmerRender extends Common {
     private deleteVDomOutOfLogic(deleteVdoms: IVirtualElement[]): void {
         if(deleteVdoms && deleteVdoms.length > 0) {
             for(const delDom of deleteVdoms) {
+                if(!this.isEmpty(delDom.props.id)) {
+                    delete this.options.component.props[delDom.props.id];
+                }
                 if(delDom?.tagAttrs?.isComponent) {
                     const dRender = <ElmerRender>this.renderComponents[delDom.virtualID];
                     dRender && dRender.destroy();

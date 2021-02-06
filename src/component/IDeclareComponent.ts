@@ -16,7 +16,7 @@ export interface IRouter {
 export interface IReduxConnect<T={}> {
     mapStateToProps?: Function;
     mapDispatchToProps?: Function;
-    reducers?: TypeReduxReducer<T>[];
+    reducers?: Array<TypeReduxReducer<T>>;
 }
 export interface IDeclareI18nData {
     en?: object;

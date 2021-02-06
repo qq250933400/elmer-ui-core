@@ -2,17 +2,14 @@ import { Common } from "elmer-common";
 import { attachReducerToController, defineReducer, ReduxController } from "elmer-redux";
 import { IVirtualElement } from "elmer-virtual-dom";
 import { IComponent } from "../component/IComponent";
+import { IReduxConnect } from "../component/IDeclareComponent";
 import { defineGlobalState, getGlobalState } from "../init/globalUtil";
 import { autowired, Injectable } from "../inject/injectable";
-import { IReduxConnect } from "../interface/IDeclareComponent";
 import { IPropCheckRule } from "../propsValidation";
-import { I18nController } from "../widget/i18n/i18nController";
 
 @Injectable("InjectComponent")
 export class InjectComponent extends Common {
 
-    @autowired(I18nController)
-    private i18nController: I18nController;
     @autowired(ReduxController, "ReduxController")
     private reduxController: ReduxController;
 
@@ -29,7 +26,6 @@ export class InjectComponent extends Common {
      */
     initComponent(targetComponent:IComponent, ComponentClass: any, nodeData:IVirtualElement): void {
         // 创建component执行一次
-        this.i18nController.initI18nTranslate(targetComponent);
         const reduxParam = ComponentClass.prototype.connect;
         if(reduxParam && (reduxParam.mapStateToProps || reduxParam.mapDispatchToProps)) {
            this.reduxController.checkInitComponents(targetComponent, ComponentClass.prototype.selector, nodeData);

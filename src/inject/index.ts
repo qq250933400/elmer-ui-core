@@ -1,8 +1,7 @@
 import { autoInit as autoInitFn  } from "./createClassFactory";
-import { autowired as Autowired, declareComponent as DeclareComponent, Injectable as injectableFn } from "./injectable";
+import { autowired as Autowired, Injectable as injectableFn } from "./injectable";
 
 export const autowired = Autowired;
-export const declareComponent = DeclareComponent;
 /**
  * Injectable 命名不规范，将要弃用
  * Duplicate todo

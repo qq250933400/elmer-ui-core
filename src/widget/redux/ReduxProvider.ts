@@ -7,9 +7,10 @@ import {
     ReduxController,
     TypeReduxSaveStorage
 } from "elmer-redux";
+import { declareComponent } from "../../component/declareComponent";
 import { EComponent } from "../../component/EComponent";
 import { defineGlobalState, getGlobalState } from "../../init/globalUtil";
-import { autoInit, autowired, declareComponent } from "../../inject";
+import { autoInit, autowired } from "../../inject";
 import { IPropCheckRule, PropTypes } from "../../propsValidation";
 
 type TypeReduxProviderPropsCheckRule = {

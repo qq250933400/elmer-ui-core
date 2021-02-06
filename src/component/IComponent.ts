@@ -1,6 +1,6 @@
 import { IVirtualElement } from "elmer-virtual-dom";
 import { IElmerEvent } from "../events/IElmerEvent";
-import { IDeclareI18n, IReduxConnect } from "../interface/IDeclareComponent";
+import { IDeclareI18n, IReduxConnect } from "./IDeclareComponent";
 
 export type TypeThemeDefault = {
     default: string;
