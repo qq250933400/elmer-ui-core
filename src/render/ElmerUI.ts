@@ -3,7 +3,7 @@ import "../polyfill";
 import { Common } from "elmer-common";
 import { HtmlParse } from "elmer-virtual-dom";
 import { ElmerWorker } from "elmer-worker";
-import { EComponent } from "../component/EComponent";
+import { Component } from "../component/Component";
 import { ElmerDOM } from "../core/ElmerDom";
 import { ElmerEvent } from "../events/ElmerEvent";
 import EventInWorker from "../events/EventInWorker";
@@ -43,7 +43,7 @@ export class ElmerUI extends Common {
             };
         }
         entryComponent.selector = "RootNode";
-        this.extend(entryComponent, EComponent.prototype, true, ignorePropKeys);
+        this.extend(entryComponent, Component.prototype, true, ignorePropKeys);
         this.defineReadOnlyProperty(entryComponent, "props", defaultProps);
         const renderObj = new ElmerRender({
             children: [],

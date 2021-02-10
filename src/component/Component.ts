@@ -7,7 +7,7 @@ import { IComponent } from "./IComponent";
 
 export const CONST_CLASS_COMPONENT_FLAG = "COMPONENT_113df7d2-555c-53a1-30fb-58627fd7";
 
-export abstract class EComponent<P={}, S={}, C={}> extends Common implements IComponent {
+export abstract class Component<P={}, S={}, C={}> extends Common implements IComponent {
     static flag:string = CONST_CLASS_COMPONENT_FLAG;
     propType?: {[PT in keyof P]?: IPropCheckRule};
     parent?: HTMLElement;

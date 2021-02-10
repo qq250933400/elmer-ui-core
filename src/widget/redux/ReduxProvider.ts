@@ -7,8 +7,8 @@ import {
     ReduxController,
     TypeReduxSaveStorage
 } from "elmer-redux";
+import { Component } from "../../component/Component";
 import { declareComponent } from "../../component/declareComponent";
-import { EComponent } from "../../component/EComponent";
 import { defineGlobalState, getGlobalState } from "../../init/globalUtil";
 import { autoInit, autowired } from "../../inject";
 import { IPropCheckRule, PropTypes } from "../../propsValidation";
@@ -32,7 +32,7 @@ defineStateOperateAction(autoInit(ReduxController), getGlobalState, defineGlobal
 @declareComponent({
     selector: "ReduxProvider"
 })
-export class ReduxProvider extends EComponent {
+export class ReduxProvider extends Component {
     static propType: TypeReduxProviderPropsCheckRule = {
         autoSave: {
             description: "自动保存到sessionStorage",

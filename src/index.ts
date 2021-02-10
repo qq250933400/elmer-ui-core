@@ -21,7 +21,6 @@ export const defineReduxProvider = defineReduxProviderFn;
 // };
 export * from "./init/globalUtil";
 export * from "./core/ElmerDom";
-export * from "./core/elmerRegister";
 export * from "./inject";
 export * from "./propsValidation";
 export * from "./core/ElmerServiceRequest";

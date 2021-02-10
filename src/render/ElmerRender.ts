@@ -1,7 +1,7 @@
 import { Common, queueCallFunc, TypeQueueCallParam } from "elmer-common";
 import { IVirtualElement, VirtualNode, VirtualRender } from "elmer-virtual-dom";
 import { ElmerWorker } from "elmer-worker";
-import { CONST_CLASS_COMPONENT_FLAG, EComponent } from "../component/EComponent";
+import { CONST_CLASS_COMPONENT_FLAG, Component } from "../component/Component";
 import { ElmerEvent } from "../events/ElmerEvent";
 import { IElmerEvent } from "../events/IElmerEvent";
 import { HOOKS_USE_EFFECT_SSID, HOOKS_USE_STATE_SSID } from "../hooks";
@@ -17,11 +17,11 @@ export type TypeUIRenderOptions = {
 };
 
 type TypeElmerRenderOptions = {
-    component: EComponent;
+    component: Component;
     container: HTMLElement;
     children?: IVirtualElement[];
     renderOptions: TypeUIRenderOptions;
-    userComponents?: EComponent[];
+    userComponents?: Component[];
     event: ElmerEvent;
     worker: ElmerWorker;
     nodePath: string;
