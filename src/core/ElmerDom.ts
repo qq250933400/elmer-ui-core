@@ -1,9 +1,8 @@
 import { ElmerAnimation, TypeAnimationChangeEvent, TypeElmerAnimationType } from "../animation/ElmerAnimation";
 import animationMethod, { TypeAnimationProperty } from "../animation/ElmerAnimationProperty";
 import { EventNames } from "../events/EventNames";
-import { Injectable } from "../inject/index";
+import { injectable } from "../inject/index";
 import { autowired } from "../inject/injectable";
-import { MDomModel } from "../middleware/MDomModel";
 import { ElmerDomEvent } from "./ElmerDomEvent";
 import { ElmerDomQuery, IElmerDomSelector } from "./ElmerDomQuery";
 
@@ -57,7 +56,7 @@ export interface IElmerDOMEvent {
     listener?:EventListenerObject;
 }
 
-@Injectable("ElmerDOM")
+@injectable("ElmerDOM")
 export class ElmerDOM extends ElmerDomQuery {
     bindEvents:string[] = EventNames;
     supportCss3: boolean = false;
@@ -66,8 +65,6 @@ export class ElmerDOM extends ElmerDomQuery {
 
     @autowired(ElmerDomEvent)
     private eventObj: ElmerDomEvent;
-    @autowired(MDomModel)
-    private mDomModel: MDomModel;
     constructor() {
         super();
         this.supportCss3 =this.support("transform");
@@ -559,13 +556,13 @@ export class ElmerDOM extends ElmerDomQuery {
                         }
                     } else if(filterType === ":") {
                         // 暂不支持，先完成基本组件功能，以后在升级， 此处使用插件模式做判断，以便于扩展判断条件
-                        if(this.mDomModel.filterCheck(tmpElement, filter)) {
-                            if(selector.child) {
-                                resultDoms.push(...this.queryInDom(tmpElement, selector.child));
-                            } else {
-                                resultDoms.push(tmpElement);
-                            }
-                        }
+                        // if(this.mDomModel.filterCheck(tmpElement, filter)) {
+                        //     if(selector.child) {
+                        //         resultDoms.push(...this.queryInDom(tmpElement, selector.child));
+                        //     } else {
+                        //         resultDoms.push(tmpElement);
+                        //     }
+                        // }
                     } else if(this.isEmpty(filterType)) {
                         if(selector.child) {
                             resultDoms.push(...this.queryInDom(tmpElement, selector.child));

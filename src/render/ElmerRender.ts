@@ -1,13 +1,14 @@
 import { Common, queueCallFunc, TypeQueueCallParam } from "elmer-common";
 import { IVirtualElement, VirtualNode, VirtualRender } from "elmer-virtual-dom";
 import { ElmerWorker } from "elmer-worker";
-import { CONST_CLASS_COMPONENT_FLAG, Component } from "../component/Component";
+import { Component, CONST_CLASS_COMPONENT_FLAG } from "../component/Component";
 import { ElmerEvent } from "../events/ElmerEvent";
 import { IElmerEvent } from "../events/IElmerEvent";
 import { HOOKS_USE_EFFECT_SSID, HOOKS_USE_STATE_SSID } from "../hooks";
 import { globalVar } from "../init/globalUtil";
 import { autowired } from "../inject";
-import { InjectComponent } from "../middleware/InjectComponent";
+// import { InjectComponent } from "../middleware/InjectComponent";
+import { RenderMiddleware } from "../middleware/RenderMiddleware";
 import { ElmerRenderAttrs } from "./ElmerRenderAttrs";
 import { RenderQueue, TypeRenderQueueOptions } from "./RenderQueue";
 
@@ -18,6 +19,7 @@ export type TypeUIRenderOptions = {
 
 type TypeElmerRenderOptions = {
     component: Component;
+    componentFactory?: Function;
     container: HTMLElement;
     children?: IVirtualElement[];
     renderOptions: TypeUIRenderOptions;
@@ -57,10 +59,12 @@ export class ElmerRender extends Common {
     private virtualElement: VirtualNode;
     @autowired(RenderQueue)
     private renderQueue: RenderQueue;
-    @autowired(InjectComponent)
-    private injectComponent: InjectComponent;
+    // @autowired(InjectComponent)
+    // private injectComponent: InjectComponent;
     @autowired(ElmerRenderAttrs)
     private renderDomAttrs: ElmerRenderAttrs;
+    @autowired(RenderMiddleware)
+    private renderMiddleware: RenderMiddleware;
 
     private options: TypeElmerRenderOptions; // 当前render传入的参数
     private sourceDom: IVirtualElement; // 代码节点未渲染过的虚拟dom树
@@ -127,6 +131,12 @@ export class ElmerRender extends Common {
         }
     }
     destroy(): void {
+        this.renderMiddleware.destroy({
+            Component: this.options.componentFactory,
+            componentObj: this.options.component,
+            nodeData: this.options.component.vdom,
+            props: this.options.component.props
+        });
         if(this.newDom) {
             this.newDom.children.map((itemDom:IVirtualElement) => {
                 itemDom?.dom?.parentElement.removeChild(itemDom.dom);
@@ -144,10 +154,28 @@ export class ElmerRender extends Common {
     }
     async render(option: TypeRenderQueueOptions): Promise<any> {
         return new Promise<any>((resolve, reject) => {
+            this.renderMiddleware.beforeRender({
+                Component: this.options.componentFactory,
+                componentObj: this.options.component,
+                nodeData: this.options.component.vdom,
+                props: this.options.component.props
+            });
             this.renderQueue.startAction(this.virtualId, option, this.renderAction.bind(this), () => {
                 if(option.firstRender) {
+                    this.renderMiddleware.didMount({
+                        Component: this.options.componentFactory,
+                        componentObj: this.options.component,
+                        nodeData: this.options.component.vdom,
+                        props: this.options.component.props
+                    });
                     typeof this.options.component.$didMount === "function" && this.options.component.$didMount();
                 } else {
+                    this.renderMiddleware.afterRender({
+                        Component: this.options.componentFactory,
+                        componentObj: this.options.component,
+                        nodeData: this.options.component.vdom,
+                        props: this.options.component.props
+                    });
                     typeof this.options.component.$didUpdate === "function" && this.options.component.$didUpdate();
                 }
                 resolve({});
@@ -155,8 +183,20 @@ export class ElmerRender extends Common {
                 // tslint:disable-next-line: no-console
                 console.error(err.stack || err);
                 if(option.firstRender) {
+                    this.renderMiddleware.didMount({
+                        Component: this.options.componentFactory,
+                        componentObj: this.options.component,
+                        nodeData: this.options.component.vdom,
+                        props: this.options.component.props
+                    });
                     typeof this.options.component.$didMount === "function" && this.options.component.$didMount();
                 } else {
+                    this.renderMiddleware.afterRender({
+                        Component: this.options.componentFactory,
+                        componentObj: this.options.component,
+                        nodeData: this.options.component.vdom,
+                        props: this.options.component.props
+                    });
                     typeof this.options.component.$didUpdate === "function" && this.options.component.$didUpdate();
                 }
                 reject(err);
@@ -523,7 +563,13 @@ export class ElmerRender extends Common {
                 vRender.options.prevDom = doUpdatePrevDom;
                 this.extend(props, vRender.options.component.props, true);
                 this.extend(props, vRDom.changeAttrs, true);
-                this.injectComponent.beforeUpdateComponent(vRender.options.component, UserComponent, props, vRDom);
+                this.renderMiddleware.beforeUpdate({
+                    Component: UserComponent,
+                    componentObj: vRender.options.component,
+                    nodeData: vdom,
+                    props: vRender.options.component.props
+                });
+                // this.injectComponent.beforeUpdateComponent(vRender.options.component, UserComponent, props, vRDom);
                 typeof vRender.options.component.$willReceiveProps === "function" && vRender.options.component.$willReceiveProps(props, vRender.options.component.props);
             };
             vdom.tagAttrs = {
@@ -532,7 +578,13 @@ export class ElmerRender extends Common {
             if(vdom.status === "APPEND") {
                 const flag = (<any>UserComponent).flag;
                 const props = vdom.props;
-                this.injectComponent.beforeInitComponent(UserComponent, props, vdom);
+                this.renderMiddleware.beforeInit({
+                    Component: UserComponent,
+                    componentObj: null,
+                    nodeData: vdom,
+                    props
+                });
+                // this.injectComponent.beforeInitComponent(UserComponent, props, vdom);
                 const virtualId = "component_" + this.guid();
                 let component;
                 if(flag === CONST_CLASS_COMPONENT_FLAG) {
@@ -560,6 +612,7 @@ export class ElmerRender extends Common {
                 const vRender = new ElmerRender({
                     children: vdom.children,
                     component,
+                    componentFactory: UserComponent,
                     container,
                     event: this.eventObj,
                     nodePath: this.isEmpty(this.options.nodePath) ? virtualId : this.options.nodePath + "." + virtualId,
@@ -569,8 +622,15 @@ export class ElmerRender extends Common {
                     worker: this.options.worker
                 });
                 vdom.virtualID = virtualId;
-                this.injectComponent.initComponent(component, UserComponent, vdom);
+                // this.injectComponent.initComponent(component, UserComponent, vdom);
                 this.renderComponents[virtualId] = vRender;
+                this.renderMiddleware.init({
+                    Component: UserComponent,
+                    componentObj: component,
+                    nodeData: vdom,
+                    props
+                });
+                // ---- some thing is doing in init
                 vRender.render({
                     firstRender: true
                 }).then(() => {

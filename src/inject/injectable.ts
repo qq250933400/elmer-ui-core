@@ -12,7 +12,7 @@ export const defineReadonlyProperty = (target:any, propertyKey: string, property
     });
 };
 
-export function Injectable(className: string): any {
+export function injectable(className: string): any {
     if(className === undefined || className === null || className.length<=0) {
         throw new Error("Injectable注入对象必须设置类名。");
     }

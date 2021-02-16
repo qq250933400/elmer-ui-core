@@ -1,8 +1,8 @@
 import { StaticCommon as utils } from "elmer-common";
 import { IVirtualElement } from "elmer-virtual-dom";
-import { Injectable } from "../inject/injectable";
+import { injectable } from "../inject/injectable";
 
-@Injectable("ElmerRenderAttrs")
+@injectable("ElmerRenderAttrs")
 export class ElmerRenderAttrs {
     /**
      * 渲染dom属性值

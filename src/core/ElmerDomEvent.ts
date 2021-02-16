@@ -1,7 +1,7 @@
 import { Common } from "elmer-common";
-import { Injectable } from "../inject/injectable";
+import { injectable } from "../inject/injectable";
 
-@Injectable("ElmerDomEvent")
+@injectable("ElmerDomEvent")
 export class ElmerDomEvent extends Common implements EventListenerObject {
     eventDom: any;
     callBack:Function;

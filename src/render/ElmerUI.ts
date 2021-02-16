@@ -48,6 +48,7 @@ export class ElmerUI extends Common {
         const renderObj = new ElmerRender({
             children: [],
             component: entryComponent,
+            componentFactory: null,
             container: target,
             event: this.eventObj,
             nodePath: "rootNode",

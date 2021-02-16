@@ -4,10 +4,10 @@ import { IVirtualElement } from "elmer-virtual-dom";
 import { IComponent } from "../component/IComponent";
 import { IReduxConnect } from "../component/IDeclareComponent";
 import { defineGlobalState, getGlobalState } from "../init/globalUtil";
-import { autowired, Injectable } from "../inject/injectable";
+import { autowired, injectable } from "../inject/injectable";
 import { IPropCheckRule } from "../propsValidation";
 
-@Injectable("InjectComponent")
+@injectable("InjectComponent")
 export class InjectComponent extends Common {
 
     @autowired(ReduxController, "ReduxController")
@@ -30,7 +30,6 @@ export class InjectComponent extends Common {
         if(reduxParam && (reduxParam.mapStateToProps || reduxParam.mapDispatchToProps)) {
            this.reduxController.checkInitComponents(targetComponent, ComponentClass.prototype.selector, nodeData);
         }
-        this.checkPropTypes(targetComponent, ComponentClass); // 运行属性检查
     }
     /**
      * 当自定义component被销毁时执行此方法，一些插件需要依赖component的，需要在此做释放，否则导致挂载变量销毁不了
@@ -120,54 +119,5 @@ export class InjectComponent extends Common {
                 }
             });
         }
-    }
-    private checkPropTypes(targetComponent:IComponent, ComponentClass:any): void {
-        const propTypes = ComponentClass["propType"] || {};
-        const propKeys = Object.keys(propTypes) || [];
-        if(propKeys.length>0) {
-            this.checkPropTypesCallBack(targetComponent, propTypes);
-        }
-    }
-    private checkPropTypesCallBack(target: any,checkRules: any): void {
-        Object.keys(checkRules).map((tmpKey: any) => {
-            let checkRuleData:IPropCheckRule|Function  = checkRules[tmpKey];
-            if(this.isFunction(checkRuleData)) {
-                this.doCheckPropType(target, tmpKey, checkRuleData);
-            } else if(this.isObject(checkRuleData)) {
-                let checkData:IPropCheckRule = checkRuleData;
-                if(this.isFunction(checkData.rule)) {
-                    this.doCheckPropType(target, tmpKey, <Function>checkData.rule);
-                }
-                // 定义propertyKey 自动mapping值到组件定义属性上
-                if(!this.isEmpty(checkData.propertyKey)) {
-                    target[checkData.propertyKey] = target.props[tmpKey];
-                }
-                // 定义stateKey自动mapping值到state属性上
-                if(!this.isEmpty(checkData.stateKey)) {
-                    target.state[checkData.stateKey] = target.props[tmpKey];
-                }
-                checkData = null;
-            }
-            checkRuleData = null;
-        });
-    }
-    /**
-     * 做prop数据类型检查
-     * @param target any 检查component
-     * @param propertyKey prop属性关键词
-     * @param checkCallBack 数据类型检查规则
-     */
-    private doCheckPropType(target: any, propertyKey: string, checkCallBack: Function): void {
-        const propValue = target.props[propertyKey];
-        this.isFunction(checkCallBack) && checkCallBack(propValue, {
-            error: (msg: any, type:any) => {
-                const tagName = target.humpToStr(target["selector"]);
-                const sMsg = "组件【"+tagName+"】属性【"+propertyKey+"】设置错误：" + msg;
-                // tslint:disable-next-line:no-console
-                console.error(sMsg, type);
-            },
-            propertyName: propertyKey,
-            propertyValue: propValue
-        });
     }
 }

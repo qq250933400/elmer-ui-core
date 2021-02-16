@@ -1,9 +1,16 @@
 import { Common } from "elmer-common";
 import { createClassFactory } from "../inject/createClassFactory";
-import { Injectable } from "../inject/injectable";
+import { injectable } from "../inject/injectable";
+import { TypeRenderMiddlewareEvent } from "./ARenderMiddleware";
 
-@Injectable("InjectModel")
-export class InjectModel extends Common {
+@injectable("PluginInjectModel")
+export class PluginInjectModel extends Common {
+    init(options:TypeRenderMiddlewareEvent): void {
+        const injectModel = options.Component.prototype.injectModel;
+        const injectService = options.Component.prototype.injectService;
+        this.inject(options.componentObj, injectModel, "model");
+        this.inject(options.componentObj, injectService, "service", true);
+    }
     /**
      *
      * @param target 将模块注入到指定对象上
@@ -11,7 +18,7 @@ export class InjectModel extends Common {
      * @param propertyKey 绑定的属性名称，不设置使用model中的key
      * @param isAutowired 是否使用全局对象
      */
-    inject(target: any, models: object, propertyKey?: string, isAutowired?: boolean): void {
+    private inject(target: any, models: object, propertyKey?: string, isAutowired?: boolean): void {
         if(typeof propertyKey === "string" && propertyKey.length>0) {
             if(!target[propertyKey]) {
                 target[propertyKey] = {};
