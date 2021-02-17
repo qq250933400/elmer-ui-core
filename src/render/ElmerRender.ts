@@ -567,7 +567,7 @@ export class ElmerRender extends Common {
                     Component: UserComponent,
                     componentObj: vRender.options.component,
                     nodeData: vdom,
-                    props: vRender.options.component.props
+                    props
                 });
                 // this.injectComponent.beforeUpdateComponent(vRender.options.component, UserComponent, props, vRDom);
                 typeof vRender.options.component.$willReceiveProps === "function" && vRender.options.component.$willReceiveProps(props, vRender.options.component.props);

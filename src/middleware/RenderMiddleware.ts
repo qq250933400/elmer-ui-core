@@ -2,6 +2,7 @@ import { autoInit, injectable  } from "../inject";
 import { ARenderMiddleware, TypeRenderMiddlewareEvent } from "./ARenderMiddleware";
 import { PluginInjectModel } from "./PluginInjectModel";
 import { PluginPropsChecking } from "./PluginPropsChecking";
+import { PluginRedux } from "./PluginRedux";
 
 @injectable("RenderMiddleware")
 export class RenderMiddleware extends ARenderMiddleware {
@@ -11,6 +12,7 @@ export class RenderMiddleware extends ARenderMiddleware {
         super();
         this.PluginFactorys = [
             PluginPropsChecking,
+            PluginRedux,
             PluginInjectModel
         ];
         this.initPlugins();
