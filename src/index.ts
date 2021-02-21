@@ -9,7 +9,7 @@ import { defineReduxProvider as defineReduxProviderFn, createReducer,defineState
 import { injectable, autowired } from "./inject/injectable";
 import { propTypes } from "./propsValidation";
 import { setServiceEnv } from "./configuration/GlobalConfig";
-import { ElmerServiceRequest } from "./core/ElmerServiceRequest";
+import { ElmerServiceRequest } from "./domEvent/ElmerServiceRequest";
 
 export const defineReduxProvider = defineReduxProviderFn;
 // export const redux = {
@@ -20,10 +20,10 @@ export const defineReduxProvider = defineReduxProviderFn;
 //     defineStateOperateAction
 // };
 export * from "./init/globalUtil";
-export * from "./core/ElmerDom";
+export * from "./domEvent/ElmerDom";
 export * from "./inject";
 export * from "./propsValidation";
-export * from "./core/ElmerServiceRequest";
+export * from "./domEvent/ElmerServiceRequest";
 export * from "./configuration";
 export * from "./animation/ElmerAnimation";
 export * from "./configuration";

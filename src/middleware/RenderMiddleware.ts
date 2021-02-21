@@ -17,26 +17,29 @@ export class RenderMiddleware extends ARenderMiddleware {
         ];
         this.initPlugins();
     }
-    beforeInit?(options: TypeRenderMiddlewareEvent): void {
+    beforeInit(options: TypeRenderMiddlewareEvent): void {
         this.callPluginMethod("beforeInit", options);
     }
-    init?(options: TypeRenderMiddlewareEvent): void {
+    init(options: TypeRenderMiddlewareEvent): void {
         this.callPluginMethod("init", options);
     }
     didMount(options: TypeRenderMiddlewareEvent): void {
         this.callPluginMethod("didMount", options);
     }
-    beforeRender?(options: TypeRenderMiddlewareEvent): void {
+    beforeRender(options: TypeRenderMiddlewareEvent): void {
         this.callPluginMethod("beforeRender", options);
     }
-    afterRender?(options: TypeRenderMiddlewareEvent): void {
+    afterRender(options: TypeRenderMiddlewareEvent): void {
         this.callPluginMethod("afterRender", options);
     }
-    beforeUpdate?(options: TypeRenderMiddlewareEvent): void {
+    beforeUpdate(options: TypeRenderMiddlewareEvent): void {
         this.callPluginMethod("beforeUpdate", options);
     }
-    destroy?(options: TypeRenderMiddlewareEvent): void {
+    destroy(options: TypeRenderMiddlewareEvent): void {
         this.callPluginMethod("destroy", options);
+    }
+    renderDidMount(): void {
+        this.callPluginMethod("renderDidMount", null);
     }
     private initPlugins(): void {
         this.PluginFactorys.map((Plugin) => {

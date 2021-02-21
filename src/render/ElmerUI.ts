@@ -1,13 +1,14 @@
-import "../polyfill";
 // tslint:disable-next-line: ordered-imports
 import { Common } from "elmer-common";
 import { HtmlParse } from "elmer-virtual-dom";
 import { ElmerWorker } from "elmer-worker";
 import { Component } from "../component/Component";
-import { ElmerDOM } from "../core/ElmerDom";
+import { ElmerDOM } from "../domEvent/ElmerDom";
 import { ElmerEvent } from "../events/ElmerEvent";
 import EventInWorker from "../events/EventInWorker";
 import { autowired } from "../inject/injectable";
+import { RenderMiddleware } from "../middleware/RenderMiddleware";
+import "../polyfill";
 import { ElmerRender, TypeUIRenderOptions } from "./ElmerRender";
 
 export class ElmerUI extends Common {
@@ -19,6 +20,9 @@ export class ElmerUI extends Common {
         htmlParse: new HtmlParse()
     })
     private worker: ElmerWorker;
+    @autowired(RenderMiddleware)
+    private middleware: RenderMiddleware;
+
     // 虚拟事件处理模块，只在最顶层做事件监听，减少对dom的操作
     private eventObj: ElmerEvent;
 
@@ -58,6 +62,8 @@ export class ElmerUI extends Common {
         });
         renderObj.render({
             firstRender: true
+        }).then(() => {
+            this.middleware.renderDidMount();
         }).catch((err) => {
             typeof entryComponent["$error"] === "function" && entryComponent["$error"](err);
         });

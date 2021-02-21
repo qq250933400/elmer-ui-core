@@ -43,4 +43,5 @@ export abstract class ARenderMiddleware {
      * @param options - 更新参数
      */
     abstract destroy?(options: TypeRenderMiddlewareEvent): void;
+    abstract renderDidMount?(): void;
 }

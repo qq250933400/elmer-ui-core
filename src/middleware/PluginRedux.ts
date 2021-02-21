@@ -16,6 +16,11 @@ export class PluginRedux extends RenderMiddlewarePlugin {
         this.reduxController.checkInitStateData(getGlobalState, defineGlobalState);
         this.reduxController.setNotifyCallback(["$onPropsChanged", "$willReceiveProps"]);
     }
+    /**
+     * 初始化Component结束事件，再次将被实例化对象挂载到redux
+     * 并获取初始化状态数据
+     * @param options - 生命周期函数事件参数
+     */
     init(options: TypeRenderMiddlewareEvent): void {
         // 创建component执行一次
         const reduxParam = options.Component.prototype.connect;
@@ -37,6 +42,10 @@ export class PluginRedux extends RenderMiddlewarePlugin {
         utils.isObject(dispatchValue) && utils.extend(options.props, dispatchValue, true);
         this.setDefaultValue(options.props, (options.Component as any).propType);
     }
+    /**
+     * 在创建Component前检查是否有做connect动作，将reducer回调挂入redux监听列表
+     * @param options - 执行事件参数
+     */
     beforeInit?(options: TypeRenderMiddlewareEvent): void {
         const reduxParam:IReduxConnect = options.Component.prototype.connect;
         if(reduxParam) {
@@ -61,7 +70,10 @@ export class PluginRedux extends RenderMiddlewarePlugin {
                 }
                 // 在初始化Component的时候在做connect操作，防止没有使用的组件但是定义了connect,在declareComponent的时候增加不必要的redux watch
                 this.reduxController.connect(options.Component.prototype.selector, reduxParam.mapStateToProps, reduxParam.mapDispatchToProps);
-
+                // 执行init_state, 当前动作会触发所有的reducer,后续应限制执行的reducers
+                this.reduxController.dispatch({
+                    type: "__INIT_STATE__"
+                });
                 const stateValue = this.reduxController.getStateByConnectSelector(options.Component.prototype.selector);
                 const dispatchValue= this.reduxController.getDispatchByConnectSelector(options.Component.prototype.selector);
                 stateValue && utils.extend(options.props, stateValue, true);

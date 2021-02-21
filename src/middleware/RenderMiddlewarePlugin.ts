@@ -8,5 +8,9 @@ export class RenderMiddlewarePlugin extends ARenderMiddleware {
     beforeUpdate?(options: TypeRenderMiddlewareEvent): void {}
     destroy?(options: TypeRenderMiddlewareEvent): void {}
     didMount?(options: TypeRenderMiddlewareEvent): void {}
+    /**
+     * 整个dom树第一次渲染结束事件
+     */
+    renderDidMount?(): void;
 }
 // tslint:enable: no-empty
