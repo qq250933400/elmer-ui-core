@@ -26,9 +26,12 @@ export class ElmerUI extends Common {
     // 虚拟事件处理模块，只在最顶层做事件监听，减少对dom的操作
     private eventObj: ElmerEvent;
 
+    private missionId: string;
+
     constructor() {
         super();
         this.eventObj = new ElmerEvent(this.worker);
+        this.missionId = "__RenderMission__" + this.guid();
     }
 
     onReady(fn:Function): void {
@@ -55,10 +58,11 @@ export class ElmerUI extends Common {
             componentFactory: null,
             container: target,
             event: this.eventObj,
+            missionId: this.missionId,
             nodePath: "rootNode",
             path: [0],
             renderOptions: options,
-            worker: this.worker,
+            worker: this.worker
         });
         renderObj.render({
             firstRender: true

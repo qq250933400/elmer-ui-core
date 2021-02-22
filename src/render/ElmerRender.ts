@@ -4,7 +4,7 @@ import { ElmerWorker } from "elmer-worker";
 import { Component, CONST_CLASS_COMPONENT_FLAG } from "../component/Component";
 import { ElmerEvent } from "../events/ElmerEvent";
 import { IElmerEvent } from "../events/IElmerEvent";
-import { HOOKS_USE_EFFECT_SSID, HOOKS_USE_STATE_SSID } from "../hooks";
+import { wikiState } from "../hooks/hookUtils";
 import { globalVar } from "../init/globalUtil";
 import { autowired } from "../inject";
 // import { InjectComponent } from "../middleware/InjectComponent";
@@ -26,6 +26,7 @@ type TypeElmerRenderOptions = {
     userComponents?: Component[];
     event: ElmerEvent;
     worker: ElmerWorker;
+    missionId: string;
     nodePath: string;
     path: number[];
     prevDom?: HTMLElement;
@@ -586,11 +587,17 @@ export class ElmerRender extends Common {
                 });
                 // this.injectComponent.beforeInitComponent(UserComponent, props, vdom);
                 const virtualId = "component_" + this.guid();
+                const missionId = this.options.missionId;
                 let component;
                 if(flag === CONST_CLASS_COMPONENT_FLAG) {
                     // 类组件
                     component = new UserComponent(props);
                 } else {
+                    const hookStore = {
+                        useCallback: {},
+                        useEffect: {},
+                        useState: {}
+                    };
                     // 高阶组件，即是一个函数的静态组件
                     component = {
                         props,
@@ -598,14 +605,15 @@ export class ElmerRender extends Common {
                         __factory: UserComponent,
                         // tslint:disable-next-line: object-literal-shorthand
                         render: function():any {
-                            if(this.useState) {
-                                this.useState.index = 0;
-                            }
-                            return this["__factory"](this.props, {
-                                instance: this,
-                                useEffectSSID: HOOKS_USE_EFFECT_SSID,
-                                useStateSSID: HOOKS_USE_STATE_SSID
-                            });
+                            wikiState[missionId] = {
+                                _this: this,
+                                hookStore,
+                                useCallbackIndex: 0,
+                                useEffectIndex: 0,
+                                useStateIndex: 0
+                            };
+                            wikiState["missionId"] = missionId;
+                            return this["__factory"].call(this, this.props);
                         }
                     };
                 }
@@ -615,6 +623,7 @@ export class ElmerRender extends Common {
                     componentFactory: UserComponent,
                     container,
                     event: this.eventObj,
+                    missionId: this.options.missionId,
                     nodePath: this.isEmpty(this.options.nodePath) ? virtualId : this.options.nodePath + "." + virtualId,
                     path: vdom.path,
                     prevDom: this.getPrevDomByVirtualNode(prevDom) as HTMLElement,
@@ -709,6 +718,7 @@ export class ElmerRender extends Common {
                 if(!this.isEmpty(vdom.props.id)) {
                     delete this.options.component.dom[vdom.props.id];
                 }
+                console.log('remove component', vdom.tagName);
                 resolve({});
             } else {
                 if(this.checkVirtualNodeChange(vdom)) {

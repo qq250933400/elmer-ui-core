@@ -55,5 +55,13 @@ export class RenderMiddleware extends ARenderMiddleware {
                 console.error(err);
             }
         });
+        if(["init", "inject", "didMount", "didUpdate", "willReceiveProps", "destroy", "didUnMount"].indexOf(methodName) >= 0) {
+            if(typeof options?.componentObj["$useEffect"] === "function"){
+                const destoryFn = options?.componentObj["$useEffect"](methodName, options);
+                if(methodName === "destroy") {
+                    typeof destoryFn === "function" && destoryFn();
+                }
+            }
+        }
     }
 }

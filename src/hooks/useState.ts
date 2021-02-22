@@ -1,52 +1,51 @@
-import { StaticCommon as utils } from "elmer-common";
+import { getWikiState, setWikiState, TypeHookStore } from "./hookUtils";
 
-export const HOOKS_USE_STATE_SSID = "USE-EFFECT-d5603e60-632c-a1ac-06c1-dc45569f";
+type TypeUseStateResult = [any, (state:any) => void, Function];
 
-export const useState = (StaticComponentOptions:any, defaultState?: any) => {
-    const instance = StaticComponentOptions.instance;
-    let useStateHook = {
-        hooks: [],
-        index: 0
-    };
-    let setStateCallback;
-    if(!StaticComponentOptions || StaticComponentOptions.useStateSSID !== HOOKS_USE_STATE_SSID) {
-        throw new Error("useState只能在函数组件使用并且需要传递函数组件第二个参数");
+export const useState = (stateKey: string, initState?: any):TypeUseStateResult => {
+    const componentObj = <any>getWikiState("_this");
+    const hookStore = <TypeHookStore>getWikiState("hookStore");
+    const useStateIndex = <any>getWikiState("useStateIndex");
+    if(!hookStore) {
+        throw new Error("[useState] Something went wrong!!!");
     }
-    if(!instance.useState) {
-        Object.defineProperty(instance, "useState", {
-            configurable: false,
-            enumerable: false,
-            value: useStateHook,
-            writable: false
-        });
-    } else {
-        useStateHook = instance.useState;
-    }
-    const currentStateIndex = useStateHook.index;
-    const stateKey = "hook_" + currentStateIndex;
-    let currentState = useStateHook.hooks[currentStateIndex];
-    if(currentState) {
-        setStateCallback = currentState.setState;
-    } else {
-        currentState = ((obj, dValue) => {
-            const stateData = obj.state || {};
-            stateData[stateKey] = dValue;
-            obj.state = stateData;
-            return {
-                getState: ():any => {
-                    return utils.getValue(obj.state, stateKey);
-                },
-                setState: (state:any) => {
+    if(!hookStore.useState[useStateIndex]) {
+        const updateStateHook:any = ((obj:any, store: TypeHookStore, stateIndex: any, stateName: string): Function => {
+            return (newState:any) => {
+                const useStateObj = store.useState[stateIndex];
+                if(JSON.stringify(useStateObj.state) !== JSON.stringify(newState)) {
                     const updateState = {};
-                    updateState[stateKey] = state;
-                    utils.setValue(obj.state, stateKey, state);
-                    return obj.setState(updateState, true);
+                    updateState[stateName] = newState;
+                    store.useState[stateIndex].state = newState;
+                    obj.setState(updateState);
                 }
             };
-        })(instance, defaultState);
-        setStateCallback = currentState.setState;
-        useStateHook.hooks.push(currentState);
+        })(componentObj, hookStore, useStateIndex, stateKey);
+        const getState = ((store, index) => {
+            return () => {
+                const useStateObj = store.useState[index];
+                return useStateObj.state;
+            };
+        })(hookStore, useStateIndex);
+        hookStore.useState[useStateIndex] = {
+            state: initState,
+            stateKey,
+            // tslint:disable-next-line: object-literal-sort-keys
+            callback: updateStateHook,
+            getState
+        };
+        if(!componentObj.state) {
+            componentObj.state = {};
+        }
+        componentObj.state[stateKey] = initState;
+        setWikiState("useStateIndex", useStateIndex + 1);
+        return [initState, updateStateHook, getState];
+    } else {
+        setWikiState("useStateIndex", useStateIndex + 1);
+        return [
+            hookStore.useState[useStateIndex].state,
+            hookStore.useState[useStateIndex].callback,
+            hookStore.useState[useStateIndex].getState
+        ];
     }
-    useStateHook.index += 1;
-    return ["state." + stateKey, setStateCallback, currentState.getState];
 };
