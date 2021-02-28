@@ -3,7 +3,9 @@ import { StaticCommon as utils } from "elmer-common";
 export type TypeHookStore = {
     useState: any;
     useCallback: any;
+    useComponent: any;
     useEffect: any;
+    getNode: any;
 };
 
 export const wikiState: any = {};

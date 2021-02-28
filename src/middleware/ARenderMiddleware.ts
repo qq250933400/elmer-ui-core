@@ -39,6 +39,16 @@ export abstract class ARenderMiddleware {
      */
     abstract beforeUpdate?(options: TypeRenderMiddlewareEvent): void;
     /**
+     * 更新结束后执行回调
+     * @param options - 更新参数
+     */
+    abstract afterUpdate?(options: TypeRenderMiddlewareEvent): void;
+    /**
+     * 接收到数据变化
+     * @param options - 更新参数
+     */
+    abstract willReceiveProps?(options: TypeRenderMiddlewareEvent): void;
+    /**
      * 销毁组件
      * @param options - 更新参数
      */

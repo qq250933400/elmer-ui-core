@@ -114,7 +114,16 @@ export class ElmerRender extends Common {
         if(this.newDom && this.newDom.children) {
             for(let i=this.newDom.children.length - 1;i>=0;i--) {
                 if(this.newDom.children[i].status !== "DELETE") {
-                    return this.newDom.children[i].dom as any;
+                    const lVdom = this.newDom.children[i];
+                    if(!this.isEmpty(lVdom.virtualID)) {
+                        if(this.renderComponents[lVdom.virtualID]) {
+                            return (this.renderComponents[lVdom.virtualID] as ElmerRender).getLastDom();
+                        } else {
+                            return (this.renderComponents[lVdom.virtualID].dom) as any;
+                        }
+                    } else {
+                        return this.newDom.children[i].dom as any;
+                    }
                 }
             }
         }
@@ -126,7 +135,16 @@ export class ElmerRender extends Common {
         if(this.newDom && this.newDom.children) {
             for(let i=0;i<this.newDom.children.length;i--) {
                 if(this.newDom.children[i].status !== "DELETE") {
-                    return this.newDom.children[i].dom as any;
+                    const lVdom = this.newDom.children[i];
+                    if(!this.isEmpty(lVdom.virtualID)) {
+                        if(this.renderComponents[lVdom.virtualID]) {
+                            return (this.renderComponents[lVdom.virtualID] as ElmerRender).getFirstDom();
+                        } else {
+                            return (this.renderComponents[lVdom.virtualID].dom) as any;
+                        }
+                    } else {
+                        return this.newDom.children[i].dom as any;
+                    }
                 }
             }
         }
@@ -480,45 +498,52 @@ export class ElmerRender extends Common {
                                 this.options.component.dom[vdom.props.id] = vdom.dom;
                             }
                             this.subscribeEventAction(vdom);
-                            if(vdom.children && vdom.children.length > 0) {
-                                // 当status为delete时删除父节点并移除事件监听就行，不需要在对子节点循环删除
-                                const renderParams: TypeQueueCallParam[] = [];
-                                vdom.children.map((childDom:IVirtualElement, index:number) => {
-                                    renderParams.push({
-                                        id: "virtualRender_" + index,
-                                        params: {
-                                            parent: vdom.dom,
-                                            vdom: childDom,
-                                            vdomParent: vdom
-                                        }
-                                    });
+                            if(vdom.dataSet && vdom.dataSet.type === "html") {
+                                (vdom.dom as HTMLElement).innerHTML = vdom.innerHTML;
+                                resolve({
+                                    prevDom: vdom.dom
                                 });
-                                queueCallFunc(renderParams, ({}, params):any => {
-                                    return this.renderVirtualDom({
-                                        container: params.parent,
-                                        hasPathUpdate: hasPathChange,
-                                        vdom: params.vdom,
-                                        vdomParent: params.vdomParent as any
+                            } else {
+                                if(vdom.children && vdom.children.length > 0) {
+                                    // 当status为delete时删除父节点并移除事件监听就行，不需要在对子节点循环删除
+                                    const renderParams: TypeQueueCallParam[] = [];
+                                    vdom.children.map((childDom:IVirtualElement, index:number) => {
+                                        renderParams.push({
+                                            id: "virtualRender_" + index,
+                                            params: {
+                                                parent: vdom.dom,
+                                                vdom: childDom,
+                                                vdomParent: vdom
+                                            }
+                                        });
                                     });
-                                }, {
-                                    throwException: true
-                                }).then(() => {
+                                    queueCallFunc(renderParams, ({}, params):any => {
+                                        return this.renderVirtualDom({
+                                            container: params.parent,
+                                            hasPathUpdate: hasPathChange,
+                                            vdom: params.vdom,
+                                            vdomParent: params.vdomParent as any
+                                        });
+                                    }, {
+                                        throwException: true
+                                    }).then(() => {
+                                        resolve({
+                                            hasPathUpdate: hasPathChange,
+                                            prevDom: vdom.dom
+                                        });
+                                    }).catch((err) => {
+                                        reject({
+                                            message: err.message,
+                                            stack: this.isObject(err.exception) ? err.exception.stack : err.stack,
+                                            statusCode: err.statusCode
+                                        });
+                                    });
+                                } else {
                                     resolve({
                                         hasPathUpdate: hasPathChange,
                                         prevDom: vdom.dom
                                     });
-                                }).catch((err) => {
-                                    reject({
-                                        message: err.message,
-                                        stack: this.isObject(err.exception) ? err.exception.stack : err.stack,
-                                        statusCode: err.statusCode
-                                    });
-                                });
-                            } else {
-                                resolve({
-                                    hasPathUpdate: hasPathChange,
-                                    prevDom: vdom.dom
-                                });
+                                }
                             }
                         } else {
                             // 节点不是删除状态时，children是空， 当前循环到此结束
@@ -559,12 +584,13 @@ export class ElmerRender extends Common {
             vdomParent: IVirtualElement = options.vdomParent;
         return new Promise<any>((resolve, reject) => {
             const prevDom = this.getPrevDom(vdom, vdomParent);
+            const middlewareObj = this.renderMiddleware;
             const doUpdateAction = (vRender:ElmerRender, vRDom: IVirtualElement, doUpdatePrevDom:HTMLElement) => {
                 const props = {};
                 vRender.options.prevDom = doUpdatePrevDom;
                 this.extend(props, vRender.options.component.props, true);
                 this.extend(props, vRDom.changeAttrs, true);
-                this.renderMiddleware.beforeUpdate({
+                middlewareObj.beforeUpdate({
                     Component: UserComponent,
                     componentObj: vRender.options.component,
                     nodeData: vdom,
@@ -579,7 +605,7 @@ export class ElmerRender extends Common {
             if(vdom.status === "APPEND") {
                 const flag = (<any>UserComponent).flag;
                 const props = vdom.props;
-                this.renderMiddleware.beforeInit({
+                middlewareObj.beforeInit({
                     Component: UserComponent,
                     componentObj: null,
                     nodeData: vdom,
@@ -594,26 +620,43 @@ export class ElmerRender extends Common {
                     component = new UserComponent(props);
                 } else {
                     const hookStore = {
+                        getNode: {},
                         useCallback: {},
+                        useComponent: {},
                         useEffect: {},
                         useState: {}
                     };
                     // 高阶组件，即是一个函数的静态组件
                     component = {
+                        dom: {},
                         props,
+                        selector: vdom.tagName,
                         // tslint:disable-next-line: object-literal-sort-keys
                         __factory: UserComponent,
                         // tslint:disable-next-line: object-literal-shorthand
                         render: function():any {
                             wikiState[missionId] = {
+                                _component: UserComponent,
+                                _renderObj: vRender,
                                 _this: this,
+                                getNodeIndex: 0,
                                 hookStore,
                                 useCallbackIndex: 0,
+                                useComponentIndex: 0,
                                 useEffectIndex: 0,
                                 useStateIndex: 0
                             };
                             wikiState["missionId"] = missionId;
-                            return this["__factory"].call(this, this.props);
+                            return this["__factory"].call(this, vdom.props);
+                        },
+                        $willReceiveProps(newProps: any): void {
+                            (this as any).props = newProps;
+                            middlewareObj.willReceiveProps({
+                                Component: UserComponent,
+                                componentObj: this,
+                                nodeData: vdom,
+                                props: newProps
+                            });
                         }
                     };
                 }
@@ -633,12 +676,15 @@ export class ElmerRender extends Common {
                 vdom.virtualID = virtualId;
                 // this.injectComponent.initComponent(component, UserComponent, vdom);
                 this.renderComponents[virtualId] = vRender;
-                this.renderMiddleware.init({
+                middlewareObj.init({
                     Component: UserComponent,
                     componentObj: component,
                     nodeData: vdom,
                     props
                 });
+                if(!this.isEmpty(props.id)) {
+                    this.options.component.dom[props.id] = component;
+                }
                 // ---- some thing is doing in init
                 vRender.render({
                     firstRender: true
@@ -718,7 +764,6 @@ export class ElmerRender extends Common {
                 if(!this.isEmpty(vdom.props.id)) {
                     delete this.options.component.dom[vdom.props.id];
                 }
-                console.log('remove component', vdom.tagName);
                 resolve({});
             } else {
                 if(this.checkVirtualNodeChange(vdom)) {

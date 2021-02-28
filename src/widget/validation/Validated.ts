@@ -1,7 +1,7 @@
 import { UseValidation, ValidateErrorOptions, ValidationComponent } from "elmer-validation";
 import { Component } from "../../component/Component";
 import { declareComponent } from "../../component/declareComponent";
-import { IPropCheckRule, propTypes } from "../../index";
+import { IPropCheckRule, propTypes } from "../../propsValidation";
 
 @UseValidation({
     sectionId: "AutoValidation"

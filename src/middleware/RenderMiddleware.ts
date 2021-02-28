@@ -35,11 +35,17 @@ export class RenderMiddleware extends ARenderMiddleware {
     beforeUpdate(options: TypeRenderMiddlewareEvent): void {
         this.callPluginMethod("beforeUpdate", options);
     }
+    afterUpdate(options: TypeRenderMiddlewareEvent): void {
+        this.callPluginMethod("afterUpdate", options);
+    }
     destroy(options: TypeRenderMiddlewareEvent): void {
         this.callPluginMethod("destroy", options);
     }
     renderDidMount(): void {
         this.callPluginMethod("renderDidMount", null);
+    }
+    willReceiveProps?(options: TypeRenderMiddlewareEvent): void {
+        this.callPluginMethod("willReceiveProps", options);
     }
     private initPlugins(): void {
         this.PluginFactorys.map((Plugin) => {
@@ -55,9 +61,12 @@ export class RenderMiddleware extends ARenderMiddleware {
                 console.error(err);
             }
         });
-        if(["init", "inject", "didMount", "didUpdate", "willReceiveProps", "destroy", "didUnMount"].indexOf(methodName) >= 0) {
-            if(typeof options?.componentObj["$useEffect"] === "function"){
-                const destoryFn = options?.componentObj["$useEffect"](methodName, options);
+        if(["init", "inject", "didMount", "didUpdate", "willReceiveProps", "destroy"].indexOf(methodName) >= 0) {
+            if(typeof options?.componentObj["$useEffect"] === "function") {
+                const destoryFn = options?.componentObj["$useEffect"](methodName, {
+                    props: options?.props,
+                    state: options?.componentObj?.state
+                });
                 if(methodName === "destroy") {
                     typeof destoryFn === "function" && destoryFn();
                 }

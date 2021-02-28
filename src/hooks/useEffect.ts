@@ -1,6 +1,13 @@
+import { RenderMiddleware } from "../middleware/RenderMiddleware";
 import { getWikiState, setWikiState, TypeHookStore } from "./hookUtils";
 
-export const useEffect = (callback: Function): void => {
+type TypeUseEffectOptions<P,S> = {
+    props: P;
+    state: S
+};
+type TypeUseEffectFn<P, S> = (eventName: keyof RenderMiddleware, options: TypeUseEffectOptions<P,S>) => Function|undefined|null;
+
+export const useEffect = <P={},S={}>(callback: TypeUseEffectFn<P,S>): void => {
     const componentObj = <any>getWikiState("_this");
     const hookStore = <TypeHookStore>getWikiState("hookStore");
     const hookIndex = <any>getWikiState("useEffectIndex");

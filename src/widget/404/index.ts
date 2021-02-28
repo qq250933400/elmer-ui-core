@@ -1,5 +1,5 @@
-import { declareComponent } from "../../component/declareComponent";
 import { Component } from "../../component/Component";
+import { declareComponent } from "../../component/declareComponent";
 import { propTypes } from "../../propsValidation";
 import "./styles/index.less";
 
