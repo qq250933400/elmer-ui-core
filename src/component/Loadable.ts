@@ -95,7 +95,7 @@ export const Loadable = (options: TypeLoadableOptions) => {
                 }
             }
         });
-        return `<div>
+        return `<div class="{{state.className}}">
             <AsyncComponent if="{{state.loaded eq true && state.loadStatus.showError eq false}}" id="{{state.asyncAppId}}" status="{{state.loaded}}"/>
             <Loading if="{{state.loaded eq false}}"/>
             <ErrorInfo if="{{state.loadStatus.showError}}" message="{{state.loadStatus.message}}" statusCode="{{state.loadStatus.statusCode}}"/>

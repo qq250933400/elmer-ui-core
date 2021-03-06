@@ -13,10 +13,7 @@ import { ElmerServiceRequest } from "./domEvent/ElmerServiceRequest";
 export * from "./init/globalUtil";
 export * from "./domEvent/ElmerDom";
 export * from "./inject";
-export * from "./domEvent/ElmerServiceRequest";
-export * from "./configuration";
 export * from "./animation/ElmerAnimation";
-export * from "./configuration";
 // ---------import widget 注册所有组件 ----------
 // tslint:enable:ordered-imports
 elmerData.extends = __extends;

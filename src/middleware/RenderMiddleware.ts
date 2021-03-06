@@ -23,6 +23,11 @@ export class RenderMiddleware extends ARenderMiddleware {
     init(options: TypeRenderMiddlewareEvent): void {
         this.callPluginMethod("init", options);
     }
+    inject(options: TypeRenderMiddlewareEvent): void {
+        // this.callPluginMethod("inject", options);
+        // typeof options?.componentObj?.$inject === "function" && options?.componentObj?.$inject();
+        console.log(options?.componentObj, options?.componentObj?.$inject);
+    }
     didMount(options: TypeRenderMiddlewareEvent): void {
         this.callPluginMethod("didMount", options);
     }
@@ -48,14 +53,27 @@ export class RenderMiddleware extends ARenderMiddleware {
         this.callPluginMethod("willReceiveProps", options);
     }
     private initPlugins(): void {
-        this.PluginFactorys.map((Plugin) => {
-            this.plugins.push(autoInit(Plugin as any));
+        this.PluginFactorys.map((Plugin, index) => {
+            this.plugins.push(autoInit(Plugin as any, {
+                argv: [
+                    {
+                        raiseEvent: ((key: any) => {
+                            return (name: keyof ARenderMiddleware, options: TypeRenderMiddlewareEvent) => {
+                                this.callPluginMethod(name, options, [key]);
+                            };
+                        })(index)
+                    }
+                ],
+                mode: "None"
+            }));
         });
     }
-    private callPluginMethod(methodName: keyof ARenderMiddleware, options: TypeRenderMiddlewareEvent): void {
-        this.plugins.map((plugin) => {
+    private callPluginMethod(methodName: keyof ARenderMiddleware, options: TypeRenderMiddlewareEvent, ignorePlugin?: any[]): void {
+        this.plugins.map((plugin, index) => {
             try {
-                typeof plugin[methodName] === "function" && plugin[methodName](options);
+                if(!ignorePlugin || (ignorePlugin.indexOf(index)<0)) {
+                    typeof plugin[methodName] === "function" && plugin[methodName](options);
+                }
             } catch(err) {
                 // tslint:disable-next-line: no-console
                 console.error(err);

@@ -19,6 +19,11 @@ export abstract class ARenderMiddleware {
      */
     abstract init?(options: TypeRenderMiddlewareEvent):void;
     /**
+     * 组件使用其他插件或则模块初始化结束后的事件
+     * @param options - 参数
+     */
+    abstract inject?(options: TypeRenderMiddlewareEvent): void;
+    /**
      * 第一次渲染结束
      * @param options - 更新参数
      */

@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import { addToClassPool } from "../init/globalUtil";
+import { addToClassPool, globalVar } from "../init/globalUtil";
 import { createClassFactory } from "./createClassFactory";
 // tslint:disable:variable-name
 
@@ -19,6 +19,7 @@ export function injectable(className: string): any {
      // tslint:disable-next-line:variable-name
     return (_constructor:Function) => {
         const paramTypes: Function[] = Reflect.getMetadata("design:paramtypes",_constructor);
+        const elmerData = globalVar();
         // 已注册
         // tslint:disable-next-line:curly
         addToClassPool(className, _constructor, () => {
@@ -28,7 +29,8 @@ export function injectable(className: string): any {
                     if (val === _constructor) {
                         throw new Error("不能依赖自己");
                     } else if (elmerData.classPool.indexOf(val) === -1) {
-                        throw new Error(`类【${className}】construct参数${val}没有被注册`);
+                        // throw new Error(`类【${className}】construct参数${val}没有被注册`);
+                        console.log(val);
                     }
                 }
             }

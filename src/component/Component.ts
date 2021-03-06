@@ -1,9 +1,9 @@
 import { Common } from "elmer-common";
 import { IVirtualElement } from "elmer-virtual-dom";
 import { IElmerEvent } from "../events/IElmerEvent";
-import { IDeclareI18n, IReduxConnect } from "./IDeclareComponent";
 import { IPropCheckRule } from "../propsValidation";
 import { IComponent } from "./IComponent";
+import { IDeclareI18n, IReduxConnect } from "./IDeclareComponent";
 
 export const CONST_CLASS_COMPONENT_FLAG = "COMPONENT_113df7d2-555c-53a1-30fb-58627fd7";
 

@@ -69,7 +69,7 @@
         "prefer-for-of": false,
         "promise-function-async": false,
         "typedef": [
-            true,
+            false,
             "call-signature",
             "parameter",
             "member-variable-declaration"

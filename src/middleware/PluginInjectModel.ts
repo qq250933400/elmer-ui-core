@@ -1,15 +1,17 @@
-import { Common } from "elmer-common";
+import { StaticCommon as utils } from "elmer-common";
 import { createClassFactory } from "../inject/createClassFactory";
 import { injectable } from "../inject/injectable";
 import { TypeRenderMiddlewareEvent } from "./ARenderMiddleware";
+import { RenderMiddlewarePlugin } from "./RenderMiddlewarePlugin";
 
 @injectable("PluginInjectModel")
-export class PluginInjectModel extends Common {
+export class PluginInjectModel extends RenderMiddlewarePlugin {
     init(options:TypeRenderMiddlewareEvent): void {
         const injectModel = options.Component.prototype.injectModel;
         const injectService = options.Component.prototype.injectService;
-        this.inject(options.componentObj, injectModel, "model");
-        this.inject(options.componentObj, injectService, "service", true);
+        this.doInject(options.componentObj, injectModel, "model");
+        this.doInject(options.componentObj, injectService, "service", true);
+        (injectModel || injectService) && typeof options?.componentObj.$inject === "function" && options.componentObj.$inject();
     }
     /**
      *
@@ -18,7 +20,7 @@ export class PluginInjectModel extends Common {
      * @param propertyKey 绑定的属性名称，不设置使用model中的key
      * @param isAutowired 是否使用全局对象
      */
-    private inject(target: any, models: object, propertyKey?: string, isAutowired?: boolean): void {
+    private doInject(target: any, models: object, propertyKey?: string, isAutowired?: boolean): void {
         if(typeof propertyKey === "string" && propertyKey.length>0) {
             if(!target[propertyKey]) {
                 target[propertyKey] = {};
@@ -26,11 +28,11 @@ export class PluginInjectModel extends Common {
         }
         if(target && models && Object.keys(models).length>0) {
             Object.keys(models).map((tmpKey) => {
-                if(!this.isEmpty(tmpKey)) {
+                if(!utils.isEmpty(tmpKey)) {
                     const tmpFactory: Function = <Function>models[tmpKey];
                     if(typeof tmpFactory === "function") {
                         const tmpObj = !isAutowired ? (new (<any>tmpFactory)(target)) : createClassFactory(<any>tmpFactory);
-                        if(!this.isEmpty(propertyKey)) {
+                        if(!utils.isEmpty(propertyKey)) {
                             target[propertyKey][tmpKey] = tmpObj;
                         } else {
                             target[tmpKey] = tmpObj;
