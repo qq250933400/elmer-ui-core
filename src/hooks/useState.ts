@@ -2,7 +2,7 @@ import { getWikiState, setWikiState, TypeHookStore } from "./hookUtils";
 
 type TypeUseStateResult = [any, (state:any) => void, Function];
 
-export const useState = (stateKey: string, initState?: any):TypeUseStateResult => {
+export const useState = (stateKey: string, defaultState?: any):TypeUseStateResult => {
     const componentObj = <any>getWikiState("_this");
     const hookStore = <TypeHookStore>getWikiState("hookStore");
     const useStateIndex = <any>getWikiState("useStateIndex");
@@ -10,6 +10,7 @@ export const useState = (stateKey: string, initState?: any):TypeUseStateResult =
         throw new Error("[useState] Something went wrong!!!");
     }
     if(!hookStore.useState[useStateIndex]) {
+        const initState = typeof defaultState === "function" ? defaultState() : defaultState;
         const updateStateHook:any = ((obj:any, store: TypeHookStore, stateIndex: any, stateName: string): Function => {
             return (newState:any) => {
                 const useStateObj = store.useState[stateIndex];

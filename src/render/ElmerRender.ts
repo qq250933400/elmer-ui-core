@@ -9,7 +9,7 @@ import { globalVar } from "../init/globalUtil";
 import { autowired } from "../inject";
 // import { InjectComponent } from "../middleware/InjectComponent";
 import { RenderMiddleware } from "../middleware/RenderMiddleware";
-import { ElmerRenderAttrs } from "./ElmerRenderAttrs";
+import { ElmerRenderAttrs, SVG_ELE, SVG_NL } from "./ElmerRenderAttrs";
 import { RenderQueue, TypeRenderQueueOptions } from "./RenderQueue";
 
 export type TypeUIRenderOptions = {
@@ -176,7 +176,7 @@ export class ElmerRender extends Common {
             this.renderMiddleware.beforeRender({
                 Component: this.options.componentFactory,
                 componentObj: this.options.component,
-                nodeData: this.options.component.vdom,
+                nodeData: this.newDom,
                 props: this.options.component.props
             });
             this.renderQueue.startAction(this.virtualId, option, this.renderAction.bind(this), () => {
@@ -226,9 +226,9 @@ export class ElmerRender extends Common {
         return new Promise<any>((resolve, reject) => {
             let vdom:IVirtualElement;
             if(typeof this.options.component.$render === "function") {
-                vdom = this.options.component.$render();
+                vdom = (this.options.component.$render as any)(this.options.component.props);
             } else if(typeof this.options.component["render"] === "function") {
-                vdom = this.options.component["render"]();
+                vdom = (this.options.component["render"] as any)(this.options.component.props);
             } else {
                 vdom = this.options.component["templateCode"];
             }
@@ -459,6 +459,11 @@ export class ElmerRender extends Common {
                         // 渲染浏览器标准元素
                         // vdom.status === "NORMAL"  不需要做任何操作
                         let hasPathChange = vdom.deleteElements && vdom.deleteElements.length > 0;
+                        const isSVG = vdom.tagAttrs?.isSVG || vdom.tagName.toLowerCase() === "svg";
+                        if(!vdom.tagAttrs) {
+                            vdom.tagAttrs = {};
+                        }
+                        vdom.tagAttrs.isSVG = isSVG;
                         if(vdom.status === "APPEND") {
                             // 新增元素
                             this.vdomAppendRender(container,vdom,vdomParent, prevDom as any);
@@ -508,6 +513,12 @@ export class ElmerRender extends Common {
                                     // 当status为delete时删除父节点并移除事件监听就行，不需要在对子节点循环删除
                                     const renderParams: TypeQueueCallParam[] = [];
                                     vdom.children.map((childDom:IVirtualElement, index:number) => {
+                                        if(isSVG) {
+                                            if(!childDom.tagAttrs) {
+                                                childDom.tagAttrs = {};
+                                            }
+                                            childDom.tagAttrs.isSVG = true;
+                                        }
                                         renderParams.push({
                                             id: "virtualRender_" + index,
                                             params: {
@@ -598,6 +609,9 @@ export class ElmerRender extends Common {
                 });
                 // this.injectComponent.beforeUpdateComponent(vRender.options.component, UserComponent, props, vRDom);
                 typeof vRender.options.component.$willReceiveProps === "function" && vRender.options.component.$willReceiveProps(props, vRender.options.component.props);
+                this.options.component.props = {
+                    ...props
+                };
             };
             vdom.tagAttrs = {
                 isComponent: true
@@ -614,18 +628,18 @@ export class ElmerRender extends Common {
                 // this.injectComponent.beforeInitComponent(UserComponent, props, vdom);
                 const virtualId = "component_" + this.guid();
                 const missionId = this.options.missionId;
+                const hookStore = {
+                    getNode: {},
+                    useCallback: {},
+                    useComponent: {},
+                    useEffect: {},
+                    useState: {}
+                };
                 let component;
                 if(flag === CONST_CLASS_COMPONENT_FLAG) {
                     // 类组件
                     component = new UserComponent(props);
                 } else {
-                    const hookStore = {
-                        getNode: {},
-                        useCallback: {},
-                        useComponent: {},
-                        useEffect: {},
-                        useState: {}
-                    };
                     // 高阶组件，即是一个函数的静态组件
                     component = {
                         dom: {},
@@ -647,7 +661,7 @@ export class ElmerRender extends Common {
                                 useStateIndex: 0
                             };
                             wikiState["missionId"] = missionId;
-                            return this["__factory"].call(this, vdom.props);
+                            return this["__factory"].call(this, vRender.options.component.props);
                         },
                         $willReceiveProps(newProps: any): void {
                             (this as any).props = newProps;
@@ -826,7 +840,12 @@ export class ElmerRender extends Common {
         } else if(vdom.tagName === "<!--") {
             return document.createComment(vdom.innerHTML);
         } else {
-            return document.createElement(vdom.tagName);
+            if(vdom.tagAttrs?.isSVG && SVG_ELE.indexOf(vdom.tagName.toLowerCase())>=0) {
+                const xmlns = !this.isEmpty(vdom.props.xmlns) ? vdom.props.xmlns : SVG_NL;
+                return document.createElementNS(xmlns, vdom.tagName);
+            } else {
+                return document.createElement(vdom.tagName);
+            }
         }
     }
     private vdomAppendRender(container:HTMLElement,vdom:IVirtualElement, vdomParent:IVirtualElement, prevSlideDom?: HTMLElement|Text): void {

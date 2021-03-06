@@ -2,6 +2,10 @@ import { StaticCommon as utils } from "elmer-common";
 import { IVirtualElement } from "elmer-virtual-dom";
 import { injectable } from "../inject/injectable";
 
+export const XML_NL = "http://www.w3.org/2000/xmlns/";
+export const SVG_NL = "http://www.w3.org/2000/svg";
+export const SVG_ELE = ["a", "circle", "ellipse", "foreignObject", "g", "image", "line", "path", "polygon", "polyline", "rect", "svg", "text", "tspan", "use"];
+
 @injectable("ElmerRenderAttrs")
 export class ElmerRenderAttrs {
     /**
@@ -46,6 +50,11 @@ export class ElmerRenderAttrs {
             if(vdom.deleteAttrs) {
                 for(const attrKey of vdom.deleteAttrs) {
                     dom.removeAttribute(attrKey);
+                }
+            }
+            if(/^svg$/i.test(vdom.tagName)) {
+                if(vdom.status === "APPEND") {
+                    !vdom.props["xmlns:xlink"] && dom.setAttribute("xmlns:xlink", XML_NL);
                 }
             }
         }

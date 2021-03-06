@@ -464,7 +464,7 @@ export class ElmerDOM extends ElmerDomQuery {
             // tslint:disable-next-line: object-literal-sort-keys
             onFinish: () => {
                 this.css(dom, {
-                    height: dValue.height,
+                    height: dValue?.height,
                     opacity: 1
                 });
                 options && typeof options.onFinish === "function" && options.onFinish();

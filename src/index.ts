@@ -5,7 +5,7 @@ import { injectable, autowired } from "./inject/injectable";
 import { declareComponent } from "./component/declareComponent";
 import { Component } from "./component/Component";
 import { propTypes } from "./propsValidation";
-import { getGlobalVar, defineGlobalVar, __extends } from "./init/globalUtil";
+import { __extends } from "./init/globalUtil";
 
 import { setServiceEnv } from "./configuration/GlobalConfig";
 import { ElmerServiceRequest } from "./domEvent/ElmerServiceRequest";

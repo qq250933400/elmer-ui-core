@@ -61,15 +61,21 @@ export class RenderMiddleware extends ARenderMiddleware {
                 console.error(err);
             }
         });
-        if(["init", "inject", "didMount", "didUpdate", "willReceiveProps", "destroy"].indexOf(methodName) >= 0) {
-            if(typeof options?.componentObj["$useEffect"] === "function") {
-                const destoryFn = options?.componentObj["$useEffect"](methodName, {
-                    props: options?.props,
-                    state: options?.componentObj?.state
+        if(["init", "inject","beforeRender", "didMount", "didUpdate", "willReceiveProps", "destroy"].indexOf(methodName) >= 0) {
+            if(methodName !== "destroy" && options?.componentObj["$hookEffects"]) {
+                const hookEffects = options?.componentObj["$hookEffects"];
+                Object.keys(hookEffects).map((hookIndex) => {
+                    hookEffects[hookIndex](methodName, {
+                        props: options?.props,
+                        state: options?.componentObj?.state
+                    });
                 });
-                if(methodName === "destroy") {
-                    typeof destoryFn === "function" && destoryFn();
-                }
+            }
+            if(methodName === "destroy" && options?.componentObj["$hookDestory"]) {
+                const hookDestory = options?.componentObj["$hookDestory"];
+                Object.keys(hookDestory).map((hookIndex) => {
+                    hookDestory[hookIndex]();
+                });
             }
         }
     }
