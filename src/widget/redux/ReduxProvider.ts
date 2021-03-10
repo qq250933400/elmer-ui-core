@@ -24,6 +24,7 @@ type TypeReduxProviderProps = {
     reducers: any;
     saveStore: TypeReduxSaveStorage;
     defineStorage: IStoragePluginFactory;
+    children?: any[]
 };
 
 // transfer getGlobalState and defineGlobalState to reduxController,

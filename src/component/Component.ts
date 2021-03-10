@@ -7,12 +7,12 @@ import { IDeclareI18n, IReduxConnect } from "./IDeclareComponent";
 
 export const CONST_CLASS_COMPONENT_FLAG = "COMPONENT_113df7d2-555c-53a1-30fb-58627fd7";
 
-export abstract class Component<P={}, S={}, C={}> extends Common implements IComponent {
+export abstract class Component<P={children?: IVirtualElement[]}, S={}, C={}> extends Common implements IComponent {
     static flag:string = CONST_CLASS_COMPONENT_FLAG;
     propType?: {[PT in keyof P]?: IPropCheckRule};
     parent?: HTMLElement;
     dom: any;
-    props?: P;
+    props?: P & {children?: IVirtualElement[]};
     state?: S;
     context?: C;
     model?: any;
@@ -25,13 +25,12 @@ export abstract class Component<P={}, S={}, C={}> extends Common implements ICom
     i18nRegion?: string;
     i18nRootKey?: string;
     i18nData?: any;
-    constructor(props: P, context?: C) {
+    constructor(props: P & {children?: IVirtualElement[]}, context?: C) {
         super();
         this.props = props;
         this.context = context;
     }
     public $render?(): any;
-    public $contextData?(context: any): void;
     public $willReceiveProps?(propData: P, oldProps: P): void;
     public $init?(): void;
     public $inject?(): void;

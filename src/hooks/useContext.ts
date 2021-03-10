@@ -7,7 +7,7 @@ import { defineHook } from "./hookUtils";
  * @param callback - this callback will be called when context has changed.
  */
 export const useContext = <T>(createContextResponse: TypeCreateContextResult<T>, callback?: Function) => {
-    if(!createContextResponse || !createContextResponse[2] || createContextResponse[2]?.flag !== CONTEXT_FLAG) {
+    if(!createContextResponse || !createContextResponse[2] || (createContextResponse[2] as any)?.flag !== CONTEXT_FLAG) {
         throw new Error("useContext got an wrong argument of createContextResponse, should be the createContext returned value.");
     }
     defineHook("useContext", (event) => {

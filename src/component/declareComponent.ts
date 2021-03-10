@@ -85,3 +85,18 @@ export const declareComponent = (options: IDeclareComponentOptions): Function =>
         }
         registerComponent(__contructor, options.selector);
     };
+
+export const inject = (options: { model?: any, service?: any }) => {
+    // tslint:disable-next-line: variable-name
+    return (__contructor: Function): void => {
+        defineReadonlyProperty(__contructor.prototype, "injectModel", options.model);
+        defineReadonlyProperty(__contructor.prototype, "injectService", options.service);
+    };
+};
+
+export const loadComponents = (components: any) => {
+    // tslint:disable-next-line: variable-name
+    return (__contructor: Function): void => {
+        defineReadonlyProperty(__contructor.prototype, "components", components);
+    };
+};

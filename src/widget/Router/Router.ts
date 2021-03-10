@@ -1,32 +1,93 @@
 import { Component } from "../../component/Component";
-import { declareComponent } from "../../component/declareComponent";
+import { declareComponent, inject, loadComponents } from "../../component/declareComponent";
 import { PropTypes } from "../../propsValidation";
-import { Model } from "./Model";
+import { RouterModel } from "./RouterModel";
+import { RouterService } from "./RouterService";
+import { RouterContext, TypeRouterContext, TypeRouterType } from "./RouterContext";
+import { Route } from "./Route";
 
 type TypeRouterProps = {
-    type: string;
+    type: TypeRouterType;
+    RouterContext: TypeRouterContext;
+    children: any[];
+};
+type TypeRouterData = {
+    component: string;
+    path: string;
+    visible: boolean;
+};
+type TypeRouterState = {
+    data: TypeRouterData[];
+};
+type TypeRouterModel = {
+    md: RouterModel;
+};
+type TypeRouterService = {
+    com: RouterService
 };
 
-@declareComponent({
+const withContext = RouterContext[1];
+
+@declareComponent({selector: "router"})
+@withContext()
+@inject({
     model: {
-        md: Model
+        md: RouterModel
     },
-    selector: "router",
+    service: {
+        com: RouterService
+    }
 })
-export class Router extends Component<TypeRouterProps> {
+@loadComponents({
+    Route
+})
+class Router extends Component<TypeRouterProps, TypeRouterState> {
     static propType = {
         type: {
+            defaultValue: "browser",
+            description: "定义路由类型",
             rule: PropTypes.oneValueOf(["browser", "hash", "memory"]).isRequired
         }
     };
-    constructor(props:any) {
+    model: TypeRouterModel;
+    service: TypeRouterService;
+    constructor(props:TypeRouterProps) {
         super(props);
-        console.log(props);
+        if(props.RouterContext.type !== props.type) {
+            props.RouterContext.type = props.type;
+        }
+        this.state = {
+            data: []
+        };
+    }
+    $getContext():any {
+        return {
+            name: "routerContext",
+            data: {
+                example: "Test"
+            }
+        }
     }
     $inject(): void {
-        console.log("after $inject");
+        // add event listen
+        this.model.md.setType(this.props.type);
+        this.model.md.setChildren(this.props.children);
+        this.model.md.setEventId(this.service.com.addEvent("onLocationChange", this.model.md.onLocationChange));
+        this.state.data = this.model.md.getInitData();
+    }
+    $willMount(): void {
+        // remove event
+        this.service.com.removeEvent("onLocationChange", this.model.md.getEventId());
+    }
+    $willReceiveProps(newProps:any): void {
+        console.log("willReceiveProps - Router", newProps);
     }
     render(): any {
-        return `<div>Router-Component</div>`;
+        return `
+            <forEach data="state.data" item="config" index="routeIndex">
+                <Route key="RouteLoop" component="{{config.component}}" config="{{config}}" if="{{config.visible}}" />
+            </forEach>`;
     }
 }
+
+export default Router;

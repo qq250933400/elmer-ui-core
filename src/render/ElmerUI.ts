@@ -39,6 +39,7 @@ export class ElmerUI extends Common {
     }
     render(target:HTMLElement, rootApp:any, options?:TypeUIRenderOptions): ElmerRender {
         // elmer
+        const contextStore:any = {};
         const entryComponent = rootApp || {};
         const ignorePropKeys = ["selector", "template", "model","service","i18n", "connect","setData","setState", "render",
             "$after", "$onPropsChanged", "$afterVirtualRender", "$beforeVirtualRender","$init",
@@ -57,6 +58,7 @@ export class ElmerUI extends Common {
             component: entryComponent,
             componentFactory: null,
             container: target,
+            contextStore,
             event: this.eventObj,
             missionId: this.missionId,
             nodePath: "rootNode",

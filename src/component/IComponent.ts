@@ -31,7 +31,6 @@ export interface IComponent<P=Object, S=Object, C=Object> {
      */
     service?: any;
     render?():any;
-    $contextData?(context:any): void;
     $willReceiveProps?(propData: P,oldProps: P): void;
     $init?(): void;
     $inject?(): void;

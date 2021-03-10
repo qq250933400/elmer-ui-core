@@ -2,6 +2,7 @@ import { Common, queueCallFunc, TypeQueueCallParam } from "elmer-common";
 import { IVirtualElement, VirtualNode, VirtualRender } from "elmer-virtual-dom";
 import { ElmerWorker } from "elmer-worker";
 import { Component, CONST_CLASS_COMPONENT_FLAG } from "../component/Component";
+import { ContextStore } from "../context/contextStore";
 import { ElmerEvent } from "../events/ElmerEvent";
 import { IElmerEvent } from "../events/IElmerEvent";
 import { wikiState } from "../hooks/hookUtils";
@@ -21,6 +22,7 @@ type TypeElmerRenderOptions = {
     component: Component;
     componentFactory?: Function;
     container: HTMLElement;
+    contextStore: any;
     children?: IVirtualElement[];
     renderOptions: TypeUIRenderOptions;
     userComponents?: Component[];
@@ -40,6 +42,7 @@ type TypeVirtualDomRenderEvent = {
     vdomParent: IVirtualElement;
     prevDom?:HTMLElement|Text|Comment;
     hasPathUpdate?: boolean;
+    isTopLevel?: boolean;
 };
 /**
  * 渲染自定义组件事件参数
@@ -47,9 +50,11 @@ type TypeVirtualDomRenderEvent = {
 type TypeComponentRenderEvent = {
     UserComponent: Function;
     container: HTMLElement;
+    components: any; // 从上往下传引用的组件
     vdom: IVirtualElement;
     vdomParent: IVirtualElement;
     hasPathUpdate: boolean;
+    prevDom: HTMLElement;
 };
 
 export class ElmerRender extends Common {
@@ -66,6 +71,8 @@ export class ElmerRender extends Common {
     private renderDomAttrs: ElmerRenderAttrs;
     @autowired(RenderMiddleware)
     private renderMiddleware: RenderMiddleware;
+    @autowired(ContextStore)
+    private contextStore: ContextStore;
 
     private options: TypeElmerRenderOptions; // 当前render传入的参数
     private sourceDom: IVirtualElement; // 代码节点未渲染过的虚拟dom树
@@ -127,6 +134,7 @@ export class ElmerRender extends Common {
                 }
             }
         }
+        return this.options.prevDom;
     }
     /**
      * 获取第一个渲染到browser的元素
@@ -148,8 +156,10 @@ export class ElmerRender extends Common {
                 }
             }
         }
+        return this.options.prevDom;
     }
     destroy(): void {
+        typeof this.options.component.$willMount === "function" && this.options.component.$willMount();
         this.renderMiddleware.destroy({
             Component: this.options.componentFactory,
             componentObj: this.options.component,
@@ -297,6 +307,7 @@ export class ElmerRender extends Common {
                         return this.renderVirtualDom({
                             container: params.parent,
                             hasPathUpdate,
+                            isTopLevel: true,
                             prevDom,
                             vdom: params.vdom,
                             vdomParent: params.vdomParent
@@ -440,13 +451,18 @@ export class ElmerRender extends Common {
                     if(typeof UserComponent === "function") {
                         this.renderUserComponent({
                             UserComponent,
+                            components: this.userComponents,
                             container,
                             hasPathUpdate: options.hasPathUpdate,
+                            prevDom: prevDom as any,
                             vdom,
                             vdomParent
                         }).then(() => {
+                            const virtualPrevDom = this.getPrevDomByVirtualNode(vdom);
+                            // 当前节点为最顶层节点时，获取不到上一个节点的真实节点时可以使用上一层自定义组件传递过来的值
+                            // 防止第一个节点if === false, 时无法取到邻近的节点导致位置错误
                             resolve({
-                                prevDom: this.getPrevDomByVirtualNode(vdom)
+                                prevDom: !virtualPrevDom && options.isTopLevel ? this.options.prevDom : virtualPrevDom
                             });
                         }).catch((err) => {
                             reject({
@@ -564,6 +580,7 @@ export class ElmerRender extends Common {
                                 // 删除事件监听已经在渲染前做删除，不需要在此处做操作
                                 if(vdom.dom) {
                                     vdom.dom.parentElement && vdom.dom.parentElement.removeChild(vdom.dom);
+                                    vdom.dom = null;
                                 }
                                 this.deleteVirtualDom(vdom);
                             }
@@ -572,7 +589,7 @@ export class ElmerRender extends Common {
                             }
                             resolve({
                                 hasPathUpdate: hasPathChange,
-                                prevDom: vdom.dom
+                                prevDom: !vdom.dom && options.isTopLevel ? this.options.prevDom : vdom.dom
                             });
                         }
                     }
@@ -597,7 +614,9 @@ export class ElmerRender extends Common {
             const prevDom = this.getPrevDom(vdom, vdomParent);
             const middlewareObj = this.renderMiddleware;
             const doUpdateAction = (vRender:ElmerRender, vRDom: IVirtualElement, doUpdatePrevDom:HTMLElement) => {
-                const props = {};
+                const props = {
+                    children: vRDom.children
+                };
                 vRender.options.prevDom = doUpdatePrevDom;
                 this.extend(props, vRender.options.component.props, true);
                 this.extend(props, vRDom.changeAttrs, true);
@@ -618,7 +637,10 @@ export class ElmerRender extends Common {
             };
             if(vdom.status === "APPEND") {
                 const flag = (<any>UserComponent).flag;
-                const props = vdom.props;
+                const props = {
+                    ...vdom.props,
+                    children: vdom.children
+                };
                 middlewareObj.beforeInit({
                     Component: UserComponent,
                     componentObj: null,
@@ -638,7 +660,7 @@ export class ElmerRender extends Common {
                 let component;
                 if(flag === CONST_CLASS_COMPONENT_FLAG) {
                     // 类组件
-                    component = new UserComponent(props);
+                    component = new UserComponent(props, this.contextStore.getContext(this.options.contextStore.stores));
                 } else {
                     // 高阶组件，即是一个函数的静态组件
                     component = {
@@ -661,7 +683,7 @@ export class ElmerRender extends Common {
                                 useStateIndex: 0
                             };
                             wikiState["missionId"] = missionId;
-                            return this["__factory"].call(this, vRender.options.component.props);
+                            return this["__factory"].call(this, vRender.options.component.props, vRender.contextStore.getContext(vRender.options.contextStore.stores));
                         },
                         $willReceiveProps(newProps: any): void {
                             (this as any).props = newProps;
@@ -674,17 +696,41 @@ export class ElmerRender extends Common {
                         }
                     };
                 }
+                const allContextStore = this.options.contextStore.stores || {};
+                let contextParentPath = this.options.contextStore.parentPath;
+                if(typeof component.$getContext === "function") {
+                    // 定义context
+                    const definedContextState = typeof component.$getContext === "function" ? component.$getContext() : null;
+                    if(definedContextState) {
+                        const defineStoreId = vdom.tagName + "_" + virtualId;
+                        const definedContextStore = this.contextStore.createStore({
+                            component,
+                            initState: definedContextState,
+                            nodeId: defineStoreId,
+                            path: contextParentPath
+                        });
+                        allContextStore[defineStoreId] = definedContextStore;
+                        contextParentPath = definedContextStore.nodeId;
+                    } else {
+                        throw new Error(`The $getcontext method must return an object object.(${vdom.tagName})`);
+                    }
+                }
                 const vRender = new ElmerRender({
                     children: vdom.children,
                     component,
                     componentFactory: UserComponent,
                     container,
+                    contextStore: {
+                        parentPath: contextParentPath,
+                        stores: allContextStore
+                    },
                     event: this.eventObj,
                     missionId: this.options.missionId,
                     nodePath: this.isEmpty(this.options.nodePath) ? virtualId : this.options.nodePath + "." + virtualId,
                     path: vdom.path,
-                    prevDom: this.getPrevDomByVirtualNode(prevDom) as HTMLElement,
+                    prevDom: this.getPrevDomByVirtualNode(prevDom) as HTMLElement || options.prevDom,
                     renderOptions: this.options.renderOptions,
+                    userComponents: options.components,
                     worker: this.options.worker
                 });
                 vdom.virtualID = virtualId;

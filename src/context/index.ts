@@ -1,17 +1,18 @@
 import { StaticCommon as util } from "elmer-common";
 import { useComponent, useContext, useEffect, useState } from "../hooks";
 
-type TypeContextStore = {
-    state: any;
+type TypeContextStore<T> = {
+    state: T;
     name: string;
-    flag: string;
+    // flag: string;
     on: (callback:Function) => string;
     remove: (eventId: string) => void;
 };
 
-export type TypeCreateContextResult<T> = [T, () => Function, TypeContextStore ];
-
 const contextStore = {};
+
+export type TypeCreateContextResult<T> = [T, () => Function, TypeContextStore<T> ];
+
 export const CONTEXT_FLAG = "Context_668f5751b331d2a1eec31f2dc0253443";
 
 export const createContext = <T>(contextName: string, initState?: T):TypeCreateContextResult<T> => {
@@ -80,7 +81,7 @@ export const createContext = <T>(contextName: string, initState?: T):TypeCreateC
                                 ...newContextData
                             });
                         });
-                        return `<WithContextComponent ...="props" ${contextNodeName}="{{state.contextState}}"/>`;
+                        return `<WithContextComponent ...="props" ${contextNodeName}="{{state.contextState}}"><context/></WithContextComponent>`;
                     };
                 };
             };
