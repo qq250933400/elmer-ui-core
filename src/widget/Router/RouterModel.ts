@@ -4,19 +4,25 @@ import { autowired } from "../../inject";
 import { RouterService } from "./RouterService";
 import { StaticCommon as utils } from "elmer-common";
 
+const [ RouterState ] = RouterContext;
+
 export class RouterModel {
     private children: IVirtualElement[];
     private domObj: any;
     private locationChangeEvtId: string;
     private routerType: TypeRouterType = "browser";
     private currentLocation: string;
+    private currentIndex: number;
     private className: string;
+    private history: string[] = [];
+    private tempData: any;
 
     @autowired(RouterService)
     private service: RouterService;
 
     constructor(obj:any) {
         this.domObj = obj;
+        this.currentIndex = -1;
     }
     setType(type: TypeRouterType): void {
         this.routerType = type;
@@ -31,10 +37,26 @@ export class RouterModel {
         return this.locationChangeEvtId;
     }
     onLocationChange(newUrl, oldUrl): void {
-        console.log(newUrl, oldUrl);
+        if(this.routerType === "memory") {
+            this.currentLocation = newUrl;
+        } else {
+            RouterState.location = newUrl;
+        }
+        const newRouteData = this.getInitData();
+        this.domObj.setState({
+            data: newRouteData
+        });
+    }
+    nativegateTo(pathName: string, params?: any): void {
+        if(this.routerType !== "memory") {
+            this.service.push(pathName, params);
+        } else {
+            this.tempData = params;
+            this.onLocationChange(pathName, this.currentLocation);
+        }
     }
     getInitData(): any[] {
-        const url = this.getLocation();
+        const url = this.getLocation() || "";
         const RouterResult = [];
         let matchIndex = -1;
         if(this.children && this.children.length > 0 ) {
@@ -64,7 +86,7 @@ export class RouterModel {
                             matchIndex = index;
                             isStopLoop = path === url;
                         }
-                        if(path === "/" && utils.isEmpty(url)) {
+                        if(path === "/" && (utils.isEmpty(url) || url === "/")) {
                             matchIndex = index;
                             isStopLoop = true;
                         }

@@ -444,7 +444,8 @@ export class ElmerRender extends Common {
                 if(this.isEmpty(vdom.tagName)) {
                     reject({
                         message: "virtual dom node is not correct, missing tagName attribute",
-                        statusCode: "VR_404"
+                        statusCode: "VR_404",
+                        vdom
                     });
                 } else {
                     const UserComponent = this.userComponents[vdom.tagName] || components[vdom.tagName];
@@ -700,7 +701,10 @@ export class ElmerRender extends Common {
                 let contextParentPath = this.options.contextStore.parentPath;
                 if(typeof component.$getContext === "function") {
                     // 定义context
-                    const definedContextState = typeof component.$getContext === "function" ? component.$getContext() : null;
+                    const definedContextState = typeof component.$getContext === "function" ? component.$getContext.call(component, {
+                        path: vdom.path,
+                        props
+                    }) : null;
                     if(definedContextState) {
                         const defineStoreId = vdom.tagName + "_" + virtualId;
                         const definedContextStore = this.contextStore.createStore({

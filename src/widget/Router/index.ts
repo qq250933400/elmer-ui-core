@@ -1,1 +1,2 @@
-export * from "./Router";
+import "./Router";
+export * from "./withRouter";

@@ -27,26 +27,9 @@ export const createContext = <T>(contextName: string, initState?: T):TypeCreateC
         };
         // tslint:disable-next-line: variable-name
         const withContext = ((contextObj, contextNodeName, _initState?: any) => {
-            contextObj.state = new Proxy({
+            contextObj.state = {
                 ...(_initState || {})
-            }, {
-                get(target: any, attr: string): any {
-                    return target[attr];
-                },
-                set(target:any, attr: string, value: any): boolean {
-                    if(!util.isEqual(target[attr], value)) {
-                        // only data is changed
-                        target[attr] = value;
-                        Object.keys(contextObj.listeners).map((eventId?: any):any => {
-                            const callback = contextObj.listeners[eventId];
-                            typeof callback === "function" && callback({name: attr, value}, target);
-                        });
-                        return true;
-                    } else {
-                        return false;
-                    }
-                }
-            });
+            };
             contextObj.on = (callback: Function): string => {
                 const evtId = "contextEvent_" + util.guid();
                 contextObj.listeners[evtId] = callback;

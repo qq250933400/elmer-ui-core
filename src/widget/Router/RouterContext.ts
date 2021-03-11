@@ -4,11 +4,13 @@ export type TypeRouterType = "browser" | "hash" | "memory";
 export type TypeRouterContext = {
     listeners: any;
     location: string;
-    type: TypeRouterType
+    type: TypeRouterType,
+    tempData?: any
 };
 
 export const RouterContext = createContext<TypeRouterContext>("RouterContext", {
     listeners: {},
     location: "",
-    type: "browser"
+    type: "browser",
+    tempData: null
 });
