@@ -1,11 +1,7 @@
 import { Component } from "../../component/Component";
-import { declareComponent } from "../../component/declareComponent";
 import { propTypes } from "../../propsValidation";
 import "./styles/index.less";
 
-@declareComponent({
-    selector: "404"
-})
 export class Page404 extends Component {
     static propType:any = {
         title: {

@@ -1,10 +1,11 @@
 import { Component } from "../../component/Component";
 import { declareComponent, inject, loadComponents } from "../../component/declareComponent";
 import { PropTypes } from "../../propsValidation";
+import { Page404 } from "../404";
+import { Route } from "./Route";
+import { RouterContext, TypeRouterContext, TypeRouterType } from "./RouterContext";
 import { RouterModel } from "./RouterModel";
 import { RouterService } from "./RouterService";
-import { RouterContext, TypeRouterContext, TypeRouterType } from "./RouterContext";
-import { Route } from "./Route";
 
 type TypeRouterProps = {
     type: TypeRouterType;
@@ -40,7 +41,7 @@ const withContext = RouterContext[1];
 })
 @loadComponents({
     Route,
-    404: () => `<h2>404 Not Found</h2>`
+    404: Page404 // () => `<h2>404 Not Found</h2>`
 })
 class Router extends Component<TypeRouterProps, TypeRouterState> {
     static propType = {
