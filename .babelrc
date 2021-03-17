@@ -1,9 +1,9 @@
 {
     "presets": [
         [
-            "env",
+            "@babel/preset-env",
             {
-                "module": false,
+                "modules": "commonjs",
                 "targets": {
                     "browsers": [
                         "last 2 versions",
@@ -14,7 +14,8 @@
         ]
     ],
     "plugins": [
-        "transform-class-properties",
-        "syntax-dynamic-import"
+        "@babel/plugin-transform-runtime",
+        ["@babel/plugin-proposal-decorators", { "legacy": true }],
+        ["@babel/plugin-proposal-class-properties", { "loose" : true }]
     ]
 }

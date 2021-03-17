@@ -1,5 +1,5 @@
 import { useComponent, useState } from "../../hooks";
-import { autoInit } from "../../inject";
+import { autoInit } from "../../injectable";
 import { RouterService } from "./RouterService";
 
 export const withRouter = () => {

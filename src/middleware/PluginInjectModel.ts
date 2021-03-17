@@ -1,6 +1,6 @@
 import { StaticCommon as utils } from "elmer-common";
-import { createClassFactory } from "../inject/createClassFactory";
-import { injectable } from "../inject/injectable";
+import { createClassFactory } from "../injectable/createClassFactory";
+import { injectable } from "../injectable/injectable";
 import { TypeRenderMiddlewareEvent } from "./ARenderMiddleware";
 import { RenderMiddlewarePlugin } from "./RenderMiddlewarePlugin";
 

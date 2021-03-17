@@ -7,7 +7,7 @@ import { ElmerEvent } from "../events/ElmerEvent";
 import { IElmerEvent } from "../events/IElmerEvent";
 import { wikiState } from "../hooks/hookUtils";
 import { globalVar } from "../init/globalUtil";
-import { autowired } from "../inject";
+import { autowired } from "../injectable";
 // import { InjectComponent } from "../middleware/InjectComponent";
 import { RenderMiddleware } from "../middleware/RenderMiddleware";
 import { ElmerRenderAttrs, SVG_ELE, SVG_NL } from "./ElmerRenderAttrs";
@@ -297,6 +297,7 @@ export class ElmerRender extends Common {
                     if(!hasPathUpdate) {
                         hasPathUpdate = renderDom.deleteElements && renderDom.deleteElements.length > 0;
                     }
+                    // console.log(renderDom, (this.options.component as any).selector);
                     this.unbindAllEvents(); // 清空上一次的注册的事件，重新添加
                     this.deleteVDomOutOfLogic(renderDom.deleteElements); // 删除dom diff算法计算出需要手动删除的节点
                     queueCallFunc(renderParams, (option, params):any => {

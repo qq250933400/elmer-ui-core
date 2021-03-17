@@ -3,15 +3,6 @@ import { addToClassPool, globalVar } from "../init/globalUtil";
 import { createClassFactory } from "./createClassFactory";
 // tslint:disable:variable-name
 
-export const defineReadonlyProperty = (target:any, propertyKey: string, propertyValue: any) => {
-    Object.defineProperty(target, propertyKey, {
-        configurable: false,
-        enumerable: true,
-        value: propertyValue,
-        writable: false
-    });
-};
-
 export function injectable(className: string): any {
     if(className === undefined || className === null || className.length<=0) {
         throw new Error("Injectable注入对象必须设置类名。");

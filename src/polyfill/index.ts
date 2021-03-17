@@ -4,16 +4,7 @@ if(!String.prototype["__defineGetter__"]) {
         this[color] = func;
     };
 }
-/*
-if(!NodeList.prototype.forEach) {
-    NodeList.prototype.forEach = function(callBack:Function, thisArgs?: any): void {
-        const self = thisArgs || window;
-        for(let i=0;i<this.length;i++) {
-            callBack.call(self, this[i], this);
-        }
-    };
-}
- */
+
 if(!Date.prototype.format) {
     // tslint:disable-next-line: only-arrow-functions
     Date.prototype.format = function(formatStr: string): string {

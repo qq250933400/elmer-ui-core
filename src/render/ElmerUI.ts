@@ -6,7 +6,7 @@ import { Component } from "../component/Component";
 import { ElmerDOM } from "../domEvent/ElmerDom";
 import { ElmerEvent } from "../events/ElmerEvent";
 import EventInWorker from "../events/EventInWorker";
-import { autowired } from "../inject/injectable";
+import { autowired } from "../injectable/injectable";
 import { RenderMiddleware } from "../middleware/RenderMiddleware";
 import "../polyfill";
 import { ElmerRender, TypeUIRenderOptions } from "./ElmerRender";

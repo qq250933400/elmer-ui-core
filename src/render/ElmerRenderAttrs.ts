@@ -1,6 +1,6 @@
 import { StaticCommon as utils } from "elmer-common";
 import { IVirtualElement } from "elmer-virtual-dom";
-import { injectable } from "../inject/injectable";
+import { injectable } from "../injectable/injectable";
 
 export const XML_NL = "http://www.w3.org/2000/xmlns/";
 export const SVG_NL = "http://www.w3.org/2000/svg";

@@ -1,6 +1,6 @@
 import { RouterContext, TypeRouterType } from "./RouterContext";
 import { IVirtualElement } from "elmer-virtual-dom";
-import { autowired } from "../../inject";
+import { autowired } from "../../injectable";
 import { RouterService } from "./RouterService";
 import { StaticCommon as utils } from "elmer-common";
 
@@ -57,6 +57,7 @@ export class RouterModel {
     }
     getInitData(): any[] {
         const url = this.getLocation() || "";
+        console.log(this.routerType, url);
         const RouterResult = [];
         let matchIndex = -1;
         if(this.children && this.children.length > 0 ) {
@@ -128,7 +129,9 @@ export class RouterModel {
     }
     getLocation(): string {
         if(this.routerType === "browser") {
-            return location.pathname;
+            const locationLink = (location.pathname || "").replace(/[\#\?][\s\S]*$/,"");
+            const suffixReg = /[\s\S]*\.(html|htm|aspx|jsp|do|php)/i;
+            return suffixReg.test(locationLink) ? locationLink.replace(suffixReg, "") : locationLink;
         } else if(this.routerType === "hash") {
             return (location.hash || "").replace(/^#/, "");
         } else {

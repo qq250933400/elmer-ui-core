@@ -1,4 +1,4 @@
-import { autoInit, injectable  } from "../inject";
+import { autoInit, injectable  } from "../injectable";
 import { ARenderMiddleware, TypeRenderMiddlewareEvent } from "./ARenderMiddleware";
 import { PluginInjectModel } from "./PluginInjectModel";
 import { PluginPropsChecking } from "./PluginPropsChecking";

@@ -1,4 +1,4 @@
-import { injectable } from "../../inject/injectable";
+import { injectable } from "../../injectable/injectable";
 import { Common } from "elmer-common";
 import { RouterContext } from "./RouterContext";
 
@@ -15,7 +15,7 @@ export class RouterService extends Common {
                 newURL: location.href,
                 oldURL: routerState.location
             });
-        }
+        };
     }
     onWindowHashChange(event) {
         const eventListeners = routerState.listeners["onLocationChange"];
@@ -43,7 +43,7 @@ export class RouterService extends Common {
     }
     push(pathName: string, state?: any, type?: "browser"|"hash"): void {
         let pushPathName = "";
-        let oldPathName = routerState.location;
+        const oldPathName = routerState.location;
         if(type === "browser") {
             pushPathName = pathName;
         } else {

@@ -79,7 +79,7 @@ export const declareComponent = (options: IDeclareComponentOptions): Function =>
         defineReadonlyProperty(__contructor.prototype, "template", options.template);
         options.components && defineReadonlyProperty(__contructor.prototype, "components", options.components);
         if (options.template?.fromLoader) {
-            defineReadonlyProperty(__contructor.prototype, "render", (function (): any {
+            defineReadonlyProperty(__contructor.prototype, "render", (function(): any {
                 return this.htmlCode;
             }).bind({ htmlCode: options.template.htmlCode }));
         }

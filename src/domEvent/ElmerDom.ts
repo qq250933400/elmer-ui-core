@@ -1,9 +1,7 @@
 import { ElmerAnimation, TypeAnimationChangeEvent, TypeElmerAnimationType } from "../animation/ElmerAnimation";
 import animationMethod, { TypeAnimationProperty } from "../animation/ElmerAnimationProperty";
 import { EventNames } from "../events/EventNames";
-import { injectable } from "../inject/index";
-import { autowired } from "../inject/injectable";
-import { ElmerDomEvent } from "./ElmerDomEvent";
+import { injectable } from "../injectable/index";
 import { ElmerDomQuery, IElmerDomSelector } from "./ElmerDomQuery";
 
 type TypeAnimationOption = {
@@ -63,8 +61,6 @@ export class ElmerDOM extends ElmerDomQuery {
     contains:Function;
     listener: any[] = [];
 
-    @autowired(ElmerDomEvent)
-    private eventObj: ElmerDomEvent;
     constructor() {
         super();
         this.supportCss3 =this.support("transform");

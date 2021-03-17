@@ -1,5 +1,5 @@
 import { Common } from "elmer-common";
-import { injectable } from "../inject";
+import { injectable } from "../injectable";
 
 type TypeContextStoreCreateOptions = {
     component: any;
