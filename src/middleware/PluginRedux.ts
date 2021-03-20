@@ -1,7 +1,7 @@
 import { StaticCommon as utils } from "elmer-common";
 import { attachReducerToController, defineReducer, ReduxController } from "elmer-redux";
 import { IReduxConnect } from "../component/IDeclareComponent";
-import { defineGlobalState, getGlobalState } from "../init/globalUtil";
+import { defineGlobalState, getGlobalState } from "../core/globalState";
 import { autowired, injectable } from "../injectable/injectable";
 import { IPropCheckRule } from "../propsValidation";
 import { TypeRenderMiddlewareEvent } from "./ARenderMiddleware";

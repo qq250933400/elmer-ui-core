@@ -6,7 +6,7 @@ import { ContextStore } from "../context/contextStore";
 import { ElmerEvent } from "../events/ElmerEvent";
 import { IElmerEvent } from "../events/IElmerEvent";
 import { wikiState } from "../hooks/hookUtils";
-import { globalVar } from "../init/globalUtil";
+import { globalVar } from "../core/globalState";
 import { autowired } from "../injectable";
 // import { InjectComponent } from "../middleware/InjectComponent";
 import { RenderMiddleware } from "../middleware/RenderMiddleware";

@@ -1,6 +1,6 @@
 import { StaticCommon } from "elmer-common";
 import "reflect-metadata";
-import { globalVar } from "../init/globalUtil";
+import { globalVar } from "../core/globalState";
 
 type TypeAutowiredMode = "Strict" | "None";
 

@@ -3,7 +3,7 @@ import { Common } from "elmer-common";
 import { HtmlParse } from "elmer-virtual-dom";
 import { ElmerWorker } from "elmer-worker";
 import { Component } from "../component/Component";
-import { ElmerDOM } from "../domEvent/ElmerDom";
+import { ElmerDOM } from "../core/ElmerDom";
 import { ElmerEvent } from "../events/ElmerEvent";
 import EventInWorker from "../events/EventInWorker";
 import { autowired } from "../injectable/injectable";

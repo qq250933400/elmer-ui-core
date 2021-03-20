@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import { addToClassPool, globalVar } from "../init/globalUtil";
+import { addToClassPool, globalVar } from "../core/globalState";
 import { createClassFactory } from "./createClassFactory";
 // tslint:disable:variable-name
 

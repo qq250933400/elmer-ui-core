@@ -1,4 +1,4 @@
-import { globalVar } from "../init/globalUtil";
+import { globalVar } from "../core/globalState";
 import { IDeclareComponentOptions } from "./IDeclareComponent";
 
 const formatSelector = (selectorName: string): string => {

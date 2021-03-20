@@ -5,10 +5,10 @@ import { injectable, autowired } from "./injectable/injectable";
 import { declareComponent } from "./component/declareComponent";
 import { Component } from "./component/Component";
 import { propTypes } from "./propsValidation";
-import { __extends } from "./init/globalUtil";
+import { __extends } from "./core/globalState";
 
-export * from "./init/globalUtil";
-export * from "./domEvent/ElmerDom";
+export * from "./core/globalState";
+export * from "./core/ElmerDom";
 export * from "./injectable";
 export * from "./animation/ElmerAnimation";
 // ---------import widget 注册所有组件 ----------
