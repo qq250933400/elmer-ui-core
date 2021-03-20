@@ -369,6 +369,10 @@ export class ElmerRender extends Common {
                     dataChanged = true;
                 }
                 if(dataChanged) {
+                    this.options.component.state = {
+                        ...(this.options.component.state || {}),
+                        ...state
+                    };
                     this.render({
                         firstRender: false,
                         state
@@ -490,12 +494,8 @@ export class ElmerRender extends Common {
                             if(this.isDOM(vdom.dom)) {
                                 this.renderDomAttrs.render(vdom.dom, vdom);
                             } else {
-                                if(vdom.tagName === "text") {
-                                    ((vdom.dom as any) as Text).textContent = vdom.innerHTML;
-                                } else {
-                                    // vdom.dom对象为undefined或null即为不存在对应的真实dom节点，需要新增
-                                    !vdom.dom && this.vdomAppendRender(container, vdom, vdomParent, prevDom as any);
-                                }
+                                // vdom.dom对象为undefined或null即为不存在对应的真实dom节点，需要新增
+                                !vdom.dom && this.vdomAppendRender(container, vdom, vdomParent, prevDom as any);
                             }
                         } else if(vdom.status === "MOVE") {
                             this.vdomMove(container, vdom, vdomParent);

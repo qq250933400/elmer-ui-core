@@ -14,6 +14,9 @@ export class ElmerRenderAttrs {
      * @param vdom 虚拟dom节点
      */
     render(dom:HTMLElement, vdom:IVirtualElement): void {
+        if(vdom.status === "DELETE") {
+            console.log(vdom);
+        }
         if(vdom.tagName === "text") {
             dom.textContent = vdom.innerHTML;
         } else {

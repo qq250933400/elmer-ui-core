@@ -55,12 +55,13 @@ class Router extends Component<TypeRouterProps, TypeRouterState> {
     onRemoveLocationChange: Function;
     constructor(props:TypeRouterProps) {
         super(props);
-        if(props.RouterContext.type !== props.type) {
+        if(props?.RouterContext && props?.RouterContext?.type !== props.type) {
             props.RouterContext.type = props.type;
         }
         this.state = {
             data: []
         };
+        console.log("init route");
     }
     $getContext({path}):any {
         return {
@@ -85,10 +86,14 @@ class Router extends Component<TypeRouterProps, TypeRouterState> {
         this.model.md.setChildren(this.props.children);
         this.onRemoveLocationChange = this.service.com.addEvent("onLocationChange", this.model.md.onLocationChange.bind(this.model.md));
         this.state.data = this.model.md.getInitData();
+        console.log(this.props.children, "----$inject");
     }
     $willMount(): void {
         // remove event
         this.onRemoveLocationChange();
+    }
+    $didMount(): void {
+        console.log(this.state.data, "---DidMount");
     }
     render(): any {
         return `

@@ -5,6 +5,19 @@ import { TypeRenderMiddlewareEvent } from "./ARenderMiddleware";
 import { RenderMiddlewarePlugin } from "./RenderMiddlewarePlugin";
 
 export class PluginPropsChecking extends RenderMiddlewarePlugin {
+    beforeInit(options: TypeRenderMiddlewareEvent): void {
+        if(options?.props && options?.props["..."]) {
+            const extProps = options?.props["..."];
+            if(utils.isObject(extProps)) {
+                Object.keys(extProps).map((attrKey: string) => {
+                    if(attrKey !== "children") {
+                        (options.props as any)[attrKey] = extProps[attrKey];
+                    }
+                });
+            }
+            delete options?.props["..."];
+        }
+    }
     init(options: TypeRenderMiddlewareEvent): void {
         this.checkPropTypes(options.componentObj, options.Component);
     }

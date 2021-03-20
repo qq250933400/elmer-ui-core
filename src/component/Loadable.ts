@@ -53,9 +53,8 @@ const defaultError = ({message, statusCode, showCode}) => {
 
 export const Loadable = (options: TypeLoadableOptions) => {
     return () => {
-        const [{}, setLoaded] = useState("loaded", false);
-        const [ appId ] = useState("asyncAppId", "__AsyncAppId__" + utils.guid());
-        const [{}, setStatus] = useState("loadStatus", {
+        const [tStatus, setStatus] = useState("loadStatus", {
+            loaded: false,
             message: "Ok",
             showError: false,
             statusCode: "200"
@@ -64,6 +63,7 @@ export const Loadable = (options: TypeLoadableOptions) => {
         useComponent("ErrorInfo", options.error || defaultError);
         useComponent("Loading", options.loading || defaultLoading);
         useState("className", options.className);
+        useState("asyncAppId", "__AsyncAppId__" + utils.guid());
         useEffect((name):any => {
             if(name === "didMount") {
                 if(typeof options.loader === "function") {
@@ -72,32 +72,35 @@ export const Loadable = (options: TypeLoadableOptions) => {
                             const AsyncComponet= resp.default;
                             useNewComponent(AsyncComponet);
                             setStatus({
+                                ...tStatus,
+                                loaded: true,
                                 showError: false
                             });
                         } else {
                             setStatus({
+                                loaded: true,
                                 message: "AsyncComponent module not an function or constructor.",
                                 showError: true,
                                 statusCode: "Async500"
                             });
                         }
-                        setLoaded(true);
+                        // setLoaded(true);
                     }).catch((err) => {
                         // tslint:disable-next-line: no-console
                         console.error(err);
                         setStatus({
+                            loaded: true,
                             message: "Load asyncComponent fail: " + err.message,
                             showError: true,
                             statusCode: "Async500"
                         });
-                        setLoaded(true);
                     });
                 }
             }
         });
-        return `<div class="{{state.className}}">
-            <AsyncComponent if="{{state.loaded eq true && state.loadStatus.showError eq false}}" id="{{state.asyncAppId}}" status="{{state.loaded}}"/>
-            <Loading if="{{state.loaded eq false}}"/>
+        return `<div data="Loadable" class="{{state.className}}">
+            <AsyncComponent em:if="state.loadStatus.loaded seq true && state.loadStatus.showError sneq true" ...="{{props}}" id="{{state.asyncAppId}}" status="{{state.loadStatus.loaded}}"/>
+            <Loading em:if="state.loadStatus.loaded sneq true"/>
             <ErrorInfo if="{{state.loadStatus.showError}}" message="{{state.loadStatus.message}}" statusCode="{{state.loadStatus.statusCode}}"/>
         </div>`;
     };

@@ -34,9 +34,10 @@ type TypeOnEffectEvent = (name: keyof ARenderMiddleware, options: TypeRenderMidd
 type TypeDefineHookCallbackOptions<T> = {
     component: any;
     render: any;
+    returnValue?: any;
     isInit: boolean;
-    hookIndex: number;
-    store: undefined | null | T;
+    hookIndex?: number;
+    store: any;
     onEffect?: (callback: TypeOnEffectEvent) => void;
     onDestory?: (callback: Function) => void;
     setState: (state: any, refresh?: boolean) => Promise<any>;
@@ -49,7 +50,7 @@ export const defineHook = <T>(hookName: string, callback: TypeDefineHookCallback
     const componentObj = <any>getWikiState("_this");
     const renderObj = <any>getWikiState("_renderObj");
     let hookIndex = <any>getWikiState(hookIndexKey);
-    if(["useState", "useCallback", "useComponent", "useEffect", "getNode"].indexOf(hookName) >= 0 && !override) {
+    if(["useCallback", "useComponent", "useEffect", "getNode"].indexOf(hookName) >= 0 && !override) {
         throw new Error(`The hook name to define is a system reserved name that is not allowed.(${hookName})`);
     }
     if(!hookStore) {
@@ -62,12 +63,12 @@ export const defineHook = <T>(hookName: string, callback: TypeDefineHookCallback
         hookStore[hookName] = {};
     }
     if(!hookStore[hookName][hookIndex]) {
-        const hookData = callback({
+        const hookOptions:any = {
             component: componentObj,
             hookIndex,
             isInit: true,
             render: renderObj,
-            store: hookStore[hookName][hookIndex],
+            store: null,
             // tslint:disable-next-line: object-literal-sort-keys
             onEffect: (effectCallback: any): void => {
                 if(!componentObj["$hookEffects"]) {
@@ -85,26 +86,24 @@ export const defineHook = <T>(hookName: string, callback: TypeDefineHookCallback
                     componentObj["$hookDestory"][hookIndex] = destoryCallback;
                 }
             },
-            setState: (state:any, refresh?: boolean): Promise<any> => {
-                return componentObj.setState(state, refresh);
-            }
-        });
-        hookStore[hookName][hookIndex] = hookData || {};
+            setState: ((targetObj:any) => {
+                return (state:any, refresh?: boolean): Promise<any> => {
+                    return targetObj.setState(state, refresh);
+                };
+            })(componentObj)
+        };
+        const hookData = callback(hookOptions);
+        hookOptions.returnValue = hookData;
+        hookStore[hookName][hookIndex] = hookOptions;
         setWikiState(hookIndexKey, hookIndex + 1);
         return hookData;
     } else {
-        callback({
-            component: componentObj,
-            hookIndex,
-            isInit: false,
-            render: renderObj,
-            store: hookStore[hookName][hookIndex],
-            // tslint:disable-next-line: object-literal-sort-keys
-            setState: (state:any, refresh?: boolean): Promise<any> => {
-                return componentObj.setState(state, refresh);
-            }
+        const saveStore = hookStore[hookName][hookIndex];
+        const hookData = callback({
+            ...saveStore,
+            isInit: false
         });
         setWikiState(hookIndexKey, hookIndex + 1);
-        return hookStore[hookName][hookIndex];
+        return hookData;
     }
 };
