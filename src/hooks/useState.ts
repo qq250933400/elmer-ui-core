@@ -18,13 +18,15 @@ export const useState = (stateKey: string, defaultState?: any):TypeUseStateResul
             const saveState = {
                 ...(options.component.state || {})
             };
+            const getStatus = ((opt)=>()=>opt.store)(options);
             saveState[stateKey] = initState;
             options.store = initState;
             options.component.state = saveState;
-            return [initState, updateState];
+            return [initState, updateState, getStatus];
         } else {
             const hookReturn = options.returnValue || [];
-            return [options.store, hookReturn[1]];
+            const hookState = options.component?.state[stateKey];
+            return [hookState, hookReturn[1], hookReturn[2]];
         }
     });
 };

@@ -55,7 +55,7 @@ const registerComponent = (widgets: object | Function, domName?: string) => {
 
 const defineReadonlyProperty = (target:any, propertyKey: string, propertyValue: any) => {
     Object.defineProperty(target, propertyKey, {
-        configurable: false,
+        configurable: true,
         enumerable: true,
         value: propertyValue,
         writable: false
@@ -72,8 +72,8 @@ export const declareComponent = (options: IDeclareComponentOptions): Function =>
     (__contructor: Function): void => {
         __contructor.prototype.selector = formatSelector(options.selector || "");
         // 使用defineReadonlyProperty定义属性，防止用户自定义方法重复定义
-        defineReadonlyProperty(__contructor.prototype, "injectModel", options.model);
-        defineReadonlyProperty(__contructor.prototype, "injectService", options.service);
+        !__contructor.prototype.injectModel && defineReadonlyProperty(__contructor.prototype, "injectModel", options.model);
+        !__contructor.prototype.injectService && defineReadonlyProperty(__contructor.prototype, "injectService", options.service);
         defineReadonlyProperty(__contructor.prototype, "connect", options.connect);
         defineReadonlyProperty(__contructor.prototype, "i18nConfig", options.i18n);
         defineReadonlyProperty(__contructor.prototype, "template", options.template);
@@ -94,9 +94,10 @@ export const inject = (options: { model?: any, service?: any }) => {
     };
 };
 
-export const loadComponents = (components: any) => {
+export const loadComponents = (components: any, callback?: Function) => {
     // tslint:disable-next-line: variable-name
     return (__contructor: Function): void => {
         defineReadonlyProperty(__contructor.prototype, "components", components);
+        typeof callback === "function" && defineReadonlyProperty(__contructor.prototype, "__loadComponentCallback__", callback);
     };
 };

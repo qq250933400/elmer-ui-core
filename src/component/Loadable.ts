@@ -1,5 +1,5 @@
 import { StaticCommon as utils } from "elmer-common";
-import { useComponent, useEffect, useState } from "../hooks";
+import { useCallback, useComponent, useEffect, useState } from "../hooks";
 
 type TypeLoadableOptions = {
     loader: Function;
@@ -9,7 +9,8 @@ type TypeLoadableOptions = {
 };
 
 const defaultLoading = () => {
-    return `<div style="display: inline-block;width: 48px;height: 48px;text-align: center; padding: 20px;" data-type="html"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="48px" height="60px" viewBox="0 0 24 30" style="enable-background:new 0 0 50 50" xml:space="preserve">
+    return `<div style="display: inline-block;width: 48px;height: 48px;text-align: center; padding: 20px;" data-type="htmlx">
+    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="48px" height="60px" viewBox="0 0 24 30" style="enable-background:new 0 0 50 50" xml:space="preserve">
         <rect x="0" y="9.22656" width="4" height="12.5469" fill="#FF6700">
             <animate attributeName="height" attributeType="XML" values="5;21;5" begin="0s" dur="0.6s" repeatCount="indefinite"></animate>
             <animate attributeName="y" attributeType="XML" values="13; 5; 13" begin="0s" dur="0.6s" repeatCount="indefinite"></animate>
@@ -53,10 +54,11 @@ const defaultError = ({message, statusCode, showCode}) => {
 
 export const Loadable = (options: TypeLoadableOptions) => {
     return () => {
-        const [tStatus, setStatus] = useState("loadStatus", {
+        const [ {}, setStatus, getStatus] = useState("loadStatus", {
             loaded: false,
             message: "Ok",
             showError: false,
+            showLoading: true,
             statusCode: "200"
         });
         const useNewComponent = useComponent("AsyncComponent", options.loading || defaultLoading);
@@ -70,17 +72,20 @@ export const Loadable = (options: TypeLoadableOptions) => {
                     options.loader().then((resp:any) => {
                         if(resp["__esModule"] && typeof resp.default === "function") {
                             const AsyncComponet= resp.default;
+                            const lastStatus = getStatus();
                             useNewComponent(AsyncComponet);
                             setStatus({
-                                ...tStatus,
+                                ...lastStatus,
                                 loaded: true,
-                                showError: false
+                                showError: false,
+                                showLoading: false,
                             });
                         } else {
                             setStatus({
                                 loaded: true,
                                 message: "AsyncComponent module not an function or constructor.",
                                 showError: true,
+                                showLoading: false,
                                 statusCode: "Async500"
                             });
                         }
@@ -92,6 +97,7 @@ export const Loadable = (options: TypeLoadableOptions) => {
                             loaded: true,
                             message: "Load asyncComponent fail: " + err.message,
                             showError: true,
+                            showLoading: false,
                             statusCode: "Async500"
                         });
                     });
@@ -99,9 +105,9 @@ export const Loadable = (options: TypeLoadableOptions) => {
             }
         });
         return `<div data="Loadable" class="{{state.className}}">
-            <AsyncComponent em:if="state.loadStatus.loaded seq true && state.loadStatus.showError sneq true" ...="{{props}}" id="{{state.asyncAppId}}" status="{{state.loadStatus.loaded}}"/>
-            <Loading em:if="state.loadStatus.loaded sneq true"/>
-            <ErrorInfo if="{{state.loadStatus.showError}}" message="{{state.loadStatus.message}}" statusCode="{{state.loadStatus.statusCode}}"/>
+            <div class="AsyncComponent"><AsyncComponent em:if="state.loadStatus.loaded seq true && state.loadStatus.showError sneq true" ...="{{props}}" id="{{state.asyncAppId}}" status="{{state.loadStatus.loaded}}"/></div>
+            <div class="showLoading"><Loading em:if="state.loadStatus.showLoading"/></div>
+            <div class="ErrorInfo"><ErrorInfo if="{{state.loadStatus.showError}}" message="{{state.loadStatus.message}}" statusCode="{{state.loadStatus.statusCode}}"/></div>
         </div>`;
     };
 };

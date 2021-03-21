@@ -1,24 +1,35 @@
-import { injectable } from "../../injectable/injectable";
 import { Common } from "elmer-common";
-import { RouterContext } from "./RouterContext";
-
-const [ routerState ] = RouterContext;
+import { injectable } from "../../injectable/injectable";
 
 type TypeRouterServiceEvent = "onLocationChange";
 
+export type TypeRouterType = "browser" | "hash" | "memory";
+export type TypeRouterState = {
+    listeners: any;
+    location: string;
+    type: TypeRouterType,
+    tempData?: any
+};
+
 @injectable("RouterService")
 export class RouterService extends Common {
+    state: TypeRouterState = {
+        listeners: {},
+        location: "",
+        tempData: null,
+        type: "browser"
+    };
     constructor() {
         super();
         window.onpopstate = () => {
             this.onWindowHashChange({
                 newURL: location.href,
-                oldURL: routerState.location
+                oldURL: this.state.location
             });
         };
     }
     onWindowHashChange(event) {
-        const eventListeners = routerState.listeners["onLocationChange"];
+        const eventListeners = this.state.listeners["onLocationChange"];
         const newUrl = event.newURL || "", oldUrl = event.oldURL || "";
         let newLocationUrl = newUrl, oldLocationUrl = oldUrl;
         if(event.type === "hashchange") {
@@ -27,30 +38,29 @@ export class RouterService extends Common {
             newLocationUrl = newHashUrl;
             oldLocationUrl = oldHashUrl;
         }
-        routerState.location = newLocationUrl;
+        this.state.location = newLocationUrl;
         Object.keys(eventListeners).map((evtId) => {
             eventListeners[evtId](newLocationUrl, oldLocationUrl);
         });
     }
     addEvent(name: TypeRouterServiceEvent, callback: Function): Function {
         const eventId = "router_event_" + this.guid();
-        const contextObj = RouterContext[2];
-        if(!contextObj.state.listeners[name]) {
-            contextObj.state.listeners[name] = {};
+        if(!this.state.listeners[name]) {
+            this.state.listeners[name] = {};
         }
-        contextObj.state.listeners[name][eventId] = callback;
+        this.state.listeners[name][eventId] = callback;
         return () => this.removeEvent(name, eventId);
     }
     push(pathName: string, state?: any, type?: "browser"|"hash"): void {
         let pushPathName = "";
-        const oldPathName = routerState.location;
+        const oldPathName = this.state.location;
         if(type === "browser") {
             pushPathName = pathName;
         } else {
             pushPathName = "#" + pathName;
         }
-        routerState.tempData = state;
-        routerState.location = pushPathName;
+        this.state.tempData = state;
+        this.state.location = pushPathName;
         history.pushState(state, "NavigateTo", pushPathName);
         this.onWindowHashChange({
             newURL: pushPathName,
@@ -62,9 +72,8 @@ export class RouterService extends Common {
      * @param name eventName
      */
     private removeEvent(name: TypeRouterServiceEvent, eventId: string): void {
-        const contextObj = RouterContext[2];
-        if(contextObj.state?.listeners[name]) {
-            delete contextObj.state.listeners[name][eventId];
+        if(this.state?.listeners[name]) {
+            delete this.state.listeners[name][eventId];
         }
     }
 }

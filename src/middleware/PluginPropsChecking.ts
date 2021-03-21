@@ -17,6 +17,22 @@ export class PluginPropsChecking extends RenderMiddlewarePlugin {
             }
             delete options?.props["..."];
         }
+        if(options.nodeData.events) {
+            Object.keys(options.nodeData.events).map((eventKey) => {
+                options.props[eventKey] = options.nodeData.events[eventKey];
+            });
+        }
+        if(typeof options.Component.prototype["__loadComponentCallback__"] === "function") {
+            const defineComponents = options.Component.prototype["__loadComponentCallback__"](options.props);
+            const allComponents = options.Component.prototype["components"] || {};
+            if(defineComponents) {
+                delete options.Component.prototype.components;
+                utils.defineReadOnlyProperty(options.Component.prototype, "components", {
+                    ...allComponents,
+                    ...defineComponents
+                });
+            }
+        }
     }
     init(options: TypeRenderMiddlewareEvent): void {
         this.checkPropTypes(options.componentObj, options.Component);

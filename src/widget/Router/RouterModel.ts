@@ -1,10 +1,7 @@
-import { RouterContext, TypeRouterType } from "./RouterContext";
+import { StaticCommon as utils } from "elmer-common";
 import { IVirtualElement } from "elmer-virtual-dom";
 import { autowired } from "../../injectable";
-import { RouterService } from "./RouterService";
-import { StaticCommon as utils } from "elmer-common";
-
-const [ RouterState ] = RouterContext;
+import { RouterService, TypeRouterType } from "./RouterService";
 
 export class RouterModel {
     private children: IVirtualElement[];
@@ -40,7 +37,7 @@ export class RouterModel {
         if(this.routerType === "memory") {
             this.currentLocation = newUrl;
         } else {
-            RouterState.location = newUrl;
+            this.service.state.location = newUrl;
         }
         const newRouteData = this.getInitData();
         this.domObj.setState({
@@ -57,7 +54,6 @@ export class RouterModel {
     }
     getInitData(): any[] {
         const url = this.getLocation() || "";
-        console.log(this.routerType, url);
         const RouterResult = [];
         let matchIndex = -1;
         if(this.children && this.children.length > 0 ) {
@@ -93,13 +89,13 @@ export class RouterModel {
                         }
                     }
                     const newRouterItem = {
-                        path,
+                        children: vdom.children,
+                        className: this.className || "",
                         component,
+                        path,
                         props: {
                             ...vprops
-                        },
-                        children: vdom.children,
-                        className: this.className || ""
+                        }
                     };
                     RouterResult.push(newRouterItem);
                     delete newRouterItem.props.path;
@@ -114,14 +110,14 @@ export class RouterModel {
         if(matchIndex >= 0) {
             RouterResult[matchIndex].visible = true;
             RouterResult.push({
-                path: "/",
                 component: "404",
+                path: "/",
                 visible: false
             });
         } else {
             RouterResult.push({
-                path: url,
                 component: "404",
+                path: url,
                 visible: true
             });
         }

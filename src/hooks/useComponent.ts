@@ -15,7 +15,6 @@ export const useComponent = (selector: string, Component: Function): Function =>
     if(!hookStore.useComponent[hookIndex]) {
         const useComponentCallback = ((vRenderObj: any, obj:any) => {
             return (NewComponent: Function) => {
-                console.log(vRenderObj);
                 vRenderObj.userComponents[selector] = NewComponent;
             };
         })(renderObj, componentObj);

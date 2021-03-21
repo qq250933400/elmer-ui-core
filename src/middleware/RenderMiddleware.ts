@@ -92,7 +92,7 @@ export class RenderMiddleware extends ARenderMiddleware {
             if(methodName === "destroy" && options?.componentObj["$hookDestory"]) {
                 const hookDestory = options?.componentObj["$hookDestory"];
                 Object.keys(hookDestory).map((hookIndex) => {
-                    hookDestory[hookIndex]();
+                    typeof hookDestory[hookIndex] === "function" && hookDestory[hookIndex](methodName);
                 });
             }
         }

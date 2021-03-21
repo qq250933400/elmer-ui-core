@@ -4,7 +4,7 @@ import { injectable } from "../injectable/injectable";
 
 export const XML_NL = "http://www.w3.org/2000/xmlns/";
 export const SVG_NL = "http://www.w3.org/2000/svg";
-export const SVG_ELE = ["a", "circle", "ellipse", "foreignObject", "g", "image", "line", "path", "polygon", "polyline", "rect", "svg", "text", "tspan", "use"];
+export const SVG_ELE = ["a", "circle", "ellipse", "foreignObject", "g", "image", "line", "path", "polygon", "polyline", "rect", "svg", "text", "tspan", "use", "animate"];
 
 @injectable("ElmerRenderAttrs")
 export class ElmerRenderAttrs {
@@ -14,9 +14,6 @@ export class ElmerRenderAttrs {
      * @param vdom 虚拟dom节点
      */
     render(dom:HTMLElement, vdom:IVirtualElement): void {
-        if(vdom.status === "DELETE") {
-            console.log(vdom);
-        }
         if(vdom.tagName === "text") {
             dom.textContent = vdom.innerHTML;
         } else {

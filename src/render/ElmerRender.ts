@@ -3,10 +3,10 @@ import { IVirtualElement, VirtualNode, VirtualRender } from "elmer-virtual-dom";
 import { ElmerWorker } from "elmer-worker";
 import { Component, CONST_CLASS_COMPONENT_FLAG } from "../component/Component";
 import { ContextStore } from "../context/contextStore";
+import { globalVar } from "../core/globalState";
 import { ElmerEvent } from "../events/ElmerEvent";
 import { IElmerEvent } from "../events/IElmerEvent";
 import { wikiState } from "../hooks/hookUtils";
-import { globalVar } from "../core/globalState";
 import { autowired } from "../injectable";
 // import { InjectComponent } from "../middleware/InjectComponent";
 import { RenderMiddleware } from "../middleware/RenderMiddleware";
@@ -113,6 +113,7 @@ export class ElmerRender extends Common {
             });
         }
         this.eventObj.nodeRegister(options.nodePath, this.options.path);
+        this.options.component.$getComponents = () => this.userComponents;
     }
     /**
      * 获取最后一个渲染的真实元素
@@ -175,6 +176,7 @@ export class ElmerRender extends Common {
             Object.keys(this.renderComponents).map((virtualId: string) => {
                 const vRender = <ElmerRender>this.renderComponents[virtualId];
                 vRender.destroy();
+                delete this.renderComponents[virtualId];
             });
         }
         this.unbindAllEvents(true);
@@ -297,7 +299,6 @@ export class ElmerRender extends Common {
                     if(!hasPathUpdate) {
                         hasPathUpdate = renderDom.deleteElements && renderDom.deleteElements.length > 0;
                     }
-                    // console.log(renderDom, (this.options.component as any).selector);
                     this.unbindAllEvents(); // 清空上一次的注册的事件，重新添加
                     this.deleteVDomOutOfLogic(renderDom.deleteElements); // 删除dom diff算法计算出需要手动删除的节点
                     queueCallFunc(renderParams, (option, params):any => {
@@ -561,9 +562,11 @@ export class ElmerRender extends Common {
                                             prevDom: vdom.dom
                                         });
                                     }).catch((err) => {
+                                        const lightStack = this.isObject(err.exception) ? err.exception.stack : err.stack;
+                                        const finalStack = err.exception?.exception?.stack || lightStack;
                                         reject({
                                             message: err.message,
-                                            stack: this.isObject(err.exception) ? err.exception.stack : err.stack,
+                                            stack: finalStack,
                                             statusCode: err.statusCode
                                         });
                                     });
@@ -575,23 +578,16 @@ export class ElmerRender extends Common {
                                 }
                             }
                         } else {
-                            // 节点不是删除状态时，children是空， 当前循环到此结束
-                            if(vdom.status === "DELETE") {
-                                // 当节点被标记为删除时，移除dom元素，并销毁事件监听和虚拟dom对象
-                                // todo release all user defined component
-                                // 删除事件监听已经在渲染前做删除，不需要在此处做操作
-                                if(vdom.dom) {
-                                    vdom.dom.parentElement && vdom.dom.parentElement.removeChild(vdom.dom);
-                                    vdom.dom = null;
-                                }
-                                this.deleteVirtualDom(vdom);
-                            }
-                            if(!this.isEmpty(vdom.props.id)) {
-                                delete this.options.component.dom[vdom.props.id]; // 移除当前dom
-                            }
+                            // 节点是删除状态时，当前循环到此结束, 删除所有子节点
+                            // 当节点被标记为删除时，移除dom元素，并销毁事件监听和虚拟dom对象
+                            // todo release all user defined component
+                            // 删除事件监听已经在渲染前做删除，不需要在此处做操作
+                            // 当前节点被删除，下一个节点的邻近节点需要往前查找，找不到使用父组件传递过来的节点，否则会以append的方式添加到容易最后一个节点
+                            const getPrevDom = this.getPrevDom(vdom, vdomParent).dom;
+                            this.deleteVirtualDom(vdom);
                             resolve({
                                 hasPathUpdate: hasPathChange,
-                                prevDom: !vdom.dom && options.isTopLevel ? this.options.prevDom : vdom.dom
+                                prevDom: !getPrevDom && options.isTopLevel ? this.options.prevDom : null
                             });
                         }
                     }
@@ -659,6 +655,7 @@ export class ElmerRender extends Common {
                     useEffect: {},
                     useState: {}
                 };
+                const extendComponents = props["__cfp__"] ? this.userComponents : [];
                 let component;
                 if(flag === CONST_CLASS_COMPONENT_FLAG) {
                     // 类组件
@@ -735,7 +732,7 @@ export class ElmerRender extends Common {
                     path: vdom.path,
                     prevDom: this.getPrevDomByVirtualNode(prevDom) as HTMLElement || options.prevDom,
                     renderOptions: this.options.renderOptions,
-                    userComponents: options.components,
+                    userComponents: extendComponents, // options.components,
                     worker: this.options.worker
                 });
                 vdom.virtualID = virtualId;
@@ -1016,11 +1013,16 @@ export class ElmerRender extends Common {
      * 遇到需要删除的节点时，释放所有子节点数据
      * @param vdom
      */
-    private deleteVirtualDom(vdom:IVirtualElement): void {
+    private deleteVirtualDom(vdom:IVirtualElement, isDeepDelete?: boolean): void {
         if(vdom?.tagAttrs?.isComponent) {
             if(this.renderComponents[vdom.virtualID]) {
                 (this.renderComponents[vdom.virtualID] as ElmerRender).destroy();
                 delete this.renderComponents[vdom.virtualID];
+            }
+        } else {
+            if(vdom.dom && !isDeepDelete) {
+                vdom.dom.parentElement && vdom.dom.parentElement.removeChild(vdom.dom);
+                vdom.dom = null;
             }
         }
         vdom.status === "DELETE";
@@ -1029,7 +1031,7 @@ export class ElmerRender extends Common {
         vdom.props = {};
         if(vdom.children && vdom.children.length > 0) {
             vdom.children.map((vdomChild) => {
-                this.deleteVirtualDom(vdomChild);
+                this.deleteVirtualDom(vdomChild, true);
             });
         }
     }
@@ -1038,7 +1040,7 @@ export class ElmerRender extends Common {
      * 这种元素在新dom树无法标记，所以需要手动删除
      * @param deleteVdoms
      */
-    private deleteVDomOutOfLogic(deleteVdoms: IVirtualElement[]): void {
+    private deleteVDomOutOfLogic(deleteVdoms: IVirtualElement[], isDeepDelete?: boolean ): void {
         if(deleteVdoms && deleteVdoms.length > 0) {
             for(const delDom of deleteVdoms) {
                 if(!this.isEmpty(delDom.props.id)) {
@@ -1049,13 +1051,14 @@ export class ElmerRender extends Common {
                     dRender && dRender.destroy();
                     delete this.renderComponents[delDom.virtualID];
                 } else {
-                    if(delDom.dom) {
+                    if(delDom.dom && !isDeepDelete) {
                         delDom.dom.parentElement && delDom.dom.parentElement.removeChild(delDom.dom);
                         // 每次渲染前都会将事件监听清除，重新挂载新的事件监听, 不需要每次都做判断
                         // 此操作对渲染功能影响是否需要在做处理，留到后续版本做更新
                         // todo: Release event listener
                     }
                 }
+                delDom.children && delDom.children.length > 0 && this.deleteVDomOutOfLogic(delDom.children, true);
             }
         }
     }

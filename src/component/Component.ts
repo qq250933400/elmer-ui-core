@@ -44,6 +44,7 @@ export abstract class Component<P={children?: IVirtualElement[]}, S={}, C={}> ex
     public $didMount?(): void;
     public $didUpdate?(): void;
     public $willMount?(): void;
+    public $getComponents?(): any;
     /**
      * 更新数据，触发组件重新渲染(已废弃)
      * @deprecated

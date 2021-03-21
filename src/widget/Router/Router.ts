@@ -10,6 +10,7 @@ type TypeRouterProps = {
     type: TypeRouterType;
     RouterContext: TypeRouterContext;
     children: any[];
+    __cfp__: boolean;
 };
 type TypeRouterData = {
     component: string;
@@ -29,7 +30,6 @@ type TypeRouterService = {
 const withContext = RouterContext[1];
 
 @declareComponent({selector: "router"})
-@withContext()
 @inject({
     model: {
         md: RouterModel
@@ -48,6 +48,12 @@ class Router extends Component<TypeRouterProps, TypeRouterState> {
             defaultValue: "browser",
             description: "定义路由类型",
             rule: PropTypes.oneValueOf(["browser", "hash", "memory"]).isRequired
+        },
+        // tslint:disable-next-line: object-literal-sort-keys
+        __cfp__: {
+            defaultValue: true,
+            description: "必须的属性用于从父组件继承",
+            rule: PropTypes.bool.isRequired
         }
     };
     model: TypeRouterModel;
@@ -61,7 +67,6 @@ class Router extends Component<TypeRouterProps, TypeRouterState> {
         this.state = {
             data: []
         };
-        console.log("init route");
     }
     $getContext({path}):any {
         return {
@@ -86,19 +91,20 @@ class Router extends Component<TypeRouterProps, TypeRouterState> {
         this.model.md.setChildren(this.props.children);
         this.onRemoveLocationChange = this.service.com.addEvent("onLocationChange", this.model.md.onLocationChange.bind(this.model.md));
         this.state.data = this.model.md.getInitData();
-        console.log(this.props.children, "----$inject");
     }
     $willMount(): void {
         // remove event
         this.onRemoveLocationChange();
     }
-    $didMount(): void {
-        console.log(this.state.data, "---DidMount");
+    getComponent(config) {
+        const allComponents = this.$getComponents() || {};
+        const component = this.getValue(allComponents,config.component);
+        return component;
     }
     render(): any {
         return `
             <forEach data="state.data" item="config" index="routeIndex">
-                <Route key="RouteLoop" component="{{config.component}}" config="{{config}}" if="{{config.visible}}" />
+                <Route key="RouteLoop" path="{{config.path}}" component="{{getComponent(config)}}" config="{{config}}" if="{{config.visible}}" />
             </forEach>`;
     }
 }

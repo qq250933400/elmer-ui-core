@@ -1,5 +1,5 @@
 import { RenderMiddleware } from "../middleware/RenderMiddleware";
-import { getWikiState, setWikiState, TypeHookStore, defineHook } from "./hookUtils";
+import { defineHook } from "./hookUtils";
 
 type TypeUseEffectOptions<P,S> = {
     props: P;
@@ -12,7 +12,7 @@ export const useEffect = <P={},S={}>(callback: TypeUseEffectFn<P,S>): void => {
         if(options.isInit) {
             options.onEffect((name, effectEvent) => {
                 const destoryCallback = callback(name, effectEvent as any);
-                options.onDestory(destoryCallback);
+                typeof destoryCallback === "function" && options.onDestory(destoryCallback);
             });
         }
     }, true);

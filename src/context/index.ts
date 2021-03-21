@@ -64,7 +64,7 @@ export const createContext = <T>(contextName: string, initState?: T):TypeCreateC
                                 ...newContextData
                             });
                         });
-                        return `<WithContextComponent ...="props" ${contextNodeName}="{{state.contextState}}"><context/></WithContextComponent>`;
+                        return `<div><WithContextComponent ...="props" ${contextNodeName}="{{state.contextState}}"><context/></WithContextComponent></div>`;
                     };
                 };
             };
