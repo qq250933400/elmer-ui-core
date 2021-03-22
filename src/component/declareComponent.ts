@@ -1,5 +1,5 @@
 import { globalVar } from "../core/globalState";
-import { IDeclareComponentOptions } from "./IDeclareComponent";
+import { IDeclareComponentOptions, IReduxConnect } from "./IDeclareComponent";
 
 const formatSelector = (selectorName: string): string => {
     let dName = selectorName.replace(/([A-Z])/g, "-$1").replace(/^([a-z])/i, "-$1").toLowerCase();
@@ -74,7 +74,7 @@ export const declareComponent = (options: IDeclareComponentOptions): Function =>
         // 使用defineReadonlyProperty定义属性，防止用户自定义方法重复定义
         !__contructor.prototype.injectModel && defineReadonlyProperty(__contructor.prototype, "injectModel", options.model);
         !__contructor.prototype.injectService && defineReadonlyProperty(__contructor.prototype, "injectService", options.service);
-        defineReadonlyProperty(__contructor.prototype, "connect", options.connect);
+        !__contructor.prototype.connect && defineReadonlyProperty(__contructor.prototype, "connect", options.connect);
         defineReadonlyProperty(__contructor.prototype, "i18nConfig", options.i18n);
         defineReadonlyProperty(__contructor.prototype, "template", options.template);
         options.components && defineReadonlyProperty(__contructor.prototype, "components", options.components);
@@ -85,6 +85,13 @@ export const declareComponent = (options: IDeclareComponentOptions): Function =>
         }
         registerComponent(__contructor, options.selector);
     };
+
+export const connect = (options: IReduxConnect) => {
+    // tslint:disable-next-line: variable-name
+    return (__contructor: Function): void => {
+        defineReadonlyProperty(__contructor.prototype, "connect", options);
+    };
+};
 
 export const inject = (options: { model?: any, service?: any }) => {
     // tslint:disable-next-line: variable-name

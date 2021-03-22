@@ -1,7 +1,7 @@
 import axios, { AxiosBasicCredentials } from "axios";
 import { StaticCommon as utils } from "elmer-common";
 import { createContext } from "../context";
-import { injectable } from "../injectable";
+import { autoInit, injectable } from "../injectable";
 
 type TypeServiceMethod = "GET" | "POST" | "DELETE" | "PUT" | "OPTIONS";
 
@@ -59,7 +59,7 @@ export class ElmerService {
         this.config = configData;
         serviceState.config = configData;
     }
-    getConfig(): TypeServiceNamespace<any> {
+    getConfig<T = any>(): {[P in keyof T]: TypeServiceNamespace<any>} {
         return this.config.config as any;
     }
     getEndPoint(endPointId: string): TypeServiceEndPoint<any>|undefined|null {
@@ -134,8 +134,9 @@ export class ElmerService {
                 resolve(({
                     config: endPoint,
                     data: resp.data,
+                    endPoint,
                     headers: resp.headers,
-                    options
+                    options  
                 } as any));
             }).catch((error) => {
                 // tslint:disable-next-line: no-console
@@ -181,7 +182,29 @@ export class ElmerService {
 }
 
 export const GetUrl = (endPoint: string) => {
-    return (target: any, attr: string, defaultValue?: any) => {
-        console.log(target, attr, defaultValue);
+    return (target: any, attr: string, defaultValue?: any): any => {
+        const obj = autoInit(ElmerService);
+        const myUrl = obj.getUrl(endPoint);
+        if(target) {
+            Object.defineProperty(target, attr, {
+                get: () => myUrl,
+                set: () => {throw new Error(`The property of ${attr} cannot be modified directly.`);}
+            });
+        }
+        return myUrl;
+    };
+};
+
+export const GetEndPoint= (endPoint: string) => {
+    return (target: any, attr: string, defaultValue?: any): any => {
+        const obj = autoInit(ElmerService);
+        const myEndPoint = obj.getEndPoint(endPoint);
+        if(target) {
+            Object.defineProperty(target, attr, {
+                get: () => myEndPoint,
+                set: () => {throw new Error(`The property of ${attr} cannot be modified directly.`);}
+            });
+        }
+        return myEndPoint;
     };
 };

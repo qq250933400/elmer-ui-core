@@ -23,11 +23,6 @@ export class RenderMiddleware extends ARenderMiddleware {
     init(options: TypeRenderMiddlewareEvent): void {
         this.callPluginMethod("init", options);
     }
-    inject(options: TypeRenderMiddlewareEvent): void {
-        // this.callPluginMethod("inject", options);
-        // typeof options?.componentObj?.$inject === "function" && options?.componentObj?.$inject();
-        console.log(options?.componentObj, options?.componentObj?.$inject);
-    }
     didMount(options: TypeRenderMiddlewareEvent): void {
         this.callPluginMethod("didMount", options);
     }
@@ -79,7 +74,8 @@ export class RenderMiddleware extends ARenderMiddleware {
                 console.error(err);
             }
         });
-        if(["init", "inject","beforeRender", "didMount", "didUpdate", "willReceiveProps", "destroy"].indexOf(methodName) >= 0) {
+        const allowMethods = ["init", "inject","beforeRender", "didMount", "didUpdate", "willReceiveProps", "destroy"];
+        if(allowMethods.indexOf(methodName) >= 0) {
             if(methodName !== "destroy" && options?.componentObj["$hookEffects"]) {
                 const hookEffects = options?.componentObj["$hookEffects"];
                 Object.keys(hookEffects).map((hookIndex) => {
