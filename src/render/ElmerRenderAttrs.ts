@@ -26,8 +26,8 @@ export class ElmerRenderAttrs {
                     const attrValue = updateProps[attrKey];
                     const srcEventName = attrKey.replace(/^on/, "");
                     if(/^on/.test(attrKey) && EventNames.indexOf(srcEventName) >= 0) {
-                            // tslint:disable-next-line: no-console
-                            console.error("事件监听请使用et:前缀设置，示例（et:click）");
+                        // tslint:disable-next-line: no-console
+                        console.error("事件监听请使用et:前缀设置，示例（et:click）");
                     } else {
                         if(/^checked$/i.test(attrKey)) {
                             dom.setAttribute(attrKey, attrValue ? "checked" : null);

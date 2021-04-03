@@ -50,7 +50,7 @@ export const defineHook = <T>(hookName: string, callback: TypeDefineHookCallback
     const componentObj = <any>getWikiState("_this");
     const renderObj = <any>getWikiState("_renderObj");
     let hookIndex = <any>getWikiState(hookIndexKey);
-    if(["useCallback", "useComponent", "useEffect", "getNode"].indexOf(hookName) >= 0 && !override) {
+    if(["useCallback", "useComponent", "useEffect"].indexOf(hookName) >= 0 && !override) {
         throw new Error(`The hook name to define is a system reserved name that is not allowed.(${hookName})`);
     }
     if(!hookStore) {

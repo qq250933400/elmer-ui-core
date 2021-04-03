@@ -5,7 +5,7 @@ type TypeUseEffectOptions<P,S> = {
     props: P;
     state: S
 };
-type TypeUseEffectFn<P, S> = (eventName: keyof RenderMiddleware, options: TypeUseEffectOptions<P,S>) => Function|undefined|null;
+type TypeUseEffectFn<P, S> = (eventName: keyof RenderMiddleware, options: TypeUseEffectOptions<P,S>) => Function|undefined|null|void;
 
 export const useEffect = <P={},S={}>(callback: TypeUseEffectFn<P,S>): void => {
     defineHook("useEffect", (options) => {

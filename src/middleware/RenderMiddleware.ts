@@ -1,3 +1,4 @@
+import { CONST_CLASS_COMPONENT_FLAG } from "../component";
 import { autoInit, injectable  } from "../injectable";
 import { ARenderMiddleware, TypeRenderMiddlewareEvent } from "./ARenderMiddleware";
 import { PluginInjectModel } from "./PluginInjectModel";
@@ -21,6 +22,7 @@ export class RenderMiddleware extends ARenderMiddleware {
         this.callPluginMethod("beforeInit", options);
     }
     init(options: TypeRenderMiddlewareEvent): void {
+        this.mergeFunctionComponentProperty(options);
         this.callPluginMethod("init", options);
     }
     didMount(options: TypeRenderMiddlewareEvent): void {
@@ -91,6 +93,14 @@ export class RenderMiddleware extends ARenderMiddleware {
                     typeof hookDestory[hookIndex] === "function" && hookDestory[hookIndex](methodName);
                 });
             }
+        }
+    }
+    private mergeFunctionComponentProperty(options: TypeRenderMiddlewareEvent): void {
+        const flag = (<any>options.Component).flag;
+        if(flag !== CONST_CLASS_COMPONENT_FLAG) {
+            Object.keys(options.Component).map((attrKey) => {
+                (options.componentObj as any)[attrKey] = (options.Component as any)[attrKey];
+            });
         }
     }
 }

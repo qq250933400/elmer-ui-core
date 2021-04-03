@@ -38,7 +38,7 @@ export const useCallback = (callback: Function, options?: TypeUseCallbackHookOpt
                         }
                     }
                     if(hasChange) {
-                        const myResult = myCallback.apply(null, newArgs);
+                        const myResult = myCallback.apply(obj, newArgs);
                         store.useCallback[stateIndex].value = myResult;
                         store.useCallback[stateIndex].arguments = newArgs;
                         return myResult;
@@ -46,7 +46,7 @@ export const useCallback = (callback: Function, options?: TypeUseCallbackHookOpt
                         return hookStoreObj.value;
                     }
                 } else {
-                    const myResult = myCallback.apply(null, newArgs);
+                    const myResult = myCallback.apply(obj, newArgs);
                     store.useCallback[stateIndex].value = myResult;
                     return myResult;
                 }

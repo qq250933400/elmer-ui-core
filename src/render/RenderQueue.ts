@@ -55,38 +55,43 @@ export class RenderQueue extends Common {
         });
     }
     private runActions(sessionId: string): void {
-        const renderSession: TypeRenderQueueSession = this.queueList[sessionId];
-        if(!renderSession.actionRuning) {
-            // 没有正在执行任务，开始检测状态并进入执行阶段
-            // 当有任务正在执行时跳过触发阶段
-            const actionLength = renderSession.actionList.length;
-            if(actionLength > 0) {
-                // has task waiting
-                const updateState = {};
-                const updateData = {};
-                for(let i=actionLength - 1;i>renderSession.lastActionIndex;i--) {
-                    if(!renderSession.actionList[i].isRended) {
-                        // 合并队列中的数据，统一执行一次
-                        // 添加当前队列索引到执行状态的列表中，下一次执行任务忽略执行过的队列
-                        const curAction = renderSession.actionList[i];
-                        this.extend(updateState, curAction.options.state);
-                        this.extend(updateData, curAction.options.data);
-                        renderSession.actionRuningIndexs.push(i);
-                        renderSession.actionList[i].isRended = true;
+        try {
+            const renderSession: TypeRenderQueueSession = this.queueList[sessionId];
+            if(!renderSession.actionRuning) {
+                // 没有正在执行任务，开始检测状态并进入执行阶段
+                // 当有任务正在执行时跳过触发阶段
+                const actionLength = renderSession.actionList.length;
+                if(actionLength > 0) {
+                    // has task waiting
+                    const updateState = {};
+                    const updateData = {};
+                    for(let i=actionLength - 1;i>renderSession.lastActionIndex;i--) {
+                        if(!renderSession.actionList[i].isRended) {
+                            // 合并队列中的数据，统一执行一次
+                            // 添加当前队列索引到执行状态的列表中，下一次执行任务忽略执行过的队列
+                            const curAction = renderSession.actionList[i];
+                            this.extend(updateState, curAction.options.state);
+                            this.extend(updateData, curAction.options.data);
+                            renderSession.actionRuningIndexs.push(i);
+                            renderSession.actionList[i].isRended = true;
+                        }
                     }
+                    renderSession.lastActionIndex = actionLength - 1;
+                    renderSession.actionRuning = true;
+                    renderSession.render({
+                        data: updateData,
+                        state: updateState
+                    }).then(() => {
+                        // 将当前执行的数据都
+                        this.checkSessionStatus(sessionId, false);
+                    }).catch((err) => {
+                        this.checkSessionStatus(sessionId, true, err);
+                    });
                 }
-                renderSession.lastActionIndex = actionLength - 1;
-                renderSession.actionRuning = true;
-                renderSession.render({
-                    data: updateData,
-                    state: updateState
-                }).then(() => {
-                    // 将当前执行的数据都
-                    this.checkSessionStatus(sessionId, false);
-                }).catch((err) => {
-                    this.checkSessionStatus(sessionId, true, err);
-                });
             }
+        } catch(e) {
+            // tslint:disable-next-line: no-console
+            console.error(e, "---QueueAction");
         }
     }
     private checkSessionStatus(sessionId: string, error: any, exception?: any): void {

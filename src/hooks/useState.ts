@@ -1,6 +1,6 @@
-import { defineHook, getWikiState, setWikiState, TypeHookStore } from "./hookUtils";
+import { defineHook } from "./hookUtils";
 
-type TypeUseStateResult = [any, (state:any) => void, Function];
+type TypeUseStateResult = [any, (state:any) => Promise<any>, Function];
 
 export const useState = (stateKey: string, defaultState?: any):TypeUseStateResult => {
     return defineHook("useState", (options):any => {
@@ -11,8 +11,7 @@ export const useState = (stateKey: string, defaultState?: any):TypeUseStateResul
                     const updateStateData: any = {};
                     updateStateData[attrKey] = newState;
                     opt.store = newState;
-                    opt.setState(updateStateData);
-                    return newState;
+                    return opt.setState(updateStateData);
                 };
             })(options, stateKey);
             const saveState = {

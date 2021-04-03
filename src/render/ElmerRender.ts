@@ -379,7 +379,7 @@ export class ElmerRender extends Common {
                 });
             } catch(e) {
                 // tslint:disable-next-line: no-console
-                console.error(e);
+                console.error(e, "---RenderAction");
                 reject({
                     message: e.message,
                     statusCode: "T_500"
@@ -417,10 +417,12 @@ export class ElmerRender extends Common {
                     dataChanged = true;
                 }
                 if(dataChanged) {
-                    this.options.component.state = {
+                    const newState = {
                         ...(this.options.component.state || {}),
                         ...state
                     };
+                    delete this.options.component.state;
+                    this.options.component.state = newState;
                     this.render({
                         firstRender: false,
                         state
@@ -444,10 +446,10 @@ export class ElmerRender extends Common {
      * @param data 对比数据
      * @param fn 重新渲染结束回调
      */
-    private async setComponentData(data:any): Promise<any> {
+    private async setComponentData(data:any, ignoreWarn?: boolean): Promise<any> {
         return new Promise<any>((resolve, reject) => {
             // tslint:disable-next-line: no-console
-            console.warn("The SetData method is not recommended. Use setState instead。");
+            !ignoreWarn && console.warn("The SetData method is not recommended. Use setState instead。");
             if(this.isObject(data)) {
                 const component = this.options.component;
                 const dataKeys = Object.keys(data);
@@ -539,8 +541,8 @@ export class ElmerRender extends Common {
                             this.vdomAppendRender(container,vdom,vdomParent, prevDom as any);
                             hasPathChange = true;
                         } else if(vdom.status === "UPDATE") {
-                            if(this.isDOM(vdom.dom)) {
-                                this.renderDomAttrs.render(vdom.dom, vdom);
+                            if(this.isDOM(vdom.dom) || this.isTextNode(vdom.dom)) {
+                                this.renderDomAttrs.render(vdom.dom as any, vdom);
                             } else {
                                 // vdom.dom对象为undefined或null即为不存在对应的真实dom节点，需要新增
                                 !vdom.dom && this.vdomAppendRender(container, vdom, vdomParent, prevDom as any);
@@ -549,9 +551,13 @@ export class ElmerRender extends Common {
                             this.vdomMove(container, vdom, vdomParent);
                             hasPathChange = true;
                         } else if(vdom.status === "MOVEUPDATE") {
-                            this.vdomMove(container, vdom, vdomParent);
                             hasPathChange = true;
-                            this.renderDomAttrs.render(vdom.dom as HTMLElement, vdom);
+                            if(this.isDOM(vdom.dom) || this.isTextNode(vdom.dom)) {
+                                this.vdomMove(container, vdom, vdomParent);
+                                this.renderDomAttrs.render(vdom.dom as HTMLElement, vdom);
+                            } else {
+                                !vdom.dom && this.vdomAppendRender(container, vdom, vdomParent, prevDom as any);
+                            }
                         } else if(vdom.status === "NORMAL") {
                             if(!vdom.dom) {
                                 this.vdomAppendRender(container, vdom, vdomParent, prevDom as any);
@@ -947,7 +953,7 @@ export class ElmerRender extends Common {
     private createDomByVdom(vdom:IVirtualElement): HTMLElement|Text|Comment {
         if(vdom.tagName === "text") {
             return document.createTextNode(vdom.innerHTML);
-        } else if(vdom.tagName === "<!--") {
+        } else if(/^<\!--$/.test(vdom.tagName)) {
             return document.createComment(vdom.innerHTML);
         } else {
             if(vdom.tagAttrs?.isSVG && SVG_ELE.indexOf(vdom.tagName.toLowerCase())>=0) {
@@ -1006,7 +1012,7 @@ export class ElmerRender extends Common {
                 }
             }
         }
-        if(["text", "<!--"].indexOf(vdom.tagName)<0) {
+        if(!/^<\!--$/.test(vdom.tagName) && !/^text$/.test(vdom.tagName)) {
             // 文本节点不需要做事件绑定和属性渲染
             this.renderDomAttrs.render(newDom as HTMLElement, vdom);
         }
@@ -1172,5 +1178,8 @@ export class ElmerRender extends Common {
                 return vdom.dom;
             }
         }
+    }
+    private isTextNode(dom: any): boolean {
+        return Object.prototype.toString.call(dom) === "[object Text]";
     }
 }
