@@ -12,3 +12,6 @@ export * from "./context";
 export * from "./hooks";
 export * from "./render";
 export * from "./widget";
+export * from "./events/IElmerEvent";
+export * from "./propsValidation";
+// todo: refractor entry code

@@ -35,8 +35,8 @@ export interface IComponent<P=Object, S=Object, C=Object> {
     $init?(): void;
     $inject?(): void;
     $before?(): void;
-    $beforeVirtualRender?(dom?:IVirtualElement): void;
-    $beforeRender?(): boolean;
+    $beforeVirtualRender?(dom?:IVirtualElement): boolean|undefined;
+    $beforeRender?(dom: IVirtualElement): boolean;
     $after?(): void;
     $afterVirtualRender?(dom?:IVirtualElement): void;
     $resize?(event:IElmerEvent): void;

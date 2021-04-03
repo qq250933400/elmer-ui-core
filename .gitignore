@@ -11,6 +11,6 @@ package-lock.json
 /example/
 /lib/
 /mochawesome-report/
-
+eui.vscode.json
 .DS_Store
 /**/*/.DS_Store

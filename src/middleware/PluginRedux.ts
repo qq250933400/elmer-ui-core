@@ -3,7 +3,7 @@ import { attachReducerToController, defineReducer, ReduxController } from "elmer
 import { IReduxConnect } from "../component/IDeclareComponent";
 import { defineGlobalState, getGlobalState } from "../core/globalState";
 import { autowired, injectable } from "../injectable/injectable";
-import { IPropCheckRule } from "../propsValidation";
+import { IPropValidator } from "../propsValidation";
 import { TypeRenderMiddlewareEvent } from "./ARenderMiddleware";
 import { RenderMiddlewarePlugin } from "./RenderMiddlewarePlugin";
 
@@ -87,7 +87,7 @@ export class PluginRedux extends RenderMiddlewarePlugin {
             // const propsKey = Object.keys(props);
             Object.keys(checkRules).map((propKey:string) => {
                 if(utils.isObject(checkRules[propKey])) {
-                    const tmpCheckRule:IPropCheckRule = checkRules[propKey];
+                    const tmpCheckRule:IPropValidator = checkRules[propKey];
                     if(utils.isEmpty(props[propKey])) {
                         if(tmpCheckRule.defaultValue !== undefined) {
                             delete props[propKey];

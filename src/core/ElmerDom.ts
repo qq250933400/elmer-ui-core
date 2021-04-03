@@ -1,3 +1,4 @@
+import { StaticCommon as utils } from "elmer-common";
 import { ElmerAnimation, TypeAnimationChangeEvent, TypeElmerAnimationType } from "../animation/ElmerAnimation";
 import animationMethod, { TypeAnimationProperty } from "../animation/ElmerAnimationProperty";
 import { EventNames } from "../events/EventNames";
@@ -676,3 +677,14 @@ export class ElmerDOM extends ElmerDomQuery {
         }
     }
 }
+
+// tslint:disable-next-line: only-arrow-functions
+export const classNames = function(...argsList: Array<string|undefined|null>):string {
+    const list = [];
+    for(let i=0;i<argsList.length;i++) {
+        if(utils.isString(argsList[i]) && !utils.isEmpty(argsList[i])) {
+            list.push(argsList[i]);
+        }
+    }
+    return list.join(" ");
+};

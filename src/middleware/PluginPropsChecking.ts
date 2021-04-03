@@ -1,6 +1,6 @@
 import { StaticCommon as utils } from "elmer-common";
 import { Component } from "../component/Component";
-import { IPropCheckRule } from "../propsValidation";
+import { IPropValidator } from "../propsValidation";
 import { TypeRenderMiddlewareEvent } from "./ARenderMiddleware";
 import { RenderMiddlewarePlugin } from "./RenderMiddlewarePlugin";
 
@@ -46,11 +46,11 @@ export class PluginPropsChecking extends RenderMiddlewarePlugin {
     }
     private checkPropTypesCallBack(target: any,checkRules: any): void {
         Object.keys(checkRules).map((tmpKey: any) => {
-            let checkRuleData:IPropCheckRule|Function  = checkRules[tmpKey];
+            let checkRuleData:IPropValidator|Function  = checkRules[tmpKey];
             if(utils.isFunction(checkRuleData)) {
                 this.doCheckPropType(target, tmpKey, checkRuleData);
             } else if(utils.isObject(checkRuleData)) {
-                let checkData:IPropCheckRule = checkRuleData;
+                let checkData:IPropValidator = checkRuleData;
                 if(utils.isFunction(checkData.rule)) {
                     this.doCheckPropType(target, tmpKey, <Function>checkData.rule);
                 }
@@ -77,7 +77,7 @@ export class PluginPropsChecking extends RenderMiddlewarePlugin {
         const propValue = target.props[propertyKey];
         utils.isFunction(checkCallBack) && checkCallBack(propValue, {
             error: (msg: any, type:any) => {
-                const tagName = target.humpToStr(target["selector"]);
+                const tagName = utils.humpToStr(target["selector"]);
                 const sMsg = "组件【"+tagName+"】属性【"+propertyKey+"】设置错误：" + msg;
                 // tslint:disable-next-line:no-console
                 console.error(sMsg, type);

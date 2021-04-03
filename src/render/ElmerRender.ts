@@ -25,7 +25,7 @@ type TypeElmerRenderOptions = {
     contextStore: any;
     children?: IVirtualElement[];
     renderOptions: TypeUIRenderOptions;
-    userComponents?: Component[];
+    userComponents?: Component[] | any;
     event: ElmerEvent;
     worker: ElmerWorker;
     missionId: string;
@@ -82,6 +82,7 @@ export class ElmerRender extends Common {
     private eventObj: ElmerEvent; // 事件处理模块，全局只有一个对象，从最顶层往下传递
     private virtualId: string;
     private renderComponents: any = {}; // 当前组件下的自定义组件渲染对象
+    private allInUseComponent: any = {}; // 当前组件所有用到的自定义组件对象
     constructor(options: TypeElmerRenderOptions) {
         super();
         let userComponents = (options.component as any).components || {};
@@ -262,6 +263,7 @@ export class ElmerRender extends Common {
             try {
                 typeof this.options.component.$before === "function" && typeof this.options.component.$before();
                 this.getSourceCode().then((vdom) => {
+                    let isVirtualRenderResult: boolean;
                     this.oldDom = this.newDom;
                     this.sourceDom = vdom;
                     if(options.state) {
@@ -271,7 +273,41 @@ export class ElmerRender extends Common {
                         this.extend(this.options.component, options.data);
                     }
                     // 准备渲染虚拟dom，做数据绑定和diff运算
-                    typeof this.options.component.$beforeVirtualRender === "function" && this.options.component.$beforeVirtualRender(this.sourceDom);
+                    const destoryOnBeforeVirtualRender = this.virtualRender.bind(this.virtualId, "onBeforeRender", (opt) => {
+                        if(typeof this.options.component.$beforeVirtualRender === "function") {
+                            isVirtualRenderResult = this.options.component.$beforeVirtualRender(opt.data);
+                        }
+                    });
+                    if(isVirtualRenderResult !== undefined && isVirtualRenderResult !== null && !isVirtualRenderResult) {
+                        // 人为手动干预渲染动态
+                        resolve({});
+                        return;
+                    }
+                    const destoryOnVirtualRender = this.virtualRender.bind(this.virtualId, "onRender", (opt) => {
+                        const vituralDom: IVirtualElement = opt.data.dom;
+                        const isComponentChild = opt.data.isComponentChild;
+                        let isUserComponent = false;
+                        const elmerData = globalVar();
+                        const components = elmerData.components || {};
+                        const UserComponent = this.userComponents[vituralDom.tagName] || components[vituralDom.tagName];
+                        if(typeof UserComponent === "function") {
+                            const key = vituralDom.path.join("-");
+                            this.allInUseComponent[key] = {
+                                component: UserComponent,
+                                selector: vituralDom.tagName
+                            };
+                            isUserComponent = true;
+                        }
+                        if(isComponentChild) {
+                            if(!(vituralDom as any).component) {
+                                (vituralDom as any).component = this.options.component;
+                            }
+                        }
+                        return {
+                            isComponent: isUserComponent,
+                            isComponentChild
+                        };
+                    });
                     const renderDom = this.virtualRender.render(this.sourceDom, this.oldDom, this.options.component, {
                         children: this.options.children,
                         rootPath: this.options.path,
@@ -279,7 +315,14 @@ export class ElmerRender extends Common {
                     });
                     // this.virtualRender.unBind(this.virtualId, "onBeforeRender", renderEventId); // render 结束移除监听事件
                     typeof this.options.component.$afterVirtualRender === "function" && this.options.component.$afterVirtualRender(renderDom);
-                    typeof this.options.component.$beforeRender === "function" && this.options.component.$beforeRender();
+                    if(typeof this.options.component.$beforeRender === "function") {
+                        isVirtualRenderResult = this.options.component.$beforeRender(renderDom);
+                    }
+                    if(isVirtualRenderResult !== undefined && isVirtualRenderResult !== null && !isVirtualRenderResult) {
+                        // 人为手动干预渲染动态
+                        resolve({});
+                        return;
+                    }
                     // 准备渲染数据
                     const renderParams: TypeQueueCallParam[] = [];
                     let hasPathUpdate = false;
@@ -317,8 +360,12 @@ export class ElmerRender extends Common {
                     }, {
                         throwException: true
                     }).then(() => {
+                        destoryOnBeforeVirtualRender();
+                        destoryOnVirtualRender();
                         resolve({});
                     }).catch((err) => {
+                        destoryOnBeforeVirtualRender();
+                        destoryOnVirtualRender();
                         reject({
                             message: err.message,
                             stack: this.isObject(err.exception) ? err.exception.stack : err.stack,
@@ -603,6 +650,21 @@ export class ElmerRender extends Common {
             }
         });
     }
+    private getUseComponents(vdom: IVirtualElement, props: any): any {
+        if(props["__cfp__"]) {
+            return this.userComponents;
+        } else {
+            const extendComponents = {};
+            const currentPathKey = vdom.path.join("-");
+            Object.keys(this.allInUseComponent).map((key: string) => {
+                if(currentPathKey === key.substr(0, currentPathKey.length)) {
+                    const com = this.allInUseComponent[key];
+                    extendComponents[com.selector] = com.component;
+                }
+            });
+            return extendComponents;
+        }
+    }
     private renderUserComponent(options: TypeComponentRenderEvent):Promise<any> {
         const UserComponent: any = options.UserComponent,
             container:HTMLElement = options.container,
@@ -655,7 +717,7 @@ export class ElmerRender extends Common {
                     useEffect: {},
                     useState: {}
                 };
-                const extendComponents = props["__cfp__"] ? this.userComponents : [];
+                const extendComponents = this.getUseComponents(vdom, props); // 获取当前使用的自定义组件
                 let component;
                 if(flag === CONST_CLASS_COMPONENT_FLAG) {
                     // 类组件

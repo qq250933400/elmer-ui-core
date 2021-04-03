@@ -1,7 +1,7 @@
 import { Common } from "elmer-common";
 import { IVirtualElement } from "elmer-virtual-dom";
 import { IElmerEvent } from "../events/IElmerEvent";
-import { IPropCheckRule } from "../propsValidation";
+import { IPropValidator } from "../propsValidation";
 import { IComponent } from "./IComponent";
 import { IDeclareI18n, IReduxConnect } from "./IDeclareComponent";
 
@@ -9,7 +9,7 @@ export const CONST_CLASS_COMPONENT_FLAG = "COMPONENT_113df7d2-555c-53a1-30fb-586
 
 export abstract class Component<P={children?: IVirtualElement[]}, S={}, C={}> extends Common implements IComponent {
     static flag:string = CONST_CLASS_COMPONENT_FLAG;
-    propType?: {[PT in keyof P]?: IPropCheckRule};
+    propType?: {[PT in keyof P]?: IPropValidator};
     parent?: HTMLElement;
     dom: any;
     props?: P & {children?: IVirtualElement[]};
@@ -35,9 +35,9 @@ export abstract class Component<P={children?: IVirtualElement[]}, S={}, C={}> ex
     public $init?(): void;
     public $inject?(): void;
     public $before?(): void;
-    public $beforeVirtualRender?(dom?: IVirtualElement): void;
+    public $beforeVirtualRender?(dom?: IVirtualElement): boolean|undefined;
     public $beforeDiff?(dom?: IVirtualElement): void;
-    public $beforeRender?(): boolean;
+    public $beforeRender?(dom: IVirtualElement): boolean;
     public $afterVirtualRender?(dom?: IVirtualElement): void;
     public $resize?(event:IElmerEvent): void;
     public $unMount?(): void;
