@@ -6,10 +6,11 @@ const [ i18nState ] = i18nContext;
 
 type TypeWithI18nOption = {
     i18n?: any;
+    id?: string;
 };
 
-export const withI18n = (option?: TypeWithI18nOption) => {
-    return (TargetComponent: Function) => {
+export const withI18n = (option?: TypeWithI18nOption):Function => {
+    return (TargetComponent: Function):Function => {
         const getI18nData = ((opt) => {
             return ():any => {
                 if(i18nState.i18n) {
@@ -26,19 +27,33 @@ export const withI18n = (option?: TypeWithI18nOption) => {
             };
         })(option);
         (TargetComponent as any).i18n = getI18nData();
-        return () => {
+        const WithI18nComponent = (props, context) => {
             const [ comId ] = useState("comId", () => {
                 return "i18nComponent_" + utils.guid();
             });
             const getTargetComponent = getNode(comId);
+            const [ {}, getI18nCallback ] = useCallback(() => {
+                const i18nData = getI18nData();
+                const locale = !utils.isEmpty(i18nState.locale) ? i18nState.locale : i18nState.defaultLocale;
+                Object.keys(context).map((contextKey: string) => {
+                    if(/^i18n_/.test(contextKey)) {
+                        const newI18nFromOption = context[contextKey].state;
+                        const newI18n = newI18nFromOption[locale];
+                        if(newI18n) {
+                            utils.extend(i18nData, newI18n);
+                        }
+                    }
+                });
+                return i18nData;
+            }, {
+                args: [i18nState.locale]
+            });
             useComponent("WithI18nComponent", TargetComponent);
             useCallback((locale: string) => {
                 const obj = getTargetComponent();
-                let i18nData = getI18nData();
                 i18nState.locale = locale;
-                i18nData = getI18nData();
                 obj.setData({
-                    i18n: i18nData
+                    i18n: getI18nCallback()
                 }, true);
                 Object.keys(i18nState.listeners).map((evtId) => {
                     if(evtId !== comId) {
@@ -49,18 +64,31 @@ export const withI18n = (option?: TypeWithI18nOption) => {
             }, {
                 name: "setLocale"
             });
-            useEffect((name) => {
+            useCallback((localeId: string) => {
+                const localeData = getI18nCallback();
+                return utils.getValue(localeData as any, localeId);
+            }, {
+                name: "getI18n"
+            });
+            useCallback(() => {
+                return i18nState.locale || i18nState.defaultLocale;
+            }, {name: "getLanguage"});
+            useEffect((name, opt) => {
                 if(name === "didMount") {
                     if(!i18nState.listeners[comId]) {
                         // 注册监听事件
                         i18nState.listeners[comId] = () => {
                             // use it for subscribe locale change event
                             const obj = getTargetComponent();
-                            const i18nData = getI18nData();
+                            const i18nData = getI18nCallback();
                             obj.setData({
                                 i18n: i18nData
                             }, true);
                         };
+                    }
+                } else if(name === "init") {
+                    if(context) {
+                        (TargetComponent as any).i18n = getI18nCallback();
                     }
                 }
                 return () => {
@@ -68,7 +96,15 @@ export const withI18n = (option?: TypeWithI18nOption) => {
                     delete i18nState.listeners[comId];
                 };
             });
-            return `<WithI18nComponent id="{{state.comId}}" ...="props" et:setLocale="setLocale"><context /></WithI18nComponent>`;
+            return `<WithI18nComponent id="{{state.comId}}" ...="{{props}}" language="{{getLanguage()}}" et:getI18n="getI18n" et:setLocale="setLocale"><context /></WithI18nComponent>`;
         };
+        if(option?.i18n) {
+            const key = "i18n_" + utils.guid();
+            WithI18nComponent.$getContext = () => ({
+                data: option.i18n,
+                name: key
+            });
+        }
+        return WithI18nComponent;
     };
 };

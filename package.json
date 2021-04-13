@@ -20,6 +20,7 @@
             "src": "./src",
             "des": "./lib"
         },
+        "port": 3005,
         "template": "./example/index.html",
         "entry": "./example/index.ts",
         "output": {

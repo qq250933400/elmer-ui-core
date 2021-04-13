@@ -1,70 +1,59 @@
 import { StaticCommon as utils } from "elmer-common";
-import { getWikiState, setWikiState, TypeHookStore } from "./hookUtils";
+import { defineHook } from "./hookUtils";
 
 type TypeUseCallbackHookOptions = {
-    arguments?: any[]; // protect arguments, 设置以后只有当参数有变化时才会执行
-    initValue?: any;
+    args?: any[]; // protect arguments, 设置以后只有当参数有变化时才会执行
+    value?: any;
     name?: string; // 不为空时将callback绑定到Component对象上
+    event?: boolean;
 };
 
 type TypeUseCallback = <T>() => T;
 
-export const useCallback = (callback: Function, options?: TypeUseCallbackHookOptions): [any, TypeUseCallback] => {
-    const componentObj = <any>getWikiState("_this");
-    const hookStore = <TypeHookStore>getWikiState("hookStore");
-    const hookIndex = <any>getWikiState("useCallbackIndex");
-    if(!hookStore) {
-        throw new Error("[useState] Something went wrong!!!");
-    }
-    if(!hookStore.useCallback[hookIndex]) {
-        const callbackHook:any = ((obj:any, store: TypeHookStore, stateIndex: any, attrName: string, myCallback: Function): Function => {
-            // tslint:disable-next-line: only-arrow-functions
-            const newCallback =  function():any {
-                const hookStoreObj = store.useCallback[stateIndex];
-                const args = hookStoreObj.arguments || [];
-                const newArgs = arguments;
-                if(args && args.length > 0) {
-                    let hasChange = false;
-                    if(newArgs.length !== args.length) {
-                        hasChange = true;
-                    } else {
-                        // tslint:disable-next-line: forin
-                        for(const key in args) {
-                            const arg = args[key];
-                            if(!utils.isEqual(arg, newArgs[key])) {
-                                hasChange = true;
-                                break;
-                            }
-                        }
-                    }
-                    if(hasChange) {
-                        const myResult = myCallback.apply(obj, newArgs);
-                        store.useCallback[stateIndex].value = myResult;
-                        store.useCallback[stateIndex].arguments = newArgs;
-                        return myResult;
-                    } else {
-                        return hookStoreObj.value;
-                    }
-                } else {
-                    const myResult = myCallback.apply(obj, newArgs);
-                    store.useCallback[stateIndex].value = myResult;
-                    return myResult;
-                }
+/**
+ * 自定义callback hook函数
+ * options.event === true时，在函数组件被调用的时候callback不会被调用
+ * options.event === false时，在函数组件方法被调用时候，当options.args设置有内容时只有参数变化callback才会被调用
+ * @param callback 回调函数
+ * @param options - 参数
+ * @returns 返回结果
+ */
+export const useCallback = (callback: Function, options?: TypeUseCallbackHookOptions):[any, TypeUseCallback] => {
+    return defineHook("useCallback", (opt):any => {
+        if(opt.isInit) {
+            const storeData = {
+                args: options?.args,
+                name: options?.name,
+                value: options?.value
             };
-            if(!utils.isEmpty(attrName)) {
-                obj[attrName] = newCallback;
+            const newCallback = ((hookStore: any, fn: Function) => {
+                // tslint:disable-next-line: only-arrow-functions
+                return function():any {
+                    if(hookStore?.args?.length>0) {
+                        return fn.apply(null, hookStore?.args);
+                    } else {
+                        return fn.apply(null, arguments);
+                    }
+                };
+            })(storeData, callback);
+            opt.store = storeData;
+            if(!utils.isEmpty(options.name)) {
+                opt.component[options.name] = newCallback;
             }
-            return newCallback;
-        })(componentObj, hookStore, hookIndex, options?.name, callback);
-        hookStore.useCallback[hookIndex] = {
-            arguments: options?.arguments,
-            callback: callbackHook,
-            value: options?.initValue
-        };
-        setWikiState("useCallbackIndex", hookIndex + 1);
-        return [options?.initValue, callbackHook];
-    } else {
-        setWikiState("useCallbackIndex", hookIndex + 1);
-        return [hookStore.useCallback[hookIndex].value, hookStore.useCallback[hookIndex].callback];
-    }
+            if(options?.args?.length > 0 && !options?.event) {
+                storeData.value = newCallback.apply(null, options?.args || []);
+            }
+            return [storeData.value, newCallback];
+        } else {
+            const newCallbackFn = opt.returnValue[1];
+            let newValue = opt.returnValue[0];
+            opt.store.args = options.args; // 更新最新参数
+            if(options?.args?.length > 0 && !options?.event) {
+                if(!utils.isEqual(options.args, opt.store.args)) {
+                    newValue = newCallbackFn.apply(null, options.args || []);
+                }
+            }
+            return [newValue, newCallbackFn];
+        }
+    });
 };

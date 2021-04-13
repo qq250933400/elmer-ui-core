@@ -4,4 +4,5 @@ export * from "./useState";
 export * from "./useCallback";
 export * from "./useComponent";
 export * from "./useContext";
+export * from "./usePatch";
 export * from "./getNode";

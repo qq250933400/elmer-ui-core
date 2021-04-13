@@ -2,14 +2,16 @@ import { Common } from "elmer-common";
 import { IVirtualElement } from "elmer-virtual-dom";
 import { IElmerEvent } from "../events/IElmerEvent";
 import { IPropValidator } from "../propsValidation";
-import { IComponent } from "./IComponent";
-import { IDeclareI18n, IReduxConnect } from "./IDeclareComponent";
+import { IComponent, TypeGetContextOption, TypeGetContextResult } from "./IComponent";
+
+type TypeDefinePropTypes<T={}> = {[P in keyof T]?: IPropValidator};
 
 export const CONST_CLASS_COMPONENT_FLAG = "COMPONENT_113df7d2-555c-53a1-30fb-58627fd7";
 
 export abstract class Component<P={children?: IVirtualElement[]}, S={}, C={}> extends Common implements IComponent {
     static flag:string = CONST_CLASS_COMPONENT_FLAG;
-    propType?: {[PT in keyof P]?: IPropValidator};
+    static propTypes?: TypeDefinePropTypes;
+    static $willReceiveProps?(newProps: any,oldProps: any): any;
     parent?: HTMLElement;
     dom: any;
     props?: P & {children?: IVirtualElement[]};
@@ -18,20 +20,13 @@ export abstract class Component<P={children?: IVirtualElement[]}, S={}, C={}> ex
     model?: any;
     service?: any;
     vdom: IVirtualElement;
-    htmlCode?: string;
-    connect?: IReduxConnect;
-    i18nConfig?: IDeclareI18n;
-    i18nLocale?: string;
-    i18nRegion?: string;
-    i18nRootKey?: string;
-    i18nData?: any;
+    i18n?: any;
     constructor(props: P & {children?: IVirtualElement[]}, context?: C) {
         super();
         this.props = props;
         this.context = context;
     }
     public $render?(): any;
-    public $willReceiveProps?(propData: P, oldProps: P): void;
     public $init?(): void;
     public $inject?(): void;
     public $before?(): void;
@@ -45,6 +40,7 @@ export abstract class Component<P={children?: IVirtualElement[]}, S={}, C={}> ex
     public $didUpdate?(): void;
     public $willMount?(): void;
     public $getComponents?(): any;
+    public $getContext?(option: TypeGetContextOption): TypeGetContextResult;
     /**
      * 更新数据，触发组件重新渲染(已废弃)
      * @deprecated

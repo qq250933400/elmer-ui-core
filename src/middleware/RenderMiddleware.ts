@@ -76,7 +76,7 @@ export class RenderMiddleware extends ARenderMiddleware {
                 console.error(err);
             }
         });
-        const allowMethods = ["init", "inject","beforeRender", "didMount", "didUpdate", "willReceiveProps", "destroy"];
+        const allowMethods = ["init", "inject", "didMount", "didUpdate", "willReceiveProps", "destroy"];
         if(allowMethods.indexOf(methodName) >= 0) {
             if(methodName !== "destroy" && options?.componentObj["$hookEffects"]) {
                 const hookEffects = options?.componentObj["$hookEffects"];

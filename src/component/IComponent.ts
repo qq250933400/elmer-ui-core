@@ -2,23 +2,19 @@ import { IVirtualElement } from "elmer-virtual-dom";
 import { IElmerEvent } from "../events/IElmerEvent";
 import { IDeclareI18n, IReduxConnect } from "./IDeclareComponent";
 
-export type TypeThemeDefault = {
-    default: string;
-    themePink: string;
+export type TypeGetContextResult = {
+    name: string;
+    data?: any;
+};
+export type TypeGetContextOption = {
+    path: number[];
+    props: any;
 };
 
 export interface IComponent<P=Object, S=Object, C=Object> {
-    parent?:HTMLElement;
     vdom: IVirtualElement;
     dom: any;
-    htmlCode?: string;
-    connect?: IReduxConnect;
-    i18nConfig?: IDeclareI18n;
-    i18nLocale?: string;
-    i18nRegion?: string;
-    i18nRootKey?: string;
-    i18nData?: any;
-    propType?: any;
+    i18n?: any;
     props?: P;
     state?: S;
     context?: C;
@@ -30,8 +26,8 @@ export interface IComponent<P=Object, S=Object, C=Object> {
      * 注入service对象，注入的service对象在整个app只保存一个变量
      */
     service?: any;
+    $getContext?(option: TypeGetContextOption): TypeGetContextResult;
     render?():any;
-    $willReceiveProps?(propData: P,oldProps: P): void;
     $init?(): void;
     $inject?(): void;
     $before?(): void;
@@ -44,8 +40,12 @@ export interface IComponent<P=Object, S=Object, C=Object> {
     $didMount?():void;
     $didUpdate?():void;
     $willMount?(): void;
-    addEvent?(handle: any, dom: HTMLElement|Element|Node,eventName: string, callBack:Function, options?:AddEventListenerOptions):void;
-    animationEnd?(dom: HTMLElement|Element|Node,callBack:Function):void;
+    /**
+     * 修改数据,已经改为使用setState方法
+     * @deprecated
+     * @param data - 修改数据
+     * @param refresh - 是否强制刷新
+     */
     setData(data: object, refresh?: boolean): Promise<any>;
     /**
      * 修改组件state触发组件重绘
@@ -55,18 +55,3 @@ export interface IComponent<P=Object, S=Object, C=Object> {
     setState<T>(data: T & P, refresh?: boolean): Promise<any>;
 }
 
-export interface IHTMLElementInsertMethod {
-    beforeBegin: string;
-    afterBegin: string;
-    beforeEnd: string;
-    afterEnd: string;
-}
-
-export class HTMLElementInsertMethod implements IHTMLElementInsertMethod {
-    afterBegin: string = "afterBegin";
-    afterEnd: string = "afterEnd";
-    beforeBegin: string = "beforeBegin";
-    beforeEnd: string = "beforeEnd";
-}
-
-export const EnumHTMLElementInsertMethod = new HTMLElementInsertMethod();

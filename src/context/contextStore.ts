@@ -8,7 +8,7 @@ type TypeContextStoreCreateOptions = {
     path?: string;
 };
 
-type TypeContextStoreCreateResult = {
+export type TypeContextStoreCreateResult = {
     state: any;
     name: string|null|undefined;
     nodeId: string;

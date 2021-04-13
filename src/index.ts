@@ -1,6 +1,9 @@
 
 import "@babel/polyfill";
 import "core-js/es5";
+import * as utilsModule from "./core/utils";
+
+export const utils = utilsModule;
 
 export * from "./core/ElmerService";
 export * from "./core/globalState";

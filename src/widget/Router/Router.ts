@@ -68,7 +68,7 @@ class Router extends Component<TypeRouterProps, TypeRouterState> {
             data: []
         };
     }
-    $getContext({path}):any {
+    $getContext({path}) {
         return {
             data: {
                 depth: path,
