@@ -2,6 +2,7 @@ import { StaticCommon as utils } from "elmer-common";
 import { IVirtualElement } from "elmer-virtual-dom";
 import { EventNames } from "../events/EventNames";
 import { injectable } from "../injectable/injectable";
+import { classNames } from "../core/ElmerDom";
 
 export const XML_NL = "http://www.w3.org/2000/xmlns/";
 export const SVG_NL = "http://www.w3.org/2000/svg";
@@ -21,7 +22,8 @@ export class ElmerRenderAttrs {
             const updateProps = vdom.status === "APPEND" ? vdom.props : vdom.changeAttrs;
             const isLink = /^(a)$/i.test(dom.tagName);
             if(updateProps) {
-                const classNameList = [];
+                let activeClassNames = classNames(vdom.props.class, vdom.props.className).replace(/\s{2,}/, " ").split(" ");
+                let hasClassNameChange = false;
                 Object.keys(updateProps).map((attrKey: string) => {
                     const attrValue = updateProps[attrKey];
                     const srcEventName = attrKey.replace(/^on/, "");
@@ -47,22 +49,24 @@ export class ElmerRenderAttrs {
                             }
                         } else if(/^class\.[a-z0-9\-_]{1,}$/i.test(attrKey)) {
                             if(attrValue) {
-                                classNameList.push(attrKey.replace(/^class\./i, ""));
+                                activeClassNames.push(attrKey.replace(/^class\./i, ""));
                             }
+                            hasClassNameChange = true;
                         } else if(/^(class|className)$/.test(attrKey)) {
-                            if(!utils.isEmpty(attrValue)) {
-                                classNameList.push(attrValue.replace(/^\s*/, "").replace(/\s*$/, ""));
-                            }
+                            hasClassNameChange = true;
                         } else {
                             dom.setAttribute(attrKey, attrValue);
                         }
                     }
                 });
-                if(classNameList.length > 0) {
-                    dom.setAttribute("class", classNameList.join(" "));
-                } else {
-                    if(dom.classList?.length > 0) {
-                        dom.setAttribute("class", "");
+                if(hasClassNameChange) {
+                    if(activeClassNames.length > 0) {
+                        dom.setAttribute("class", activeClassNames.join(" "));
+                    } else {
+                        // 当真实dom挂载有class而最新的虚拟节点没有className相关的数据时移除设置
+                        if(!utils.isEmpty(dom.className)) {
+                            dom.setAttribute("class", "");
+                        }
                     }
                 }
             }

@@ -1,5 +1,4 @@
-import { StaticCommon as utils } from "elmer-common";
-import { useCallback, useEffect, useState } from "../../hooks";
+import { useCallback, useState } from "../../hooks";
 import { autoInit } from "../../injectable";
 import { PropTypes } from "../../propsValidation";
 import { I18nService } from "./I18nService";

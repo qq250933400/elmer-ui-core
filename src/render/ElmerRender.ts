@@ -693,6 +693,7 @@ export class ElmerRender extends Common {
                         nodeData: vdom,
                         props
                     });
+                    vRender.options.children = vRDom.children; // 替换子元素为最新的元素，以便子元素做diff运算
                     if(!(vRender as any).isClassComponent) {
                         vRender.options.component.props = props;
                         vRender.render({
@@ -702,7 +703,20 @@ export class ElmerRender extends Common {
                         const willReceviePropsFn = this.getValue(vRender.options.component, "__proto__.constructor.$willReceiveProps");
                         if(!this.isEqual(props, vRender.options.component.props) && typeof willReceviePropsFn === "function") {
                             const returnState = willReceviePropsFn(props, vRender.options.component.state);
-                            if((returnState && Object.keys(returnState).length > 0) || needRender) {
+                            let hasStateChange = false;
+                            if(returnState) {
+                                // 判断返回的state是否有变化，只有返回的state和旧state对象上的值不一样时才做渲染动作
+                                for(const key in returnState) {
+                                    const oldState = this.getValue(vRender.options.component.state, key);
+                                    if(!this.isEqual(returnState[key], oldState)) {
+                                        hasStateChange = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            // 不管最终是否需要重新渲染都必须更新props到最新的值, 否则会引发很难检测的问题
+                            vRender.options.component.props = props;
+                            if(hasStateChange || needRender) {
                                 // 当willReceiveProps返回数据以后调用setState方法执行更新操作
                                 // 调用setState方法重新渲染
                                 // 当子元素需要更新时也执行更新操作
@@ -738,7 +752,6 @@ export class ElmerRender extends Common {
                     nodeData: vdom,
                     props
                 });
-                // this.injectComponent.beforeInitComponent(UserComponent, props, vdom);
                 const virtualId = "component_" + this.guid();
                 const missionId = this.options.missionId;
                 const hookStore = {
@@ -911,13 +924,19 @@ export class ElmerRender extends Common {
             }
         });
     }
-    private checkVirtualNodeChange(vdom:IVirtualElement, isChildNode?: boolean): boolean|null {
+    /**
+     * 只使用与自定义组件包含子组件时的判断
+     * 只要有任何一个子组件的status不是NORMAL的时候则认为需要重新做渲染动作
+     * @param vdom - 要判断的虚拟节点
+     * @returns 是否需要重新渲染
+     */
+    private checkVirtualNodeChange(vdom:IVirtualElement): boolean|null {
         if(vdom.status !== "NORMAL") {
-            return isChildNode ? true : false;
+            return true;
         } else {
             if(vdom.children && vdom.children.length > 0) {
                 for(const item of vdom.children) {
-                    if(this.checkVirtualNodeChange(item, true)) {
+                    if(this.checkVirtualNodeChange(item)) {
                         return true;
                     }
                 }
