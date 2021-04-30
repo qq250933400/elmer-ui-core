@@ -24,6 +24,7 @@ type TypeElmerRenderOptions = {
     container: HTMLElement;
     contextStore: any;
     children?: IVirtualElement[];
+    depth: number; // 当前节点深度
     renderOptions: TypeUIRenderOptions;
     userComponents?: Component[] | any;
     event: ElmerEvent;
@@ -32,6 +33,7 @@ type TypeElmerRenderOptions = {
     nodePath: string;
     path: number[];
     prevDom?: HTMLElement;
+    virtualId: string;
 };
 /**
  * 渲染虚拟dom事件参数
@@ -97,7 +99,7 @@ export class ElmerRender extends Common {
             userComponents = covertComponents;
         }
         this.virtualRender.setVirtualElement(this.virtualElement);
-        this.virtualId = this.guid() + "_" + (new Date()).getTime().toString(); // 当前自定义组件节点ID
+        this.virtualId = options.virtualId || (this.guid() + "_" + (new Date()).getTime().toString()); // 当前自定义组件节点ID
         this.options = options;
         this.userComponents = {...userComponents, ...fromParentComponents};
         this.eventObj = options.event;
@@ -310,7 +312,7 @@ export class ElmerRender extends Common {
                     });
                     const renderDom = this.virtualRender.render(this.sourceDom, this.oldDom, this.options.component, {
                         children: this.options.children,
-                        rootPath: this.options.path,
+                        rootPath: [], // this.options.path,
                         sessionId: this.virtualId
                     });
                     // this.virtualRender.unBind(this.virtualId, "onBeforeRender", renderEventId); // render 结束移除监听事件
@@ -364,22 +366,33 @@ export class ElmerRender extends Common {
                         destoryOnVirtualRender();
                         resolve({});
                     }).catch((err) => {
+                        const statusCode = this.getValue(err, "exception.statusCode");
                         destoryOnBeforeVirtualRender();
                         destoryOnVirtualRender();
-                        reject({
-                            message: err.message,
-                            stack: this.isObject(err.exception) ? err.exception.stack : err.stack,
-                            statusCode: err.statusCode
-                        });
+                        if(!this.isEmpty(statusCode)) {
+                            const newErr = err.exception;
+                            // tslint:disable-next-line: no-console
+                            console.error(newErr?.exception?.stack);
+                            reject({
+                                ...err.exception,
+                                stack: newErr?.exception?.stack,
+                            });
+                        } else {
+                            reject({
+                                message: err.message,
+                                stack: err?.exception?.stack,
+                                statusCode: err.statusCode
+                            });
+                        }
                     });
                     this.newDom = renderDom; // 渲染结束更新节点到对应的属性
                     this.options.component.vdom = renderDom;
                 }).catch((err) => {
+                    // tslint:disable-next-line: no-console
                     reject(err);
                 });
             } catch(e) {
                 // tslint:disable-next-line: no-console
-                console.error(e, "---RenderAction");
                 reject({
                     message: e.message,
                     statusCode: "T_500"
@@ -574,7 +587,8 @@ export class ElmerRender extends Common {
                             if(!this.isEmpty(vdom.props.id)) {
                                 this.options.component.dom[vdom.props.id] = vdom.dom;
                             }
-                            this.subscribeEventAction(vdom);
+                            this.subscribeEvents(vdom);
+                            // this.subscribeEventAction(vdom);
                             if(vdom.dataSet && vdom.dataSet.type === "html") {
                                 (vdom.dom as HTMLElement).innerHTML = vdom.innerHTML;
                                 resolve({
@@ -706,6 +720,7 @@ export class ElmerRender extends Common {
                             let hasStateChange = false;
                             if(returnState) {
                                 // 判断返回的state是否有变化，只有返回的state和旧state对象上的值不一样时才做渲染动作
+                                // tslint:disable-next-line: forin
                                 for(const key in returnState) {
                                     const oldState = this.getValue(vRender.options.component.state, key);
                                     if(!this.isEqual(returnState[key], oldState)) {
@@ -752,7 +767,7 @@ export class ElmerRender extends Common {
                     nodeData: vdom,
                     props
                 });
-                const virtualId = "component_" + this.guid();
+                const virtualId = "component_" + vdom.tagName + "_" + this.guid().replace(/\-/g, "");
                 const missionId = this.options.missionId;
                 const hookStore = {
                     getNode: {},
@@ -837,6 +852,7 @@ export class ElmerRender extends Common {
                         parentPath: contextParentPath,
                         stores: allContextStore
                     },
+                    depth: this.options.depth + 1,
                     event: this.eventObj,
                     missionId: this.options.missionId,
                     nodePath: this.isEmpty(this.options.nodePath) ? virtualId : this.options.nodePath + "." + virtualId,
@@ -844,6 +860,7 @@ export class ElmerRender extends Common {
                     prevDom: this.getPrevDomByVirtualNode(prevDom) as HTMLElement || options.prevDom,
                     renderOptions: this.options.renderOptions,
                     userComponents: extendComponents, // options.components,
+                    virtualId,
                     worker: this.options.worker
                 });
                 (vRender as any).isClassComponent = isClassComponent;
@@ -1037,6 +1054,23 @@ export class ElmerRender extends Common {
             this.renderDomAttrs.render(newDom as HTMLElement, vdom);
         }
         vdom.dom = newDom;
+    }
+    private subscribeEvents(vdom:IVirtualElement): void {
+        const allEvents = vdom.events || {};
+        const eventKeys = Object.keys(allEvents);
+        if(allEvents && eventKeys.length > 0) {
+            Object.keys(allEvents).map((eventName: string): void => {
+                this.eventObj.subscribe2(vdom.dom as any, {
+                    depth: this.options.depth,
+                    eventHandler: (allEvents[eventName] as Function).bind(this),
+                    eventName,
+                    path: vdom.path,
+                    virtualId: this.options.virtualId,
+                    virtualNodePath: this.options.path,
+                    virtualPath: this.options.nodePath
+                });
+            });
+        }
     }
     /**
      * 绑定事件监听

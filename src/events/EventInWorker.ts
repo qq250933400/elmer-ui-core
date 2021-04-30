@@ -1,3 +1,8 @@
+import { IEventContext } from "./IEventContext";
+
+type TypeEventListenData = { [ P in Exclude<keyof IEventContext, "eventHandler">]: IEventContext[P] };
+type TypeDomEventConfig = { [P in Exclude<keyof TypeEventListenData, "eventName">]: IEventContext[P] } & { events: any };
+
 export type TypeEventIdMapping = {
     eventId: string;
     path: number[];
@@ -36,6 +41,35 @@ export default class EventInWorker {
                     return path1[i] > path2[i];
                 }
             }
+        }
+    }
+    eventHandleSort(eventName: string, srcOptions: TypeDomEventConfig, eventListens: TypeEventListenData[]) {
+        const matchEvents: TypeEventListenData[] = [];
+        eventListens.map((item) => {
+            if(item.eventName === eventName && item.depth <= srcOptions.depth) {
+                matchEvents.push(item);
+            }
+        });
+        console.log(srcOptions.depth);
+        this.eventHandleSortAction(matchEvents, srcOptions);
+    }
+    private eventHandleSortAction(matchEvents: TypeEventListenData[], srcOptions: TypeDomEventConfig): void {
+        for(let i = 0;i < matchEvents.length;i++) {
+            let topEvent = matchEvents[i];
+            for(let j=i+1;j<matchEvents.length;j++) {
+                const subEvent = matchEvents[j];
+                if(this.isTopLevelEvent(topEvent, subEvent)) {
+                    matchEvents[i] = subEvent;
+                    matchEvents[j] = topEvent;
+                    topEvent = subEvent;
+                }
+            }
+        }
+        console.log(matchEvents, "afterSearch");
+    }
+    private isTopLevelEvent(event1: TypeEventListenData, event2: TypeEventListenData): boolean {
+        if(event1.depth < event2.depth) {
+            return true;
         }
     }
 }

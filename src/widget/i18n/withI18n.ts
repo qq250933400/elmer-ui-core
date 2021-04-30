@@ -9,6 +9,14 @@ type TypeWithI18nOption = {
     id?: string;
 };
 
+export const setLocale = (locale: string): void => {
+    i18nState.locale = locale;
+    Object.keys(i18nState.listeners).map((evtId) => {
+        // 通知其他调用i18n的组件，locale已经被修改
+        i18nState.listeners[evtId]();
+    });
+};
+
 export const withI18n = (option?: TypeWithI18nOption):Function => {
     return (TargetComponent: Function):Function => {
         const getI18nData = ((opt) => {

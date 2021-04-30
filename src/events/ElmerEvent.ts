@@ -1,5 +1,7 @@
 import { queueCallFunc, StaticCommon as utils, TypeQueueCallParam } from "elmer-common";
 import { ElmerWorker } from "elmer-worker";
+import { EventContext } from "./EventContext";
+import { IEventContext, TypeDomEventOptions } from "./IEventContext";
 
 type TypeEventIdMapping = {
     eventId: string;
@@ -24,12 +26,15 @@ type TypeEventMapData = {
     parent: string;
     path: number[];
 };
+type TypeEventContextData<T={}> = {[P in keyof T]: EventContext};
 
 export class ElmerEvent {
     private eventListeners: any = {};
     private worker: ElmerWorker;
     private sortReady: boolean;
     private nodeMap: any = {};
+    private eventData: TypeEventContextData = {};
+    private eventHandlers: any = [];
     constructor(worker: ElmerWorker) {
         this.worker = worker;
     }
@@ -45,12 +50,16 @@ export class ElmerEvent {
         if(!utils.isEmpty(parentPath)) {
             const parentPathKey = parentPath.replace(/\./g, ".nodes.");
             const pNode:any = utils.getValue(this.nodeMap, parentPathKey);
-            pNode.nodes[currentPath] = {
-                events: {},
-                nodes: {},
-                parent: "",
-                path
-            };
+            if(pNode) {
+                pNode.nodes[currentPath] = {
+                    events: {},
+                    nodes: {},
+                    parent: "",
+                    path
+                };
+            } else {
+                throw new Error("创建事件监听错误： 事件监听虚拟节点结构创建错误。");
+            }
         } else {
             this.nodeMap[currentPath] = {
                 events: {},
@@ -119,8 +128,8 @@ export class ElmerEvent {
                 eventNode = utils.getValue<TypeEventMapData>(this.nodeMap, eventNodePath);
             }
             // console.log(eventNode, vNodePath);return;
-            let evtObj:TypeEventData = eventNode.events[eventName];
-            if(!evtObj) {
+            let evtObj:TypeEventData = eventNode?.events[eventName];
+            if(!evtObj && eventNode) {
                 const eventHandler = this.createEventHandler();
                 eventNode.events[eventName] = {
                     eventPathId: [],
@@ -136,7 +145,7 @@ export class ElmerEvent {
                     this.addEventListener(eventName, eventHandler);
                 }
             }
-            if(evtObj.eventPathId.indexOf(pathStr)<0) {
+            if(evtObj && evtObj.eventPathId.indexOf(pathStr)<0) {
                 // 当前path不存在事件监听列表中才能加入列表
                 evtObj.eventPathId.push(pathStr);
                 evtObj.listeners[evtId] = callback;
@@ -190,6 +199,73 @@ export class ElmerEvent {
             delete this.eventListeners[eventName];
         });
         this.eventListeners = {};
+    }
+    subscribe2(dom:HTMLElement,options: IEventContext): String {
+        const eventId = "Event_" + utils.guid().replace(/\-/g, "") + "_" + (new Date()).getTime();
+        try {
+            // const ect = new EventContext(options);
+            const EUIEventsOption: TypeDomEventOptions = (dom as any).EUIEventsOption || {
+                depth: options.depth,
+                events: {},
+                path: options.path,
+                virtualId: options.virtualId,
+                virtualNodePath: options.virtualNodePath,
+                virtualPath: options.virtualPath
+            };
+            if (!this.eventData[options.eventName]) {
+                this.addEventListener(options.eventName, (event: Event) => {
+                    const eventPath = <HTMLElement[]>(event as any).path;
+                    if (eventPath && eventPath.length > 0) {
+                        let srcEventDom: HTMLElement;
+                        let eventOptions: TypeDomEventOptions;
+                        for (let i = 0; i < eventPath.length; i++) {
+                            const myOptions: TypeDomEventOptions = (eventPath[i] as any).EUIEventsOption;
+                            if (myOptions) {
+                                eventOptions = myOptions;
+                                srcEventDom = eventPath[i];
+                                break;
+                            }
+                        }
+                        if (srcEventDom) {
+                            // find the event target that event handler was bind by ElmerEvent
+                            this.callEventHandler(eventOptions, event);
+                        }
+                    }
+                });
+                this.eventData[options.eventName] = {};
+            }
+            if (!EUIEventsOption.events[options.eventName]) {
+                EUIEventsOption.events[options.eventName] = eventId;
+            } else {
+                throw new Error(`The event of ${options.eventName} already has event handler.`);
+            }
+            (dom as any).EUIEventsOption = EUIEventsOption;
+            this.eventData[options.eventName][eventId] = options;
+            this.eventHandlers.push({
+                depth: options.depth,
+                eventName: options.eventName,
+                path: options.path,
+                virtualId: options.virtualId,
+                virtualNodePath: options.virtualNodePath,
+                virtualPath: options.virtualPath
+            });
+        } catch (e) {
+            console.error(e);
+        }
+        return eventId;
+    }
+    /**
+     * 响应事件，查找到在事件触发返回的callback并触发，如果遇到cancelBubble将停止事件冒泡
+     * @param eventOptions - 保存到dom节点上的数据
+     * @param event - Native Event
+     */
+    private callEventHandler(eventOptions: TypeDomEventOptions, event:Event): void {
+        this.worker.callObjMethod("elmerEvent", "eventHandleSort", event.type, eventOptions, this.eventHandlers)
+            .then((data) => {
+                console.log(data);
+            }).catch((error) => {
+                console.error(error);
+            });
     }
     private callEventAction(evt:Event, eventName:string, path: number[], vNodePath: string):void {
         const eventNodePath = vNodePath.replace(/\./g, ".nodes.");

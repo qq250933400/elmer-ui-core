@@ -59,11 +59,13 @@ export class ElmerUI extends Common {
             componentFactory: null,
             container: target,
             contextStore,
+            depth: 0,
             event: this.eventObj,
             missionId: this.missionId,
             nodePath: "rootNode",
             path: [0],
             renderOptions: options,
+            virtualId: "RootApp_" + this.missionId,
             worker: this.worker
         });
         renderObj.render({

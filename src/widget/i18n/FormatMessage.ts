@@ -14,8 +14,8 @@ const FuncFormatMessage = (props:any) => {
             data: newValue
         }) || lngId;
         return translateResult;
-    }, { name: "formatText", args: [ value ], event: true});
-    return `<span class="{{props.className}}">{{formatText(props.lngId)}}</span>`;
+    }, { name: "formatText", args: [ lngId, value ], event: true});
+    return `<span class="{{props.className}}">{{formatText(props.value, props.lngId)}}</span>`;
 };
 
 FuncFormatMessage.propTypes = {

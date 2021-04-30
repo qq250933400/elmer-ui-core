@@ -6,6 +6,7 @@ type TypeUseCallbackHookOptions = {
     value?: any;
     name?: string; // 不为空时将callback绑定到Component对象上
     event?: boolean;
+    useArgsOnly?: boolean; // 只接收options.args參數
 };
 
 type TypeUseCallback = <T>() => T;
@@ -22,18 +23,24 @@ export const useCallback = (callback: Function, options?: TypeUseCallbackHookOpt
     return defineHook("useCallback", (opt):any => {
         if(opt.isInit) {
             const storeData = {
-                args: options?.args,
+                args: options?.args ? JSON.parse(JSON.stringify(options?.args)) : [],
                 name: options?.name,
+                useArgsOnly: options?.useArgsOnly,
                 value: options?.value
             };
             const newCallback = ((hookStore: any, fn: Function) => {
                 // tslint:disable-next-line: only-arrow-functions
                 return function():any {
-                    if(hookStore?.args?.length>0) {
-                        return fn.apply(null, hookStore?.args);
-                    } else {
-                        return fn.apply(null, arguments);
+                    const newArgs = arguments;
+                    const optArgs = hookStore?.args || [];
+                    const applyNewArgs = [];
+                    if(!hookStore?.useArgsOnly && newArgs.length > 0) {
+                        for(let i=0;i<newArgs.length;i++) {
+                            applyNewArgs.push(newArgs[i]);
+                        }
                     }
+                    applyNewArgs.push(...optArgs);
+                    return fn.apply(null, applyNewArgs);
                 };
             })(storeData, callback);
             opt.store = storeData;
@@ -47,11 +54,15 @@ export const useCallback = (callback: Function, options?: TypeUseCallbackHookOpt
         } else {
             const newCallbackFn = opt.returnValue[1];
             let newValue = opt.returnValue[0];
-            opt.store.args = options.args; // 更新最新参数
             if(options?.args?.length > 0 && !options?.event) {
                 if(!utils.isEqual(options.args, opt.store.args)) {
+                    // 更新最新参数
+                    // 当在store设置args时，callback传递参数为opt.store.args
+                    opt.store.args = options?.args ? JSON.parse(JSON.stringify(options?.args)) : [];
                     newValue = newCallbackFn.apply(null, options.args || []);
                 }
+            } else {
+                opt.store.args = options?.args ? JSON.parse(JSON.stringify(options?.args)) : []; // 更新最新参数
             }
             return [newValue, newCallbackFn];
         }
