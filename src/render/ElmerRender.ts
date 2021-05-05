@@ -107,15 +107,6 @@ export class ElmerRender extends Common {
         this.options.component.setData = this.setComponentData.bind(this); // 当前方法由于需要遍历所有属性影响性能不建议使用，使用setState会更好，兼容旧代码
         this.options.component.dom = {};
         typeof this.options?.component?.$init === "function" && this.options?.component?.$init();
-        if(typeof this.options.component.$resize === "function") {
-            this.eventObj.subscribe({
-                callback: this.options.component.$resize,
-                eventName: "resize",
-                path: this.options.path,
-                vNodePath: this.options.nodePath
-            });
-        }
-        this.eventObj.nodeRegister(options.nodePath, this.options.path);
         this.options.component.$getComponents = () => this.userComponents;
     }
     /**
@@ -182,7 +173,7 @@ export class ElmerRender extends Common {
                 delete this.renderComponents[virtualId];
             });
         }
-        this.unbindAllEvents(true);
+        // this.unbindAllEvents(true);
         this.newDom = null;
         this.oldDom = null;
     }
@@ -344,7 +335,6 @@ export class ElmerRender extends Common {
                     if(!hasPathUpdate) {
                         hasPathUpdate = renderDom.deleteElements && renderDom.deleteElements.length > 0;
                     }
-                    this.unbindAllEvents(); // 清空上一次的注册的事件，重新添加
                     this.deleteVDomOutOfLogic(renderDom.deleteElements); // 删除dom diff算法计算出需要手动删除的节点
                     queueCallFunc(renderParams, (option, params):any => {
                         let prevDom:any = option.lastResult ? option.lastResult.prevDom : null;
@@ -399,12 +389,6 @@ export class ElmerRender extends Common {
                 });
             }
         });
-    }
-    /**
-     * 移除所有事件监听
-     */
-    private unbindAllEvents(deleteVNode?: boolean): void {
-        this.eventObj.nodeUnRegister(this.options.nodePath, deleteVNode);
     }
     private async setComponentState(state:any, force?: boolean): Promise<any> {
         return new Promise((resolve, reject) => {
@@ -767,7 +751,7 @@ export class ElmerRender extends Common {
                     nodeData: vdom,
                     props
                 });
-                const virtualId = "component_" + vdom.tagName + "_" + this.guid().replace(/\-/g, "");
+                const virtualId = "vNode_" + vdom.tagName + "_" + this.guid().replace(/\-/g, "");
                 const missionId = this.options.missionId;
                 const hookStore = {
                     getNode: {},
@@ -856,7 +840,7 @@ export class ElmerRender extends Common {
                     event: this.eventObj,
                     missionId: this.options.missionId,
                     nodePath: this.isEmpty(this.options.nodePath) ? virtualId : this.options.nodePath + "." + virtualId,
-                    path: vdom.path,
+                    path: [...this.options.path, ...vdom.path],
                     prevDom: this.getPrevDomByVirtualNode(prevDom) as HTMLElement || options.prevDom,
                     renderOptions: this.options.renderOptions,
                     userComponents: extendComponents, // options.components,
@@ -875,6 +859,12 @@ export class ElmerRender extends Common {
                 });
                 if(!this.isEmpty(props.id)) {
                     this.options.component.dom[props.id] = component;
+                }
+                if(typeof component.$resize === "function") {
+                    vdom.events = {
+                        resize: component.$resize.bind(component)
+                    };
+                    this.subscribeEvents(vdom);
                 }
                 // ---- some thing is doing in init
                 vRender.render({
@@ -1060,50 +1050,20 @@ export class ElmerRender extends Common {
         const eventKeys = Object.keys(allEvents);
         if(allEvents && eventKeys.length > 0) {
             Object.keys(allEvents).map((eventName: string): void => {
-                this.eventObj.subscribe2(vdom.dom as any, {
+                typeof allEvents[eventName] === "function" && this.eventObj.subscribe(vdom.dom as any, {
+                    callback: ((obj: any, callback: Function) => {
+                        return (event:any) => {
+                            return callback.call(obj, event);
+                        };
+                    })(this.options.component, allEvents[eventName]),
                     depth: this.options.depth,
                     eventHandler: (allEvents[eventName] as Function).bind(this),
                     eventName,
-                    path: vdom.path,
+                    path: [...this.options.path, ...vdom.path],
                     virtualId: this.options.virtualId,
                     virtualNodePath: this.options.path,
                     virtualPath: this.options.nodePath
                 });
-            });
-        }
-    }
-    /**
-     * 绑定事件监听
-     * @param dom 真实dom节点
-     * @param vdom 虚拟dom节点数据
-     */
-    private subscribeEventAction(vdom:IVirtualElement): void {
-        const allEvents = vdom.events || {};
-        const eventKeys = Object.keys(vdom.events);
-        if(vdom.events && eventKeys.length > 0) {
-            Object.keys(vdom.events).map((eventName: string): void => {
-                const eventCallback = vdom.events[eventName];
-                if(typeof eventCallback === "function") {
-                    // 找到存在的回调函数再做事件监听绑定
-                    ((evtDom: IVirtualElement,evtName: string, callback:Function, componenent:any) => {
-                        const eventId = this.eventObj.subscribe({
-                            callback: (event:IElmerEvent) => {
-                                const newEvent:any = {
-                                    ...event,
-                                    cancelBubble: false,
-                                    data: evtDom.data,
-                                    dataSet: evtDom.dataSet
-                                };
-                                const eventResult = callback.call(componenent, newEvent);
-                                event.cancelBubble = newEvent.cancelBubble;
-                                return eventResult;
-                            },
-                            eventName: evtName,
-                            path: evtDom.path,
-                            vNodePath: this.options.nodePath,
-                        });
-                    })(vdom, eventName, eventCallback, this.options.component);
-                }
             });
         }
     }

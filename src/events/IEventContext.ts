@@ -1,5 +1,7 @@
 export interface IEventContext {
+    readonly callback?: Function;
     readonly depth: number;
+    readonly eventId?: string;
     readonly eventName: string;
     readonly eventHandler: Function;
     readonly path: number[];
