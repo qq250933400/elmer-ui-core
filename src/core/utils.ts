@@ -4,7 +4,7 @@
  * @param formatStr 格式化文本
  * @returns 返回数据
  */
-export const format = (val: number, formatStr: string = "####.##"): string => {
+const format = (val: number, formatStr: string = "####.##"): string => {
     const valueMatch = val.toString().match(/^(\d*)($|[\.]([\d]{1,}))$/);
     const formatReg = /^([#\,\s]{1,})($|[\.]([#,\s]*))$/;
     if(!formatReg.test(formatStr)) {
@@ -47,4 +47,23 @@ export const format = (val: number, formatStr: string = "####.##"): string => {
     } else {
         return val.toString();
     }
+};
+
+const createUUID = () => {
+    let d = new Date().getTime();
+    if (window.performance && typeof window.performance.now === "function") {
+        d += performance.now(); // use high-precision timer if available
+    }
+    const uuid = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+        const r = (d + Math.random() * 16) % 16 | 0;
+        d = Math.floor(d / 16);
+        // tslint:disable-next-line: triple-equals
+        return (c == "x" ? r : (r & 0x3 | 0x8)).toString(16);
+    });
+    return uuid;
+};
+
+export default {
+    format,
+    uuid: createUUID
 };

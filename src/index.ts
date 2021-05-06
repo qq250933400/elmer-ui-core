@@ -1,7 +1,7 @@
 
 import "@babel/polyfill";
 import "core-js/es5";
-import * as utilsModule from "./core/utils";
+import utilsModule from "./core/utils";
 
 export const utils = utilsModule;
 
@@ -17,4 +17,5 @@ export * from "./render";
 export * from "./widget";
 export * from "./events/IElmerEvent";
 export * from "./propsValidation";
+export * from "./core/Observer";
 // todo: refractor entry code

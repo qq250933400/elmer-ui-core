@@ -117,7 +117,7 @@
         "forin": true,
         "import-blacklist": true,
         "no-arg": true,
-        "no-bitwise": true,
+        "no-bitwise": false,
         "no-console": true,
         "no-construct": true,
         "no-debugger": true,

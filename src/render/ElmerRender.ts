@@ -5,7 +5,7 @@ import { Component, CONST_CLASS_COMPONENT_FLAG } from "../component/Component";
 import { ContextStore } from "../context/contextStore";
 import { globalVar } from "../core/globalState";
 import { ElmerEvent } from "../events/ElmerEvent";
-import { IElmerEvent } from "../events/IElmerEvent";
+import { TypeDomEventOptions } from "../events/IEventContext";
 import { wikiState } from "../hooks/hookUtils";
 import { autowired } from "../injectable";
 // import { InjectComponent } from "../middleware/InjectComponent";
@@ -161,6 +161,7 @@ export class ElmerRender extends Common {
             nodeData: this.options.component.vdom,
             props: this.options.component.props
         });
+        this.eventObj.unsubscribe(this.options.virtualId);
         if(this.newDom) {
             this.newDom.children.map((itemDom:IVirtualElement) => {
                 itemDom?.dom?.parentElement.removeChild(itemDom.dom);
@@ -362,7 +363,7 @@ export class ElmerRender extends Common {
                         if(!this.isEmpty(statusCode)) {
                             const newErr = err.exception;
                             // tslint:disable-next-line: no-console
-                            console.error(newErr?.exception?.stack);
+                            console.error(newErr.exception ? newErr.exception.stack : newErr.stack);
                             reject({
                                 ...err.exception,
                                 stack: newErr?.exception?.stack,
@@ -565,13 +566,13 @@ export class ElmerRender extends Common {
                         if(!hasPathChange) {
                             hasPathChange = options.hasPathUpdate;
                         }
+                        this.subscribeEvents(vdom);
                         if(vdom.status !== "DELETE") {
                             (vdom.dom as any).path = vdom.path;
                             (vdom.dom as any).vNodePath = this.options.nodePath;
                             if(!this.isEmpty(vdom.props.id)) {
                                 this.options.component.dom[vdom.props.id] = vdom.dom;
                             }
-                            this.subscribeEvents(vdom);
                             // this.subscribeEventAction(vdom);
                             if(vdom.dataSet && vdom.dataSet.type === "html") {
                                 (vdom.dom as HTMLElement).innerHTML = vdom.innerHTML;
@@ -864,7 +865,7 @@ export class ElmerRender extends Common {
                     vdom.events = {
                         resize: component.$resize.bind(component)
                     };
-                    this.subscribeEvents(vdom);
+                    this.subscribeEvents.call(this, vdom);
                 }
                 // ---- some thing is doing in init
                 vRender.render({
@@ -1045,26 +1046,62 @@ export class ElmerRender extends Common {
         }
         vdom.dom = newDom;
     }
+    /**
+     * 添加时间监听或者移除事件监听
+     * 当vdom.status === "DELETE" 将移除事件监听
+     * 当最新的vdom数据解析以后events上的事件比已绑定事件元素的事件要少将移除对比缺少的事件
+     * @param vdom 虚拟节点
+     */
     private subscribeEvents(vdom:IVirtualElement): void {
         const allEvents = vdom.events || {};
         const eventKeys = Object.keys(allEvents);
+        const eventOptions: TypeDomEventOptions = (vdom?.dom as any)?.EUIEventsOption;
         if(allEvents && eventKeys.length > 0) {
-            Object.keys(allEvents).map((eventName: string): void => {
-                typeof allEvents[eventName] === "function" && this.eventObj.subscribe(vdom.dom as any, {
-                    callback: ((obj: any, callback: Function) => {
-                        return (event:any) => {
-                            return callback.call(obj, event);
-                        };
-                    })(this.options.component, allEvents[eventName]),
-                    depth: this.options.depth,
-                    eventHandler: (allEvents[eventName] as Function).bind(this),
-                    eventName,
-                    path: [...this.options.path, ...vdom.path],
-                    virtualId: this.options.virtualId,
-                    virtualNodePath: this.options.path,
-                    virtualPath: this.options.nodePath
+            const oldEvents = JSON.parse(JSON.stringify(eventOptions?.events || {}));
+            if(vdom.status !== "DELETE") {
+                const vdomPath = [...this.options.path, ...vdom.path];
+                // 检测路径是否有变化，有变化更新信息
+                if(eventOptions && JSON.stringify(eventOptions.path) !== JSON.stringify(vdomPath)) {
+                    this.eventObj.updateEventPath(eventOptions.events, vdomPath);
+                    eventOptions.path = vdomPath;
+                    (vdom?.dom as any).EUIEventsOption = eventOptions; // 更新最新的路径到绑定节点
+                }
+                Object.keys(allEvents).map((eventName: string): void => {
+                    const hasSubscribe = eventOptions?.events[eventName] ? true : false;
+                    if(!hasSubscribe) {
+                        typeof allEvents[eventName] === "function" && this.eventObj.subscribe(vdom.dom as any, {
+                            callback: ((obj: any, callback: Function) => {
+                                return (event:any) => {
+                                    return callback.call(obj, event);
+                                };
+                            })(this.options.component, allEvents[eventName]),
+                            data: vdom.data,
+                            dataSet: vdom.dataSet,
+                            depth: this.options.depth,
+                            eventHandler: (allEvents[eventName] as Function).bind(this),
+                            eventName,
+                            path: vdomPath,
+                            target: vdom.dom as any,
+                            virtualId: this.options.virtualId,
+                            virtualNodePath: this.options.path,
+                            virtualPath: this.options.nodePath
+                        });
+                    }
+                    delete oldEvents[eventName];
                 });
-            });
+            }
+            const leftEvents = Object.keys(oldEvents);
+            if(leftEvents.length > 0) {
+                const removeEvents = [];
+                leftEvents.map((eventName) => {
+                    removeEvents.push(leftEvents[eventName]);
+                });
+                this.eventObj.unsubscribe(null, removeEvents);
+            }
+        } else {
+            if(eventOptions?.events) {
+                this.eventObj.unsubscribe(null, eventOptions.events);
+            }
         }
     }
     private getPrevDom(vdom:IVirtualElement, vdomParent:IVirtualElement): IVirtualElement|null {
@@ -1140,6 +1177,8 @@ export class ElmerRender extends Common {
                         // todo: Release event listener
                     }
                 }
+                delDom.status = "DELETE";
+                this.subscribeEvents(delDom);
                 delDom.children && delDom.children.length > 0 && this.deleteVDomOutOfLogic(delDom.children, true);
             }
         }
