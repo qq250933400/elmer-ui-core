@@ -1,6 +1,6 @@
 import { StaticCommon as utils } from "elmer-common";
 import { getNode, useCallback,useComponent, useEffect, useState } from "../../hooks";
-import { i18nContext } from "./initI18n";
+import { getDefaultLocale, i18nContext } from "./initI18n";
 
 const [ i18nState ] = i18nContext;
 
@@ -15,6 +15,7 @@ export const setLocale = (locale: string): void => {
         // 通知其他调用i18n的组件，locale已经被修改
         i18nState.listeners[evtId]();
     });
+    localStorage.setItem("locale", locale);
 };
 
 export const withI18n = (option?: TypeWithI18nOption):Function => {
@@ -22,7 +23,8 @@ export const withI18n = (option?: TypeWithI18nOption):Function => {
         const getI18nData = ((opt) => {
             return ():any => {
                 if(i18nState.i18n) {
-                    const locale = !utils.isEmpty(i18nState.locale) ? i18nState.locale : i18nState.defaultLocale;
+                    const defaultLocale = getDefaultLocale();
+                    const locale = !utils.isEmpty(i18nState.locale) ? i18nState.locale : defaultLocale;
                     const globalData = i18nState.i18n[locale];
                     const optData = opt && opt.i18n ? opt.i18n[locale] : {};
                     return {
@@ -35,14 +37,14 @@ export const withI18n = (option?: TypeWithI18nOption):Function => {
             };
         })(option);
         (TargetComponent as any).i18n = getI18nData();
-        const WithI18nComponent = (props, context) => {
-            const [ comId ] = useState("comId", () => {
+        const WithI18nComponent = ({}, context) => {
+            const [ {}, getComId, comId ] = useState("comId", () => {
                 return "i18nComponent_" + utils.guid();
             });
-            const getTargetComponent = getNode(comId);
+            const getTargetComponent = getNode(getComId());
             const [ {}, getI18nCallback ] = useCallback(() => {
                 const i18nData = getI18nData();
-                const locale = !utils.isEmpty(i18nState.locale) ? i18nState.locale : i18nState.defaultLocale;
+                const locale = !utils.isEmpty(i18nState.locale) ? i18nState.locale : getDefaultLocale();
                 Object.keys(context).map((contextKey: string) => {
                     if(/^i18n_/.test(contextKey)) {
                         const newI18nFromOption = context[contextKey].state;
@@ -69,6 +71,7 @@ export const withI18n = (option?: TypeWithI18nOption):Function => {
                         i18nState.listeners[evtId]();
                     }
                 });
+                localStorage.setItem("locale", locale);
             }, {
                 name: "setLocale"
             });
@@ -79,7 +82,7 @@ export const withI18n = (option?: TypeWithI18nOption):Function => {
                 name: "getI18n"
             });
             useCallback(() => {
-                return i18nState.locale || i18nState.defaultLocale;
+                return i18nState.locale || getDefaultLocale();
             }, {name: "getLanguage"});
             useEffect((name, opt) => {
                 if(name === "didMount") {

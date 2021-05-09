@@ -27,7 +27,7 @@ const defaultLoading = () => {
 };
 
 const defaultError = ({message, statusCode, showCode}) => {
-    const [{}, setStatusInfo] = useState("statusInfo", {
+    const [setStatusInfo] = useState("statusInfo", {
         message,
         showCode,
         statusCode
@@ -54,7 +54,7 @@ const defaultError = ({message, statusCode, showCode}) => {
 
 export const Loadable = (options: TypeLoadableOptions) => {
     return () => {
-        const [ {}, setStatus, getStatus] = useState("loadStatus", {
+        const [ setStatus, getStatus] = useState("loadStatus", {
             loaded: false,
             message: "Ok",
             showError: false,

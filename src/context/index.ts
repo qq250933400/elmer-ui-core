@@ -41,8 +41,8 @@ export const createContext = <T>(contextName: string, initState?: T):TypeCreateC
             return () => {
                 return (TargetComponent: Function) => {
                     return () => {
-                        const [contextEventId, setUseContentEventId] = useState("contextEventId");
-                        const [{}, setContextState] = useState("contextState", () => {
+                        const [setUseContentEventId, {}, contextEventId] = useState("contextEventId");
+                        const [setContextState] = useState("contextState", () => {
                             return { ...contextObj.state };
                         });
                         useComponent("WithContextComponent", TargetComponent);

@@ -4,6 +4,7 @@ export * from "./useState";
 export * from "./useCallback";
 export * from "./useComponent";
 export * from "./useContext";
+export * from "./useOnce";
 export * from "./usePatch";
 export * from "./useModel";
 export * from "./useService";

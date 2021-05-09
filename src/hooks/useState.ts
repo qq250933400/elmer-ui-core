@@ -1,6 +1,6 @@
 import { defineHook } from "./hookUtils";
 
-type TypeUseStateResult = [any, (state:any) => Promise<any>, Function];
+type TypeUseStateResult = [(state:any) => Promise<any>, () => any, any];
 
 export const useState = (stateKey: string, defaultState?: any):TypeUseStateResult => {
     return defineHook("useState", (options):any => {
@@ -21,11 +21,10 @@ export const useState = (stateKey: string, defaultState?: any):TypeUseStateResul
             saveState[stateKey] = initState;
             options.store = initState;
             options.component.state = saveState;
-            return [initState, updateState, getStatus];
+            return [updateState, getStatus, initState];
         } else {
             const hookReturn = options.returnValue || [];
-            const hookState = options.component?.state[stateKey];
-            return [hookState, hookReturn[1], hookReturn[2]];
+            return [hookReturn[0], hookReturn[1], options.store];
         }
     });
 };

@@ -11,6 +11,8 @@ import { RenderMiddleware } from "../middleware/RenderMiddleware";
 import "../polyfill";
 import { ElmerRender, TypeUIRenderOptions } from "./ElmerRender";
 
+const DEBUGGERLABEL = "ELMER_UI_FIRST_RENDER";
+
 export class ElmerUI extends Common {
 
     @autowired(ElmerDOM)
@@ -68,12 +70,19 @@ export class ElmerUI extends Common {
             virtualId: "RootApp_" + this.missionId,
             worker: this.worker
         });
+        // tslint:disable-next-line: no-console
+        options?.debug && console.time(DEBUGGERLABEL);
+
         renderObj.render({
             firstRender: true
         }).then(() => {
             this.middleware.renderDidMount();
+            // tslint:disable-next-line: no-console
+            options?.debug && console.timeEnd(DEBUGGERLABEL);
         }).catch((err) => {
             typeof entryComponent["$error"] === "function" && entryComponent["$error"](err);
+            // tslint:disable-next-line: no-console
+            options?.debug && console.timeEnd(DEBUGGERLABEL);
         });
         return renderObj;
     }

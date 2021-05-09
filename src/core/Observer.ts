@@ -39,7 +39,10 @@ export class Observer <T>{
      */
     emit(eventName: T, ...args: any[]): void {
         const eventHandlers = observerStorage[this.name][eventName];
-        Object.keys(eventHandlers).map((evtId: string) => {
+        if(!eventHandlers) {
+            console.warn(`在Observer事件池${this.name}中没有发现${eventName}的事件监听(如果是不需要用的事件请移除代码)。`);
+        }
+        eventHandlers && Object.keys(eventHandlers).map((evtId: string) => {
             const callback = eventHandlers[evtId]?.callback;
             typeof callback === "function" && callback.apply(null, args);
         });

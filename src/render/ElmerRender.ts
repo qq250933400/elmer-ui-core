@@ -16,6 +16,7 @@ import { RenderQueue, TypeRenderQueueOptions } from "./RenderQueue";
 export type TypeUIRenderOptions = {
     isRSV?: boolean; // Render first init
     htmlCode?: string|IVirtualElement;
+    debug?: boolean;
 };
 
 type TypeElmerRenderOptions = {
@@ -62,29 +63,38 @@ type TypeComponentRenderEvent = {
 export class ElmerRender extends Common {
 
     @autowired(VirtualRender, "VirtualRender")
-    private virtualRender: VirtualRender;
+    private virtualRender: VirtualRender; // 虚拟dom渲染，将绑定数据渲染到指定的dom属性
     @autowired(VirtualNode)
-    private virtualElement: VirtualNode;
+    private virtualElement: VirtualNode; // 虚拟dom操作，append, remove, clone
     @autowired(RenderQueue)
-    private renderQueue: RenderQueue;
-    // @autowired(InjectComponent)
-    // private injectComponent: InjectComponent;
-    @autowired(ElmerRenderAttrs)
-    private renderDomAttrs: ElmerRenderAttrs;
-    @autowired(RenderMiddleware)
-    private renderMiddleware: RenderMiddleware;
-    @autowired(ContextStore)
-    private contextStore: ContextStore;
+    private renderQueue: RenderQueue; // 采用队列形式执行渲染过程
 
-    private options: TypeElmerRenderOptions; // 当前render传入的参数
-    private sourceDom: IVirtualElement; // 代码节点未渲染过的虚拟dom树
-    private newDom: IVirtualElement; // 新节点渲染过的虚拟dom树
-    private oldDom: IVirtualElement; // 旧dom节点
-    private userComponents: any = {}; // 当前组件引用的自定义组件
-    private eventObj: ElmerEvent; // 事件处理模块，全局只有一个对象，从最顶层往下传递
+    @autowired(ElmerRenderAttrs)
+    private renderDomAttrs: ElmerRenderAttrs; // 将虚拟dom属性渲染到真实dom节点
+    @autowired(RenderMiddleware)
+    private renderMiddleware: RenderMiddleware; // 渲染生命周期扩展
+    @autowired(ContextStore)
+    private contextStore: ContextStore; // context 数据存储
+
+    /** 当前render传入的参数 */
+    private options: TypeElmerRenderOptions;
+    /** 未渲染过的虚拟dom树 */
+    private sourceDom: IVirtualElement;
+    /** 新节点渲染过的虚拟dom树 */
+    private newDom: IVirtualElement;
+    /** 旧dom节点 */
+    private oldDom: IVirtualElement;
+    /** Html代码 */
+    private htmlCode: String;
+    /** 当前组件引用的自定义组件 */
+    private userComponents: any = {};
+    /** 事件处理模块，全局只有一个对象，从最顶层往下传递 */
+    private eventObj: ElmerEvent;
     private virtualId: string;
-    private renderComponents: any = {}; // 当前组件下的自定义组件渲染对象
-    private allInUseComponent: any = {}; // 当前组件所有用到的自定义组件对象
+    /** 当前组件下的自定义组件渲染对象 */
+    private renderComponents: any = {};
+    /** 当前组件所有用到的自定义组件对象 */
+    private allInUseComponent: any = {};
     constructor(options: TypeElmerRenderOptions) {
         super();
         let userComponents = (options.component as any).components || {};
@@ -231,7 +241,7 @@ export class ElmerRender extends Common {
     }
     private async getSourceCode():Promise<any> {
         return new Promise<any>((resolve, reject) => {
-            let vdom:IVirtualElement;
+            let vdom:IVirtualElement|String;
             if(typeof this.options.component.$render === "function") {
                 vdom = (this.options.component.$render as any)(this.options.component.props);
             } else if(typeof this.options.component["render"] === "function") {
@@ -240,13 +250,18 @@ export class ElmerRender extends Common {
                 vdom = this.options.component["templateCode"];
             }
             if(this.isString(vdom)) {
-                // vdom = this.htmlParse.parse(vdom);
-                this.options.worker.callObjMethod("htmlParse","parse", vdom as any)
-                    .then((resp) => {
-                        resolve(resp.data);
-                    }).catch((err) => {
-                        reject(err);
-                    });
+                // 当方法或者高阶组件返回的是html代码的时候只有html代码变化才会调用htmlParse进行解析，否则使用已经解析好的数据即可
+                if(this.htmlCode !== vdom || !this.sourceDom) {
+                    this.htmlCode = vdom;
+                    this.options.worker.callObjMethod("htmlParse","parse", vdom as any)
+                        .then((resp) => {
+                            resolve(resp.data);
+                        }).catch((err) => {
+                            reject(err);
+                        });
+                } else {
+                    resolve(this.sourceDom);
+                }
             } else {
                 resolve(vdom);
             }
@@ -307,7 +322,6 @@ export class ElmerRender extends Common {
                         rootPath: [], // this.options.path,
                         sessionId: this.virtualId
                     });
-                    // this.virtualRender.unBind(this.virtualId, "onBeforeRender", renderEventId); // render 结束移除监听事件
                     typeof this.options.component.$afterVirtualRender === "function" && this.options.component.$afterVirtualRender(renderDom);
                     if(typeof this.options.component.$beforeRender === "function") {
                         isVirtualRenderResult = this.options.component.$beforeRender(renderDom);
