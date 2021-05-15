@@ -53,10 +53,21 @@ export default class EventInWorker {
         const matchEvents: TypeEventListenData[] = [];
         const srcVirtalNodePath = srcOptions.path;
         const srcVirtualNodePathLen = srcVirtalNodePath.length;
+        const isAnimationEndEvent = /animationEnd$/i.test(eventName);
+        const isTransitionEndEvent = /transitionEnd$/i.test(eventName);
         eventListens.map((item) => {
             const itemVirtualPathLen = item.path.length;
+            let isEventTypeMatched = item.eventName === eventName;
             let isMathedEvent = false;
-            if(item.eventName === eventName && item.depth <= srcOptions.depth &&
+            // 特殊事件处理
+            if(isAnimationEndEvent) {
+                isEventTypeMatched = /animationEnd$/i.test(item.eventName);
+            }
+            if(isTransitionEndEvent) {
+                isEventTypeMatched = /transitionEnd$/i.test(item.eventName);
+            }
+
+            if(isEventTypeMatched && item.depth <= srcOptions.depth &&
                 item.virtualPath.substr(0, srcOptions.virtualPath.length) <= srcOptions.virtualPath
                 ) {
                 if(item.depth === srcOptions.depth) {
@@ -77,10 +88,10 @@ export default class EventInWorker {
                     if(JSON.stringify(newSrcNodePath) === JSON.stringify(item.path)) {
                         matchEvents.push(item);
                     }
-                    // console.log(JSON.stringify(item.virtualNodePath), "-Preix: ",  JSON.stringify(newSrcNodePath), '--Source--:', JSON.stringify(srcVirtalNodePath));
                 }
             }
         });
+
         this.eventHandleSortAction(matchEvents, srcOptions);
         return matchEvents;
     }

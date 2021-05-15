@@ -55,6 +55,9 @@ const [serviceState, withServiceContext,] = createContext("ElmerServiceContext",
 @injectable("/core/ElmerService")
 export class ElmerService {
     private config: {[P in keyof TypeServiceConfig<any>]?: TypeServiceConfig<any>[P]} = {};
+    constructor() {
+        this.config = serviceState.config;
+    }
     setConfig(configData: TypeServiceConfig<any>): void {
         this.config = configData;
         serviceState.config = configData;
@@ -98,9 +101,15 @@ export class ElmerService {
         const endPoint = this.getEndPoint(endPointId);
         return endPoint ? endPoint.url : null;
     }
-    send<T = {}>(options: TypeServiceSendOptions): Promise<T> {
+    /**
+     * 发送http请求
+     * @param options - 请求参数
+     * @param newEndPoint - 自定义API参数配置，不从全局配置数据去读取
+     * @returns - 返回Promise对象
+     */
+    send<T = {}>(options: TypeServiceSendOptions, newEndPoint?: TypeServiceEndPoint<{}>): Promise<T> {
         return new Promise<T>((resolve, reject) => {
-            const endPoint = this.getEndPoint(options?.endPoint);
+            const endPoint = newEndPoint || this.getEndPoint(options?.endPoint);
             if(!endPoint) {
                 reject({
                     message: "The endpoint is not found.",

@@ -35,24 +35,30 @@ export class PluginPropsChecking extends RenderMiddlewarePlugin {
         }
     }
     init(options: TypeRenderMiddlewareEvent): void {
-        this.checkPropTypes(options.componentObj, options.Component, options.nodeData.tagName);
+        this.checkPropTypes(options.componentObj, options.Component, options.props, options.nodeData.tagName);
     }
-    private checkPropTypes(targetComponent:Component, ComponentClass:any, tagName?: string): void {
+    willReceiveProps(options: TypeRenderMiddlewareEvent): void {
+        this.checkPropTypes(options.componentObj, options.Component, options.props,options.nodeData.tagName);
+    }
+    private checkPropTypes(targetComponent:Component, ComponentClass:any, props: any, tagName?: string): void {
         const propTypes = ComponentClass["propType"] || ComponentClass["propTypes"] || {};
         const propKeys = Object.keys(propTypes) || [];
         if(propKeys.length>0) {
-            this.checkPropTypesCallBack(targetComponent, propTypes, tagName);
+            this.checkPropTypesCallBack(targetComponent, propTypes, props, tagName);
         }
     }
-    private checkPropTypesCallBack(target: any,checkRules: any, tagName?: string): void {
+    private checkPropTypesCallBack(target: any,checkRules: any, props: any, tagName?: string): void {
         Object.keys(checkRules).map((tmpKey: any) => {
             let checkRuleData:IPropValidator|Function  = checkRules[tmpKey];
             if(utils.isFunction(checkRuleData)) {
-                this.doCheckPropType(target, tmpKey, checkRuleData, tagName);
+                this.doCheckPropType(target, tmpKey, checkRuleData, tagName, props);
             } else if(utils.isObject(checkRuleData)) {
                 let checkData:IPropValidator = checkRuleData;
+                if(!props[tmpKey] && checkData.defaultValue) {
+                    props[tmpKey] = checkData.defaultValue;
+                }
                 if(utils.isFunction(checkData.rule)) {
-                    this.doCheckPropType(target, tmpKey, <Function>checkData.rule, tagName);
+                    this.doCheckPropType(target, tmpKey, <Function>checkData.rule, tagName, props);
                 }
                 // 定义propertyKey 自动mapping值到组件定义属性上
                 if(!utils.isEmpty(checkData.propertyKey)) {
@@ -73,8 +79,8 @@ export class PluginPropsChecking extends RenderMiddlewarePlugin {
      * @param propertyKey prop属性关键词
      * @param checkCallBack 数据类型检查规则
      */
-    private doCheckPropType(target: any, propertyKey: string, checkCallBack: Function, tagName: string): void {
-        const propValue = target.props[propertyKey];
+    private doCheckPropType(target: any, propertyKey: string, checkCallBack: Function, tagName: string, props: any): void {
+        const propValue = props[propertyKey];
         utils.isFunction(checkCallBack) && checkCallBack(propValue, {
             error: (msg: any, type:any) => {
                 const tagNameNS = utils.humpToStr(target["selector"]) || tagName;

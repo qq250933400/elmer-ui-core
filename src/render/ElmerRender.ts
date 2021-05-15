@@ -700,7 +700,7 @@ export class ElmerRender extends Common {
                     vRender.options.prevDom = doUpdatePrevDom;
                     this.extend(props, vRender.options.component.props, true);
                     this.extend(props, vRDom.changeAttrs, true);
-                    middlewareObj.beforeUpdate({
+                    middlewareObj.willReceiveProps({
                         Component: UserComponent,
                         componentObj: vRender.options.component,
                         nodeData: vdom,

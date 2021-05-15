@@ -1,6 +1,6 @@
 import { autoInit } from "../injectable";
-import { defineHook } from "./hookUtils";
 import { TypeAutowiredOptions } from "../injectable/createClassFactory";
+import { defineHook } from "./hookUtils";
 
 export const useService = <T>(Service: new (...args:any[]) => any, options?: string | TypeAutowiredOptions):T => {
     return defineHook("useService", (opt) => {

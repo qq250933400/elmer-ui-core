@@ -10,6 +10,7 @@ export class ElmerEvent {
     private worker: ElmerWorker;
     private eventData: TypeEventContextData = {};
     private eventHandlers: TypeEventHandler[] = [];
+    private eventOriginHandler: any = {};
     constructor(worker: ElmerWorker) {
         this.worker = worker;
     }
@@ -26,7 +27,7 @@ export class ElmerEvent {
     subscribe(dom:HTMLElement,options: IEventContext): String {
         const eventId = "Event_" + utils.guid().replace(/\-/g, "") + "_" + (new Date()).getTime();
         try {
-            // const ect = new EventContext(options);
+            const bindEventName = options.eventName;
             let EUIEventsOption: TypeDomEventOptions = options.eventName !== "resize" ? (dom as any).EUIEventsOption : null;
             EUIEventsOption = (EUIEventsOption || {
                 depth: options.depth,
@@ -37,8 +38,8 @@ export class ElmerEvent {
                 virtualNodePath: options.virtualNodePath,
                 virtualPath: options.virtualPath
             }) as any;
-            if (!this.eventData[options.eventName]) {
-                this.addEventListener(options.eventName, (event: Event) => {
+            if (!this.eventData[bindEventName]) {
+                const invokeEvent = (event: Event) => {
                     const eventPath = <HTMLElement[]>(event as any).path;
                     if (event.type !== "resize" && eventPath && eventPath.length > 0) {
                         let srcEventDom: HTMLElement;
@@ -58,22 +59,25 @@ export class ElmerEvent {
                     } else {
                         this.callResizeEventHandler(event);
                     }
-                });
-                this.eventData[options.eventName] = {};
+                };
+                this.addEventListener(options.eventName, invokeEvent);
+                this.eventData[bindEventName] = {};
+                // 将初始事件处理方法保留，以便后面做删除操作
+                this.eventOriginHandler[bindEventName] = invokeEvent;
             }
-            if (!EUIEventsOption.events[options.eventName]) {
-                EUIEventsOption.events[options.eventName] = eventId;
+            if (!EUIEventsOption.events[bindEventName]) {
+                EUIEventsOption.events[bindEventName] = eventId;
             } else {
                 throw new Error(`The event of ${options.eventName} already has event handler.`);
             }
             if(options.eventName !== "resize") {
                 (dom as any).EUIEventsOption = EUIEventsOption;
             }
-            this.eventData[options.eventName][eventId] = options;
+            this.eventData[bindEventName][eventId] = options;
             this.eventHandlers.push({
                 depth: options.depth,
                 eventId,
-                eventName: options.eventName,
+                eventName: bindEventName,
                 path: options.path,
                 virtualId: options.virtualId,
                 virtualNodePath: options.virtualNodePath,
@@ -92,13 +96,25 @@ export class ElmerEvent {
      */
     unsubscribe(virtualNodeId?: string, eventIds?: string[]): void {
         if(!utils.isEmpty(virtualNodeId) || eventIds?.length > 0) {
+            const newEventHandler = [];
             // 将事件从事件索引列表删除
             for(let i=this.eventHandlers.length - 1;i>=0;i--) {
                 const evt = this.eventHandlers[i];
-                if(evt && (evt.virtualId === virtualNodeId || (eventIds && eventIds.indexOf(evt.virtualId)>=0))) {
-                    delete this.eventHandlers[i];
+                let isRemoved = false;
+                if(evt?.virtualId === virtualNodeId) {
+                    // 当前事件监听所在虚拟domID与移除事件监听dom相同
+                    isRemoved = true;
                 }
+                if(!isRemoved) {
+                    // 当前事件监听所在虚拟domID与移除事件监听dom不相同时
+                    if(eventIds && eventIds.indexOf(evt.eventId) >= 0) {
+                        // 事件ID和移除事件ID相同
+                        isRemoved = true;
+                    }
+                }
+                !isRemoved && newEventHandler.push(evt);
             }
+            this.eventHandlers = newEventHandler;
             // 将事件监听从监听源数据删除
             Object.keys(this.eventData).map((eventName: string) => {
                 const evtInfo = this.eventData[eventName];
@@ -113,7 +129,11 @@ export class ElmerEvent {
                     }
                 });
                 if(Object.keys(evtInfo).length <= 0) {
+                    // 当所有事件监听都从虚拟节点移除以后，将根元素的事件监听移除
+                    // 保证所有做过删除的事件不会被调用两次
+                    this.removeEventListen(eventName, this.eventOriginHandler[eventName]);
                     delete this.eventData[eventName];
+                    delete this.eventOriginHandler[eventName];
                 }
             });
         }
@@ -185,36 +205,39 @@ export class ElmerEvent {
                             nativeEvent: event,
                             srcElement: (event as any).srcElement
                         };
-                        const type = event.type;
+                        /** 针对特殊事件做处理，在事件池保存name区分大小写 */
+                        const type = /animationEnd$/i.test(event.type) ? "animationEnd" : (/transitionEnd$/i.test(event.type) ? "transitionEnd" : event.type);
                         const eventHandlers = this.eventData[type];
                         if(eventHandlers) {
                             for(const evt of matchEvents) {
                                 const handler:IEventContext = eventHandlers[evt.eventId];
-                                const callback = handler.callback;
-                                const eventTarget = handler.target;
-                                callEventOptions.currentTarget = eventTarget;
-                                callEventOptions.dataSet = handler.dataSet;
-                                callEventOptions.data = handler.data;
-                                if(/^input$/i.test(eventTarget.tagName)) {
-                                    if(/^(radio|checkbox)$/i.test((eventTarget as any).type)) {
-                                        callEventOptions.checked = (eventTarget as any).checked;
-                                    } else {
+                                if(handler) {
+                                    const callback = handler.callback;
+                                    const eventTarget = handler.target;
+                                    callEventOptions.currentTarget = eventTarget;
+                                    callEventOptions.dataSet = handler.dataSet;
+                                    callEventOptions.data = handler.data;
+                                    if(/^input$/i.test(eventTarget.tagName)) {
+                                        if(/^(radio|checkbox)$/i.test((eventTarget as any).type)) {
+                                            callEventOptions.checked = (eventTarget as any).checked;
+                                        } else {
+                                            callEventOptions.value = (eventTarget as any).value;
+                                        }
+                                    } else if(/^(textarea|select)$/i.test(eventTarget.tagName)) {
                                         callEventOptions.value = (eventTarget as any).value;
                                     }
-                                } else if(/^(textarea|select)$/i.test(eventTarget.tagName)) {
-                                    callEventOptions.value = (eventTarget as any).value;
-                                }
-                                if(/^mouse/i.test(type)) {
-                                    // mouse event
-                                    callEventOptions.x = (event as MouseEvent).x;
-                                    callEventOptions.y = (event as MouseEvent).y;
-                                } else if(/^touch/i.test(type)) {
-                                    callEventOptions.touches = (event as TouchEvent).touches;
-                                }
-                                typeof handler?.callback === "function" && callback(callEventOptions);
-                                // console.log(callback, evt.eventId);
-                                if(callEventOptions.cancelBubble) {
-                                    break;
+                                    if(/^mouse/i.test(type)) {
+                                        // mouse event
+                                        callEventOptions.x = (event as MouseEvent).x;
+                                        callEventOptions.y = (event as MouseEvent).y;
+                                    } else if(/^touch/i.test(type)) {
+                                        callEventOptions.touches = (event as TouchEvent).touches;
+                                    }
+                                    typeof handler?.callback === "function" && callback(callEventOptions);
+                                    // console.log(callback, evt.eventId);
+                                    if(callEventOptions.cancelBubble) {
+                                        break;
+                                    }
                                 }
                             }
                         }

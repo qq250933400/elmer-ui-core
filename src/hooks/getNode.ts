@@ -14,7 +14,7 @@ export const getNode = (id: string): Function => {
             })(opt.component, id);
             return getNodeCallback;
         } else {
-            return opt.returnValue();
+            return opt.returnValue;
         }
     });
 };
