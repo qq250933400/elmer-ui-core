@@ -13,6 +13,10 @@ import { ElmerRender, TypeUIRenderOptions } from "./ElmerRender";
 
 const DEBUGGERLABEL = "ELMER_UI_FIRST_RENDER";
 
+type TypeUIOptions = TypeUIRenderOptions & {
+    components?: any
+};
+
 export class ElmerUI extends Common {
 
     @autowired(ElmerDOM)
@@ -39,7 +43,7 @@ export class ElmerUI extends Common {
     onReady(fn:Function): void {
         this.$.addEvent(window, "load", fn);
     }
-    render(target:HTMLElement, rootApp:any, options?:TypeUIRenderOptions): ElmerRender {
+    render(target:HTMLElement, rootApp:any, options?:TypeUIOptions): ElmerRender {
         // elmer
         const contextStore:any = {};
         const entryComponent = rootApp || {};
@@ -51,6 +55,9 @@ export class ElmerUI extends Common {
             entryComponent.$render = () => {
                 return options ? options.htmlCode : "<span>Missing render lifecycle method in rootApp object.</span>";
             };
+        }
+        if(options?.components) {
+            entryComponent.components = options.components;
         }
         entryComponent.selector = "RootNode";
         this.extend(entryComponent, Component.prototype, true, ignorePropKeys);

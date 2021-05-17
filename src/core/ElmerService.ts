@@ -3,15 +3,15 @@ import { StaticCommon as utils } from "elmer-common";
 import { createContext } from "../context";
 import { autoInit, injectable } from "../injectable";
 
-type TypeServiceMethod = "GET" | "POST" | "DELETE" | "PUT" | "OPTIONS";
+export type TypeServiceMethod = "GET" | "POST" | "DELETE" | "PUT" | "OPTIONS";
 
-type TypeServiceEndPointOption = {
+export type TypeServiceEndPointOption = {
     withRoute?: boolean;
     withRouteAction?: string;
     withRoutePath?: string;
 };
 
-type TypeServiceEndPoint<T> = {
+export type TypeServiceEndPoint<T> = {
     url: string | any;
     method: TypeServiceMethod,
     uri?: any;
@@ -25,13 +25,13 @@ type TypeServiceEndPoint<T> = {
     dummyData?: string;
 };
 
-type TypeServiceNamespace<T>= {
+export type TypeServiceNamespace<T>= {
     host?: any;
     isDummy?: boolean;
     endPoints: {[P in keyof T]: TypeServiceEndPoint<any>};
 };
 
-type TypeServiceConfig<T={}> = {
+export type TypeServiceConfig<T={}> = {
     env?: string;
     isDummy?: boolean;
     host: any;
@@ -39,7 +39,7 @@ type TypeServiceConfig<T={}> = {
     timeout?: number;
 };
 
-type TypeServiceSendOptions = {
+export type TypeServiceSendOptions = {
     endPoint: string;
     uri?: any;
     data?: any;
@@ -62,7 +62,14 @@ export class ElmerService {
         this.config = configData;
         serviceState.config = configData;
     }
-    getConfig<T = any>(): {[P in keyof T]: TypeServiceNamespace<any>} {
+    setNamespace(namespace: string, data: TypeServiceNamespace<any>): void {
+        if(this.config?.config) {
+            this.config.config[namespace] = data;
+        } else {
+            this.config.config = {};
+        }
+    }
+    getConfig<T={}>(): {[P in keyof T]: TypeServiceNamespace<any>} {
         return this.config.config as any;
     }
     getEndPoint(endPointId: string): TypeServiceEndPoint<any>|undefined|null {
@@ -215,5 +222,31 @@ export const GetEndPoint= (endPoint: string) => {
             });
         }
         return myEndPoint;
+    };
+};
+
+export const SetServiceConfig = <T={}>() => {
+    return (target: any, attr: string, defaultValue?: TypeServiceConfig<T>): any => {
+        const obj = autoInit(ElmerService);
+        obj.setConfig(defaultValue);
+        if(target) {
+            Object.defineProperty(target, attr, {
+                get: () => defaultValue,
+                set: () => {throw new Error(`The property of ${attr} cannot be modified directly.`);}
+            });
+        }
+    };
+};
+
+export const SetServiceNamespace = <T={}>(namespace: string) => {
+    return (target: any, attr: string, defaultValue?: TypeServiceNamespace<T>): any => {
+        const obj = autoInit(ElmerService);
+        obj.setNamespace(namespace, defaultValue);
+        if(target) {
+            Object.defineProperty(target, attr, {
+                get: () => defaultValue,
+                set: () => {throw new Error(`The property of ${attr} cannot be modified directly.`);}
+            });
+        }
     };
 };

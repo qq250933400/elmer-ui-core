@@ -1,11 +1,20 @@
-import { StaticCommon as utils } from "elmer-common";
-import { useCallback, useComponent, useEffect, useState } from "../hooks";
+import { queueCallFunc, queueCallRaceAll,StaticCommon as utils, TypeQueueCallParam } from "elmer-common";
+import { ElmerService, TypeServiceSendOptions } from "../core/ElmerService";
+import { useComponent, useEffect, useService, useState } from "../hooks";
 
-type TypeLoadableOptions = {
+type LoadableEndPoints<T={}> = {[P in keyof T]: TypeServiceSendOptions};
+
+type TypeLoadableOptions<T={}> = {
     loader: Function;
     loading?: Function;
     error?: Function;
     className?: string;
+    callApis?: {
+        /** 是否异步请求 */
+        async?: boolean;
+        commonHandler?: Function;
+        endPoints: LoadableEndPoints;
+    }
 };
 
 const defaultLoading = () => {
@@ -55,6 +64,7 @@ const defaultError = ({message, statusCode, showCode}) => {
 export const Loadable = (options: TypeLoadableOptions) => {
     return () => {
         const [ setStatus, getStatus] = useState("loadStatus", {
+            apiData: null,
             loaded: false,
             message: "Ok",
             showError: false,
@@ -62,6 +72,7 @@ export const Loadable = (options: TypeLoadableOptions) => {
             statusCode: "200"
         });
         const useNewComponent = useComponent("AsyncComponent", options.loading || defaultLoading);
+        const service = useService<ElmerService>(ElmerService);
         useComponent("ErrorInfo", options.error || defaultError);
         useComponent("Loading", options.loading || defaultLoading);
         useState("className", options.className);
@@ -69,38 +80,111 @@ export const Loadable = (options: TypeLoadableOptions) => {
         useEffect((name):any => {
             if(name === "didMount") {
                 if(typeof options.loader === "function") {
-                    options.loader().then((resp:any) => {
-                        if(resp["__esModule"] && typeof resp.default === "function") {
-                            const AsyncComponet= resp.default;
-                            const lastStatus = getStatus();
-                            useNewComponent(AsyncComponet);
+                    queueCallFunc([
+                        {
+                            id: "call_apis",
+                            params: options.callApis,
+                            // tslint:disable-next-line: object-literal-sort-keys
+                            fn: ():any => {
+                                return new Promise<any>((resolve, reject) => {
+                                    if(options?.callApis?.endPoints && Object.keys(options?.callApis?.endPoints).length > 0) {
+                                        const params: TypeQueueCallParam[] = [];
+                                        const apiInvoke = options.callApis.async ? queueCallRaceAll : queueCallFunc;
+                                        Object.keys(options?.callApis?.endPoints).map((id: string) => {
+                                            const sendOption: TypeServiceSendOptions = options?.callApis?.endPoints[id];
+                                            params.push({
+                                                id,
+                                                params: sendOption
+                                            });
+                                        });
+                                        apiInvoke(params, (opt, invokeParam): Promise<any> => {
+                                            // tslint:disable-next-line: variable-name
+                                            return new Promise((_resolve, _reject) => {
+                                                service.send(invokeParam)
+                                                    .then((resp: any) => {
+                                                        if(typeof options?.callApis?.commonHandler === "function") {
+                                                            _reject(options?.callApis?.commonHandler(true, resp));
+                                                        } else {
+                                                            _reject(resp);
+                                                        }
+                                                    })
+                                                    .catch((respError) => {
+                                                        if(typeof options?.callApis?.commonHandler === "function") {
+                                                            _reject(options?.callApis?.commonHandler(false, respError));
+                                                        } else {
+                                                            _reject(respError);
+                                                        }
+                                                    });
+                                            });
+                                        })
+                                            .then((allResp:any) => resolve(allResp))
+                                            .catch((apiError: any) => reject(apiError));
+                                    } else {
+                                        resolve({});
+                                    }
+                                });
+                            }
+                        }, {
+                            id: "loadComponent",
+                            params: null,
+                            // tslint:disable-next-line: object-literal-sort-keys
+                            fn: () => {
+                                return new Promise((resolve, reject) => {
+                                    options.loader().then((resp:any) => {
+                                        if(resp["__esModule"] && typeof resp.default === "function") {
+                                            const AsyncComponet= resp.default;
+                                            const lastStatus = getStatus();
+                                            useNewComponent(AsyncComponet);
+                                            setStatus({
+                                                ...lastStatus,
+                                                loaded: true,
+                                                showError: false,
+                                                showLoading: false,
+                                            });
+                                            resolve({});
+                                        } else {
+                                            setStatus({
+                                                loaded: true,
+                                                message: "AsyncComponent module not an function or constructor.",
+                                                showError: true,
+                                                showLoading: false,
+                                                statusCode: "Async500"
+                                            });
+                                            resolve({});
+                                        }
+                                        // setLoaded(true);
+                                    }).catch((err) => {
+                                        // tslint:disable-next-line: no-console
+                                        console.error(err);
+                                        reject({
+                                            message: "Load asyncComponent fail: " + err.message,
+                                            statusCode: "Async500",
+                                        });
+                                    });
+                                });
+                            }
+                        }
+                    ], null, {
+                        throwException: true
+                    }).then((allResp: any) => {
+                        setStatus({
+                            ...getStatus(),
+                            apiData: allResp.call_apis,
+                            showLoading: false
+                        });
+                    }).catch((error) => {
+                        if(utils.isEmpty(error.statusCode) || !utils.isEmpty(error.message)) {
                             setStatus({
-                                ...lastStatus,
+                                ...getStatus(),
                                 loaded: true,
-                                showError: false,
-                                showLoading: false,
-                            });
-                        } else {
-                            setStatus({
-                                loaded: true,
-                                message: "AsyncComponent module not an function or constructor.",
+                                message: error.message,
                                 showError: true,
-                                showLoading: false,
-                                statusCode: "Async500"
+                                showLoading: false
                             });
                         }
-                        // setLoaded(true);
-                    }).catch((err) => {
-                        // tslint:disable-next-line: no-console
-                        console.error(err);
-                        setStatus({
-                            loaded: true,
-                            message: "Load asyncComponent fail: " + err.message,
-                            showError: true,
-                            showLoading: false,
-                            statusCode: "Async500"
-                        });
                     });
+                } else {
+                    throw new Error("The attribute of loader is not an function.");
                 }
             }
         });

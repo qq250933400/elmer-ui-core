@@ -54,7 +54,8 @@ export class PluginPropsChecking extends RenderMiddlewarePlugin {
                 this.doCheckPropType(target, tmpKey, checkRuleData, tagName, props);
             } else if(utils.isObject(checkRuleData)) {
                 let checkData:IPropValidator = checkRuleData;
-                if(!props[tmpKey] && checkData.defaultValue) {
+                if(( undefined === props[tmpKey] || null === props[tmpKey]) && checkData.defaultValue) {
+                    delete props[tmpKey];
                     props[tmpKey] = checkData.defaultValue;
                 }
                 if(utils.isFunction(checkData.rule)) {
