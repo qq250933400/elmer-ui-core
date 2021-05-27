@@ -55,8 +55,10 @@ const [serviceState, withServiceContext,] = createContext("ElmerServiceContext",
 @injectable("/core/ElmerService")
 export class ElmerService {
     private config: {[P in keyof TypeServiceConfig<any>]?: TypeServiceConfig<any>[P]} = {};
+    private env: String;
     constructor() {
         this.config = serviceState.config;
+        this.env = ENV;
     }
     setConfig(configData: TypeServiceConfig<any>): void {
         this.config = configData;
@@ -67,6 +69,7 @@ export class ElmerService {
             this.config.config[namespace] = data;
         } else {
             this.config.config = {};
+            this.config.config[namespace] = data;
         }
     }
     getConfig<T={}>(): {[P in keyof T]: TypeServiceNamespace<any>} {
@@ -83,7 +86,7 @@ export class ElmerService {
             if(endPointConfig) {
                 const endPoint = JSON.parse(JSON.stringify(endPointConfig));
                 const isDummy = this.config.isDummy || namespaceData.isDummy || endPoint.isDummy;
-                const env = this.config.env || "PROD";
+                const env:any = this.config.env || this.env || "PROD";
                 const rootHost = (this.config.host || {})[env];
                 const namespaceHost = (namespaceData.host || {})[env];
                 const domainPath = namespaceHost || rootHost;
@@ -152,7 +155,7 @@ export class ElmerService {
                     data: resp.data,
                     endPoint,
                     headers: resp.headers,
-                    options  
+                    options
                 } as any));
             }).catch((error) => {
                 // tslint:disable-next-line: no-console
@@ -238,15 +241,10 @@ export const SetServiceConfig = <T={}>() => {
     };
 };
 
-export const SetServiceNamespace = <T={}>(namespace: string) => {
-    return (target: any, attr: string, defaultValue?: TypeServiceNamespace<T>): any => {
+export const SetServiceNamespace = (namespace: string) => {
+    return (target: any, attr: string, descriptor?: PropertyDescriptor): any => {
         const obj = autoInit(ElmerService);
-        obj.setNamespace(namespace, defaultValue);
-        if(target) {
-            Object.defineProperty(target, attr, {
-                get: () => defaultValue,
-                set: () => {throw new Error(`The property of ${attr} cannot be modified directly.`);}
-            });
-        }
+        const configData = descriptor.value();
+        obj.setNamespace(namespace, configData);
     };
 };

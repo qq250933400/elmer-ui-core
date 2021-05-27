@@ -1,4 +1,5 @@
 import { queueCallFunc, queueCallRaceAll,StaticCommon as utils, TypeQueueCallParam } from "elmer-common";
+import { classNames } from "../core/ElmerDom";
 import { ElmerService, TypeServiceSendOptions } from "../core/ElmerService";
 import { useComponent, useEffect, useService, useState } from "../hooks";
 
@@ -12,7 +13,8 @@ type TypeLoadableOptions<T={}> = {
     callApis?: {
         /** 是否异步请求 */
         async?: boolean;
-        commonHandler?: Function;
+        after?: Function;
+        before?: Function;
         endPoints: LoadableEndPoints;
     }
 };
@@ -75,7 +77,7 @@ export const Loadable = (options: TypeLoadableOptions) => {
         const service = useService<ElmerService>(ElmerService);
         useComponent("ErrorInfo", options.error || defaultError);
         useComponent("Loading", options.loading || defaultLoading);
-        useState("className", options.className);
+        useState("className", classNames("Loadable", options.className));
         useState("asyncAppId", "__AsyncAppId__" + utils.guid());
         useEffect((name):any => {
             if(name === "didMount") {
@@ -100,22 +102,25 @@ export const Loadable = (options: TypeLoadableOptions) => {
                                         apiInvoke(params, (opt, invokeParam): Promise<any> => {
                                             // tslint:disable-next-line: variable-name
                                             return new Promise((_resolve, _reject) => {
+                                                typeof options?.callApis?.before === "function" && options?.callApis?.before(invokeParam, opt);
                                                 service.send(invokeParam)
                                                     .then((resp: any) => {
-                                                        if(typeof options?.callApis?.commonHandler === "function") {
-                                                            _reject(options?.callApis?.commonHandler(true, resp));
+                                                        if(typeof options?.callApis?.after === "function") {
+                                                            _reject(options?.callApis?.after(true, resp));
                                                         } else {
                                                             _reject(resp);
                                                         }
                                                     })
                                                     .catch((respError) => {
-                                                        if(typeof options?.callApis?.commonHandler === "function") {
-                                                            _reject(options?.callApis?.commonHandler(false, respError));
+                                                        if(typeof options?.callApis?.after === "function") {
+                                                            _reject(options?.callApis?.after(false, respError));
                                                         } else {
                                                             _reject(respError);
                                                         }
                                                     });
                                             });
+                                        }, {
+                                            throwException: true
                                         })
                                             .then((allResp:any) => resolve(allResp))
                                             .catch((apiError: any) => reject(apiError));
@@ -181,6 +186,9 @@ export const Loadable = (options: TypeLoadableOptions) => {
                                 showError: true,
                                 showLoading: false
                             });
+                        } else {
+                            // tslint:disable-next-line: no-console
+                            console.error(error);
                         }
                     });
                 } else {
@@ -190,7 +198,7 @@ export const Loadable = (options: TypeLoadableOptions) => {
         });
         return `<div data="Loadable" class="{{state.className}}">
             <div class="AsyncComponent"><AsyncComponent em:if="state.loadStatus.loaded seq true && state.loadStatus.showError sneq true" ...="{{props}}" id="{{state.asyncAppId}}" status="{{state.loadStatus.loaded}}"/></div>
-            <div class="showLoading"><Loading em:if="state.loadStatus.showLoading"/></div>
+            <div class="LoadableLoading"><Loading em:if="state.loadStatus.showLoading"/></div>
             <div class="ErrorInfo"><ErrorInfo if="{{state.loadStatus.showError}}" message="{{state.loadStatus.message}}" statusCode="{{state.loadStatus.statusCode}}"/></div>
         </div>`;
     };

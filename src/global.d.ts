@@ -43,3 +43,5 @@ declare var require: NodeRequire;
 declare interface NodeRequire {
   <T>(path: string): any;
 }
+
+declare var ENV: String;

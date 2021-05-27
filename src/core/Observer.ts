@@ -40,6 +40,7 @@ export class Observer <T>{
     emit(eventName: T, ...args: any[]): void {
         const eventHandlers = observerStorage[this.name][eventName];
         if(!eventHandlers) {
+            // tslint:disable-next-line: no-console
             console.warn(`在Observer事件池${this.name}中没有发现${eventName}的事件监听(如果是不需要用的事件请移除代码)。`);
         }
         eventHandlers && Object.keys(eventHandlers).map((evtId: string) => {
