@@ -178,7 +178,7 @@ export const Loadable = (options: TypeLoadableOptions) => {
                             showLoading: false
                         });
                     }).catch((error) => {
-                        if(utils.isEmpty(error.statusCode) || !utils.isEmpty(error.message)) {
+                        if(!utils.isEmpty(error.statusCode) || !utils.isEmpty(error.message)) {
                             setStatus({
                                 ...getStatus(),
                                 loaded: true,
@@ -189,6 +189,13 @@ export const Loadable = (options: TypeLoadableOptions) => {
                         } else {
                             // tslint:disable-next-line: no-console
                             console.error(error);
+                            setStatus({
+                                ...getStatus(),
+                                loaded: true,
+                                message: "Unknow Error",
+                                showError: true,
+                                showLoading: false
+                            });
                         }
                     });
                 } else {
