@@ -1,7 +1,8 @@
+import { EventEmitter } from "events";
 import utils from "./utils";
 const observerStorage = {};
 
-export class Observer <T>{
+export class Observer <T> {
     private name: string;
     constructor(name: string) {
         this.name = name;
