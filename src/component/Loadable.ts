@@ -1,7 +1,7 @@
 import { queueCallFunc, queueCallRaceAll,StaticCommon as utils, TypeQueueCallParam } from "elmer-common";
-import { classNames } from "../core/ElmerDom";
-import { ElmerService, TypeServiceSendOptions } from "../core/ElmerService";
 import { useComponent, useEffect, useService, useState } from "../hooks";
+import { classNames } from "../lib/ElmerDom";
+import { ElmerService, TypeServiceSendOptions } from "../lib/ElmerService";
 
 type LoadableEndPoints<T={}> = {[P in keyof T]: TypeServiceSendOptions};
 

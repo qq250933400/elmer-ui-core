@@ -1,15 +1,15 @@
 import { useCallback, useState } from "../../hooks";
-import { autoInit } from "../../injectable";
+import { useService } from "../../hooks";
 import { PropTypes } from "../../propsValidation";
 import { I18nService } from "./I18nService";
 import { withI18n } from "./withI18n";
 
 const FuncFormatMessage = (props:any) => {
     const { className, lngId, getI18n, value } = props;
+    const serviceObj = useService<I18nService>(I18nService);
     useState("className", className || "");
     useCallback((newValue:any) => {
         const text = getI18n(lngId);
-        const serviceObj: I18nService = autoInit(I18nService);
         const translateResult = serviceObj.translate(text, {
             data: newValue
         }) || lngId;

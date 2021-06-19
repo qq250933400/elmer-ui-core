@@ -1,6 +1,6 @@
 import { StaticCommon as utils } from "elmer-common";
 import { IVirtualElement } from "elmer-virtual-dom";
-import { autowired } from "../../injectable";
+import { Autowired } from "../../decorators";
 import { RouterService, TypeRouterType } from "./RouterService";
 
 export class RouterModel {
@@ -14,7 +14,7 @@ export class RouterModel {
     private history: string[] = [];
     private tempData: any;
 
-    @autowired(RouterService)
+    @Autowired(RouterService)
     private service: RouterService;
 
     constructor(obj:any) {

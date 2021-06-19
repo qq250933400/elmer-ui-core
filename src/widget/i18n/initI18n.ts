@@ -1,6 +1,6 @@
 import { createContext } from "../../context";
 
-import utils from "../../core/utils";
+import utils from "../../lib/utils";
 
 type TypeSupportLocales = "zh-CN" | "en-GB" | "hk-CN";
 

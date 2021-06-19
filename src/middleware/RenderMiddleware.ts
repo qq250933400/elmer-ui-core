@@ -1,11 +1,12 @@
 import { CONST_CLASS_COMPONENT_FLAG } from "../component";
-import { autoInit, injectable  } from "../injectable";
+import { Service  } from "../decorators";
+import { getServiceObj } from "../decorators/Autowired";
 import { ARenderMiddleware, TypeRenderMiddlewareEvent } from "./ARenderMiddleware";
 import { PluginInjectModel } from "./PluginInjectModel";
 import { PluginPropsChecking } from "./PluginPropsChecking";
 import { PluginRedux } from "./PluginRedux";
 
-@injectable("RenderMiddleware")
+@Service
 export class RenderMiddleware extends ARenderMiddleware {
     plugins: ARenderMiddleware[] = [];
     private PluginFactorys:Function[] = [];
@@ -51,7 +52,7 @@ export class RenderMiddleware extends ARenderMiddleware {
     }
     private initPlugins(): void {
         this.PluginFactorys.map((Plugin, index) => {
-            this.plugins.push(autoInit(Plugin as any, {
+            this.plugins.push(getServiceObj(Plugin as any, {
                 argv: [
                     {
                         raiseEvent: ((key: any) => {

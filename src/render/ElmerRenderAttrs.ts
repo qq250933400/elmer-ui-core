@@ -1,14 +1,14 @@
 import { StaticCommon as utils } from "elmer-common";
 import { IVirtualElement } from "elmer-virtual-dom";
+import { Service } from "../decorators";
 import { EventNames } from "../events/EventNames";
-import { injectable } from "../injectable/injectable";
-import { classNames } from "../core/ElmerDom";
+import { classNames } from "../lib/ElmerDom";
 
 export const XML_NL = "http://www.w3.org/2000/xmlns/";
 export const SVG_NL = "http://www.w3.org/2000/svg";
 export const SVG_ELE = ["a", "circle", "ellipse", "foreignObject", "g", "image", "line", "path", "polygon", "polyline", "rect", "svg", "text", "tspan", "use", "animate"];
 
-@injectable("ElmerRenderAttrs")
+@Service
 export class ElmerRenderAttrs {
     /**
      * 渲染dom属性值

@@ -1,10 +1,12 @@
 import { Component } from "../../component/Component";
-import { declareComponent, inject, loadComponents } from "../../component/declareComponent";
+import decorators from "../../decorators";
 import { PropTypes } from "../../propsValidation";
 import { Route } from "./Route";
 import { RouterContext, TypeRouterContext, TypeRouterType } from "./RouterContext";
 import { RouterModel } from "./RouterModel";
 import { RouterService } from "./RouterService";
+
+const { loadComponents, Autowired } = decorators;
 
 type TypeRouterProps = {
     type: TypeRouterType;
@@ -20,24 +22,7 @@ type TypeRouterData = {
 type TypeRouterState = {
     data: TypeRouterData[];
 };
-type TypeRouterModel = {
-    md: RouterModel;
-};
-type TypeRouterService = {
-    com: RouterService
-};
 
-const withContext = RouterContext[1];
-
-@declareComponent({selector: "router"})
-@inject({
-    model: {
-        md: RouterModel
-    },
-    service: {
-        com: RouterService
-    }
-})
 @loadComponents({
     Route,
     404: () => `<h2>404 Not Found</h2>`
@@ -56,8 +41,12 @@ class Router extends Component<TypeRouterProps, TypeRouterState> {
             rule: PropTypes.bool.isRequired
         }
     };
-    model: TypeRouterModel;
-    service: TypeRouterService;
+
+    @Autowired(RouterModel)
+    model: RouterModel;
+    @Autowired(RouterService)
+    service: RouterService;
+
     onRemoveLocationChange: Function;
     constructor(props:TypeRouterProps) {
         super(props);
@@ -85,12 +74,12 @@ class Router extends Component<TypeRouterProps, TypeRouterState> {
             name: "router_" + path.length + path[path.length - 1]
         };
     }
-    $inject(): void {
+    $init(): void {
         // add event listen
-        this.model.md.setType(this.props.type);
-        this.model.md.setChildren(this.props.children);
-        this.onRemoveLocationChange = this.service.com.addEvent("onLocationChange", this.model.md.onLocationChange.bind(this.model.md));
-        this.state.data = this.model.md.getInitData();
+        this.model.setType(this.props.type);
+        this.model.setChildren(this.props.children);
+        this.onRemoveLocationChange = this.service.addEvent("onLocationChange", this.model.onLocationChange.bind(this.model));
+        this.state.data = this.model.getInitData();
     }
     $willMount(): void {
         // remove event

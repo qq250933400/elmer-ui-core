@@ -1,10 +1,10 @@
 import { StaticCommon as utils } from "elmer-common";
-import { createClassFactory } from "../injectable/createClassFactory";
-import { injectable } from "../injectable/injectable";
+import { Service } from "../decorators";
+import { getServiceObj } from "../decorators/Autowired";
 import { TypeRenderMiddlewareEvent } from "./ARenderMiddleware";
 import { RenderMiddlewarePlugin } from "./RenderMiddlewarePlugin";
 
-@injectable("PluginInjectModel")
+@Service
 export class PluginInjectModel extends RenderMiddlewarePlugin {
     init(options:TypeRenderMiddlewareEvent): void {
         const injectModel = options.Component.prototype.injectModel;
@@ -31,7 +31,7 @@ export class PluginInjectModel extends RenderMiddlewarePlugin {
                 if(!utils.isEmpty(tmpKey)) {
                     const tmpFactory: Function = <Function>models[tmpKey];
                     if(typeof tmpFactory === "function") {
-                        const tmpObj = !isAutowired ? (new (<any>tmpFactory)(target)) : createClassFactory(<any>tmpFactory);
+                        const tmpObj = !isAutowired ? (new (<any>tmpFactory)(target)) : getServiceObj(<any>tmpFactory);
                         if(!utils.isEmpty(propertyKey)) {
                             target[propertyKey][tmpKey] = tmpObj;
                         } else {

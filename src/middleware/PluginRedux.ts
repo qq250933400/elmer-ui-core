@@ -1,15 +1,17 @@
 import { StaticCommon as utils } from "elmer-common";
 import { attachReducerToController, defineReducer, ReduxController } from "elmer-redux";
-import { IReduxConnect } from "../component/IDeclareComponent";
-import { defineGlobalState, getGlobalState } from "../core/globalState";
-import { autowired, injectable } from "../injectable/injectable";
+import { Autowired, Service } from "../decorators";
+// import { IReduxConnect } from "../component/IDeclareComponent";
+import { defineGlobalState, getGlobalState } from "../lib/globalState";
 import { IPropValidator } from "../propsValidation";
 import { TypeRenderMiddlewareEvent } from "./ARenderMiddleware";
 import { RenderMiddlewarePlugin } from "./RenderMiddlewarePlugin";
 
-@injectable("PluginRedux")
+type IReduxConnect = {} & any;
+
+@Service
 export class PluginRedux extends RenderMiddlewarePlugin {
-    @autowired(ReduxController, "ReduxController")
+    @Autowired(ReduxController)
     private reduxController: ReduxController;
     constructor() {
         super();

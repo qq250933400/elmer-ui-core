@@ -1,6 +1,5 @@
 import { IVirtualElement } from "elmer-virtual-dom";
 import { IElmerEvent } from "../events/IElmerEvent";
-import { IDeclareI18n, IReduxConnect } from "./IDeclareComponent";
 
 export type TypeGetContextResult = {
     name: string;
@@ -14,7 +13,6 @@ export type TypeGetContextOption = {
 export interface IComponent<P=Object, S=Object, C=Object> {
     vdom: IVirtualElement;
     dom: any;
-    i18n?: any;
     props?: P;
     state?: S;
     context?: C;

@@ -1,9 +1,9 @@
 import { queueCallFunc, queueCallRaceAll, TypeQueueCallParam } from "elmer-common";
 import { Component } from "../../component/Component";
-import { connect, loadComponents } from "../../component/declareComponent";
-import { ElmerService } from "../../core/ElmerService";
-import { autowired } from "../../injectable";
+import { Autowired, loadComponents } from "../../decorators";
+import { ElmerService } from "../../lib/ElmerService";
 import { PropTypes } from "../../propsValidation";
+
 
 type TypeRouteProps = {
     path: string;
@@ -15,17 +15,13 @@ type TypeRouteProps = {
 const RouteContext = ({routeContext}) => {
     return {tagName: "VirtualRootNode", children: routeContext || [], props: {}};
 };
-@connect({
-    mapDispatchToProps: (dispatch:Function) => ({
-        actionUpdateRedux: (data) => (dispatch(data))
-    })
-})
+// @connect({
+//     mapDispatchToProps: (dispatch:Function) => ({
+//         actionUpdateRedux: (data) => (dispatch(data))
+//     })
+// })
 @loadComponents({
     RouteContext,
-}, ({ component }) => {
-    return {
-        RouteComponent: component
-    };
 })
 export class Route extends Component<TypeRouteProps> {
     static propTypes = {
@@ -43,7 +39,7 @@ export class Route extends Component<TypeRouteProps> {
         hasAjaxRequest: false
     };
     private isDidMount: boolean = false;
-    @autowired(ElmerService)
+    @Autowired(ElmerService)
     private serviceObj: ElmerService;
 
     $init(): void {

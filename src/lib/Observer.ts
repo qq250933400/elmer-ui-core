@@ -19,7 +19,7 @@ export class Observer <T> {
      * @returns {Function} 手动销毁函数
      */
     on(eventName: T, callback: Function): Function {
-        const id = utils.uuid();
+        const id = utils.guid();
         if(!observerStorage[this.name][eventName]) {
             observerStorage[this.name][eventName] = {};
         }

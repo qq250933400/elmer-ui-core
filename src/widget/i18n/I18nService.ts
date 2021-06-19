@@ -1,11 +1,11 @@
 import { StaticCommon as utils } from "elmer-common";
-import { injectable } from "../../injectable";
+import { Service } from "../../decorators";
 
 type TypeTranslateOption = {
     data?: any;
 };
 
-@injectable("I18nService")
+@Service
 export class I18nService {
     translate(txt: string, option: TypeTranslateOption): string {
         let txtResult = txt;

@@ -1,4 +1,6 @@
 import { Common } from "elmer-common";
+import { Service } from "../decorators";
+
 export type TypeRenderQueueOptions = {
     state?: any;
     data?: any;
@@ -28,6 +30,7 @@ type TypeRenderQueueSession = {
  * 1、当前模块主要功能将一次渲染当做一个任务推送到队列中去执行
  * 2、在第一次渲染还未执行结束时触发第二次或更多次渲染任务，在第一次渲染结束以后，立即执行第二次渲染，此时会将新增的任务数据合并一次执行
  */
+@Service
 export class RenderQueue extends Common {
     static className: string = "RenderQueue";
     private queueList: any = {};
@@ -65,11 +68,13 @@ export class RenderQueue extends Common {
                     // has task waiting
                     const updateState = {};
                     const updateData = {};
+                    let firstRender = false;
                     for(let i=actionLength - 1;i>renderSession.lastActionIndex;i--) {
                         if(!renderSession.actionList[i].isRended) {
                             // 合并队列中的数据，统一执行一次
                             // 添加当前队列索引到执行状态的列表中，下一次执行任务忽略执行过的队列
                             const curAction = renderSession.actionList[i];
+                            firstRender = curAction.options.firstRender;
                             this.extend(updateState, curAction.options.state);
                             this.extend(updateData, curAction.options.data);
                             renderSession.actionRuningIndexs.push(i);
@@ -80,7 +85,9 @@ export class RenderQueue extends Common {
                     renderSession.actionRuning = true;
                     renderSession.render({
                         data: updateData,
-                        state: updateState
+                        state: updateState,
+                        // tslint:disable-next-line: object-literal-sort-keys
+                        firstRender
                     }).then(() => {
                         // 将当前执行的数据都
                         this.checkSessionStatus(sessionId, false);

@@ -1,3 +1,12 @@
+import { HtmlParse, VirtualNode } from "elmer-virtual-dom";
+import { ElmerWorker } from "elmer-worker";
+import { Service } from "../decorators";
+
+/** 将第三方依赖注册为Service组件 */
+Service(VirtualNode);
+Service(HtmlParse);
+Service(ElmerWorker);
+
 if(!String.prototype["__defineGetter__"]) {
     // tslint:disable-next-line:typedef
     String.prototype["__defineGetter__"] = function(color,func) {

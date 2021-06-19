@@ -1,5 +1,5 @@
 import { Common } from "elmer-common";
-import { injectable } from "../../injectable/injectable";
+import { Service } from "../../decorators";
 
 type TypeRouterServiceEvent = "onLocationChange";
 
@@ -11,7 +11,7 @@ export type TypeRouterState = {
     tempData?: any
 };
 
-@injectable("RouterService")
+@Service
 export class RouterService extends Common {
     state: TypeRouterState = {
         listeners: {},

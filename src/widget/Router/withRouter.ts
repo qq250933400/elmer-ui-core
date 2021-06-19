@@ -1,10 +1,9 @@
-import { useComponent, useState } from "../../hooks";
-import { autoInit } from "../../injectable";
+import { useComponent, useService, useState } from "../../hooks";
 import { RouterService } from "./RouterService";
 
 export const withRouter = () => {
     return (TargetComponent: Function) => {
-        const serviceObj = autoInit(RouterService, {mode: "None"});
+        const serviceObj = useService<RouterService>(RouterService);
         return ({}, context) => {
             useComponent("RouterComponent", TargetComponent);
             useState("routeObj", {

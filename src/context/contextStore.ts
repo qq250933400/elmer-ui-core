@@ -1,5 +1,5 @@
 import { Common } from "elmer-common";
-import { injectable } from "../injectable";
+import { Service } from "../decorators";
 
 type TypeContextStoreCreateOptions = {
     component: any;
@@ -20,7 +20,7 @@ const contextStore = {};
 
 // tslint:disable object-literal-sort-keys
 
-@injectable("ContextStore")
+@Service
 export class ContextStore extends Common {
     /**
      * 创建context

@@ -3,12 +3,11 @@ import { IVirtualElement, VirtualNode, VirtualRender } from "elmer-virtual-dom";
 import { ElmerWorker } from "elmer-worker";
 import { Component, CONST_CLASS_COMPONENT_FLAG } from "../component/Component";
 import { ContextStore } from "../context/contextStore";
-import { globalVar } from "../core/globalState";
+import { Autowired } from "../decorators";
 import { ElmerEvent } from "../events/ElmerEvent";
 import { TypeDomEventOptions } from "../events/IEventContext";
 import { wikiState } from "../hooks/hookUtils";
-import { autowired } from "../injectable";
-// import { InjectComponent } from "../middleware/InjectComponent";
+import { globalVar } from "../lib/globalState";
 import { RenderMiddleware } from "../middleware/RenderMiddleware";
 import { ElmerRenderAttrs, SVG_ELE, SVG_NL } from "./ElmerRenderAttrs";
 import { RenderQueue, TypeRenderQueueOptions } from "./RenderQueue";
@@ -62,18 +61,18 @@ type TypeComponentRenderEvent = {
 
 export class ElmerRender extends Common {
 
-    @autowired(VirtualRender, "VirtualRender")
+    @Autowired(VirtualRender, "VirtualRender")
     private virtualRender: VirtualRender; // 虚拟dom渲染，将绑定数据渲染到指定的dom属性
-    @autowired(VirtualNode)
+    @Autowired(VirtualNode)
     private virtualElement: VirtualNode; // 虚拟dom操作，append, remove, clone
-    @autowired(RenderQueue)
+    @Autowired(RenderQueue)
     private renderQueue: RenderQueue; // 采用队列形式执行渲染过程
 
-    @autowired(ElmerRenderAttrs)
+    @Autowired(ElmerRenderAttrs)
     private renderDomAttrs: ElmerRenderAttrs; // 将虚拟dom属性渲染到真实dom节点
-    @autowired(RenderMiddleware)
+    @Autowired(RenderMiddleware)
     private renderMiddleware: RenderMiddleware; // 渲染生命周期扩展
-    @autowired(ContextStore)
+    @Autowired(ContextStore)
     private contextStore: ContextStore; // context 数据存储
 
     /** 当前render传入的参数 */
@@ -282,7 +281,7 @@ export class ElmerRender extends Common {
                         this.extend(this.options.component, options.data);
                     }
                     // 准备渲染虚拟dom，做数据绑定和diff运算
-                    const destoryOnBeforeVirtualRender = this.virtualRender.bind(this.virtualId, "onBeforeRender", (opt) => {
+                    const destoryOnBeforeVirtualRender = this.virtualRender.on(this.virtualId, "onBeforeRender", (opt) => {
                         if(typeof this.options.component.$beforeVirtualRender === "function") {
                             isVirtualRenderResult = this.options.component.$beforeVirtualRender(opt.data);
                         }
@@ -292,7 +291,7 @@ export class ElmerRender extends Common {
                         resolve({});
                         return;
                     }
-                    const destoryOnVirtualRender = this.virtualRender.bind(this.virtualId, "onRender", (opt) => {
+                    const destoryOnVirtualRender = this.virtualRender.on(this.virtualId, "onRender", (opt) => {
                         const vituralDom: IVirtualElement = opt.data.dom;
                         const isComponentChild = opt.data.isComponentChild;
                         let isUserComponent = false;

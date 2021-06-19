@@ -1,4 +1,4 @@
-import utils from "../core/utils";
+import utils from "../lib/utils";
 import { defineHook } from "./hookUtils";
 
 export const useOnce = <T={}>(initState: T, stateKey?: string,): T => {

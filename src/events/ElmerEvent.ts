@@ -1,10 +1,12 @@
 import { queueCallFunc, StaticCommon as utils, TypeQueueCallParam } from "elmer-common";
 import { ElmerWorker } from "elmer-worker";
+import { Service } from "../decorators";
 import { EventContext } from "./EventContext";
 import { IEventContext, TypeDomEventOptions, TypeEventHandler } from "./IEventContext";
 
 type TypeEventContextData<T={}> = {[P in keyof T]: EventContext};
 
+@Service
 export class ElmerEvent {
     private eventListeners: any = {};
     private worker: ElmerWorker;

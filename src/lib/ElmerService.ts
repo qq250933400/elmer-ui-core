@@ -1,7 +1,8 @@
 import axios, { AxiosBasicCredentials } from "axios";
 import { StaticCommon as utils } from "elmer-common";
 import { createContext } from "../context";
-import { autoInit, injectable } from "../injectable";
+import { Service} from "../decorators";
+import { getServiceObj } from "../decorators/Autowired";
 
 export type TypeServiceMethod = "GET" | "POST" | "DELETE" | "PUT" | "OPTIONS";
 
@@ -52,7 +53,7 @@ const [serviceState, withServiceContext,] = createContext("ElmerServiceContext",
     config: {}
 });
 
-@injectable("/core/ElmerService")
+@Service
 export class ElmerService {
     private config: {[P in keyof TypeServiceConfig<any>]?: TypeServiceConfig<any>[P]} = {};
     private env: String;
@@ -201,8 +202,8 @@ export class ElmerService {
 }
 
 export const GetUrl = (endPoint: string) => {
-    return (target: any, attr: string, defaultValue?: any): any => {
-        const obj = autoInit(ElmerService);
+    return (target: any, attr: string): any => {
+        const obj = getServiceObj<ElmerService>(ElmerService);
         const myUrl = obj.getUrl(endPoint);
         if(target) {
             Object.defineProperty(target, attr, {
@@ -215,8 +216,8 @@ export const GetUrl = (endPoint: string) => {
 };
 
 export const GetEndPoint= (endPoint: string) => {
-    return (target: any, attr: string, defaultValue?: any): any => {
-        const obj = autoInit(ElmerService);
+    return (target: any, attr: string): any => {
+        const obj = getServiceObj<ElmerService>(ElmerService);
         const myEndPoint = obj.getEndPoint(endPoint);
         if(target) {
             Object.defineProperty(target, attr, {
@@ -230,7 +231,7 @@ export const GetEndPoint= (endPoint: string) => {
 
 export const SetServiceConfig = <T={}>() => {
     return (target: any, attr: string, defaultValue?: TypeServiceConfig<T>): any => {
-        const obj = autoInit(ElmerService);
+        const obj = getServiceObj<ElmerService>(ElmerService);
         obj.setConfig(defaultValue);
         if(target) {
             Object.defineProperty(target, attr, {
@@ -243,7 +244,7 @@ export const SetServiceConfig = <T={}>() => {
 
 export const SetServiceNamespace = (namespace: string) => {
     return (target: any, attr: string, descriptor?: PropertyDescriptor): any => {
-        const obj = autoInit(ElmerService);
+        const obj = getServiceObj<ElmerService>(ElmerService);
         const configData = descriptor.value();
         obj.setNamespace(namespace, configData);
     };

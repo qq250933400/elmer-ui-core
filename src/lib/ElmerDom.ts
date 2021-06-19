@@ -1,8 +1,8 @@
 import { StaticCommon as utils } from "elmer-common";
 import { ElmerAnimation, TypeAnimationChangeEvent, TypeElmerAnimationType } from "../animation/ElmerAnimation";
 import animationMethod, { TypeAnimationProperty } from "../animation/ElmerAnimationProperty";
+import { Service } from "../decorators";
 import { EventNames } from "../events/EventNames";
-import { injectable } from "../injectable/index";
 import { ElmerDomQuery, IElmerDomSelector } from "./ElmerDomQuery";
 
 type TypeAnimationOption = {
@@ -55,7 +55,7 @@ export interface IElmerDOMEvent {
     listener?:EventListenerObject;
 }
 
-@injectable("ElmerDOM")
+@Service
 export class ElmerDOM extends ElmerDomQuery {
     bindEvents:string[] = EventNames;
     supportCss3: boolean = false;

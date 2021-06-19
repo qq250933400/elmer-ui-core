@@ -1,99 +1,56 @@
+import "../polyfill";
 // tslint:disable-next-line: ordered-imports
-import { Common } from "elmer-common";
-import { HtmlParse } from "elmer-virtual-dom";
+import { HtmlParse, VirtualNode } from "elmer-virtual-dom";
 import { ElmerWorker } from "elmer-worker";
 import { Component } from "../component/Component";
-import { ElmerDOM } from "../core/ElmerDom";
-import { ElmerEvent } from "../events/ElmerEvent";
-import EventInWorker from "../events/EventInWorker";
-import { autowired } from "../injectable/injectable";
-import { RenderMiddleware } from "../middleware/RenderMiddleware";
-import "../polyfill";
-import { ElmerRender, TypeUIRenderOptions } from "./ElmerRender";
+import { Autowired, Service } from "../decorators";
+import { ElmerRender } from "./ElmerRender2";
+import { Initialization } from "./Initialization";
 
-const DEBUGGERLABEL = "ELMER_UI_FIRST_RENDER";
-
-type TypeUIOptions = TypeUIRenderOptions & {
-    components?: any
+type TypeSupportComponent = Function|Component;
+type TypeLoadComponents<T={}> = {[P in keyof T]: TypeSupportComponent};
+type TypeRenderOptions = {
+    /** 默认引入的自定义组件 */
+    components: TypeLoadComponents;
+    /** 是否服务端渲染模式 */
+    ssr?: boolean;
 };
 
-export class ElmerUI extends Common {
+export class ElmerUI {
 
-    @autowired(ElmerDOM)
-    private $:ElmerDOM;
-    @autowired(ElmerWorker, "ElmerWorker", {
-        elmerEvent: new EventInWorker(),
-        htmlParse: new HtmlParse()
-    })
-    private worker: ElmerWorker;
-    @autowired(RenderMiddleware)
-    private middleware: RenderMiddleware;
+    @Autowired(VirtualNode)
+    private virtualNode: VirtualNode;
 
-    // 虚拟事件处理模块，只在最顶层做事件监听，减少对dom的操作
-    private eventObj: ElmerEvent;
-
-    private missionId: string;
-
-    constructor() {
-        super();
-        this.eventObj = new ElmerEvent(this.worker);
-        this.missionId = "__RenderMission__" + this.guid();
-    }
-
-    onReady(fn:Function): void {
-        this.$.addEvent(window, "load", fn);
-    }
-    render(target:HTMLElement, rootApp:any, options?:TypeUIOptions): ElmerRender {
-        // elmer
-        const contextStore:any = {};
-        const entryComponent = rootApp || {};
-        const ignorePropKeys = ["selector", "template", "model","service","i18n", "connect","setData","setState", "render",
-            "$after", "$onPropsChanged", "$afterVirtualRender", "$beforeVirtualRender","$init",
-            "$inject", "$before", "$resize", "$dispose"];
-        const defaultProps = entryComponent.props || {};
-        if(typeof entryComponent.$render !== "function" && typeof entryComponent.render !== "function") {
-            entryComponent.$render = () => {
-                return options ? options.htmlCode : "<span>Missing render lifecycle method in rootApp object.</span>";
-            };
+    private vRender: ElmerRender;
+    onReady(fn: Function): void {
+        if(window.addEventListener) {
+            window.addEventListener("load", fn as any);
+        } else {
+            (window as any).attachEvent("onload", fn);
         }
-        if(options?.components) {
-            entryComponent.components = options.components;
-        }
-        entryComponent.selector = "RootNode";
-        this.extend(entryComponent, Component.prototype, true, ignorePropKeys);
-        this.defineReadOnlyProperty(entryComponent, "props", defaultProps);
-        const renderObj = new ElmerRender({
+    }
+    render(container: HTMLElement, RootApp: TypeSupportComponent, options?: TypeRenderOptions): ElmerRender {
+        const entryVirtualNode = this.virtualNode.create("RootNode", {});
+        const entryComponent = Initialization(RootApp, {
+            vdom: entryVirtualNode
+        });
+        const vRender = new ElmerRender({
+            ComponentFactory: RootApp as any,
             children: [],
-            component: entryComponent,
-            componentFactory: null,
-            container: target,
-            contextStore,
-            depth: 0,
-            event: this.eventObj,
-            missionId: this.missionId,
-            nodePath: "rootNode",
-            path: [0],
-            renderOptions: options,
-            virtualId: "RootApp_" + this.missionId,
-            worker: this.worker
+            component: entryComponent as any,
+            container,
+            path: [],
+            useComponents: options?.components || {},
+            vdom: entryVirtualNode,
         });
-        // tslint:disable-next-line: no-console
-        options?.debug && console.time(DEBUGGERLABEL);
-
-        renderObj.render({
-            firstRender: true
-        }).then(() => {
-            this.middleware.renderDidMount();
-            // tslint:disable-next-line: no-console
-            options?.debug && console.timeEnd(DEBUGGERLABEL);
-        }).catch((err) => {
-            typeof entryComponent["$error"] === "function" && entryComponent["$error"](err);
-            // tslint:disable-next-line: no-console
-            options?.debug && console.timeEnd(DEBUGGERLABEL);
+        vRender.render({
+            firstRender: true,
+            state: (entryComponent as any).state
         });
-        return renderObj;
+        this.vRender = vRender;
+        return vRender;
     }
-    dispose(): void {
-        this.eventObj.dispose();
+    destory(): void {
+        this.vRender.destory();
     }
 }

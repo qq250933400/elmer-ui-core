@@ -1,3 +1,4 @@
+import { Service } from "../decorators";
 import { IEventContext } from "./IEventContext";
 
 type TypeEventListenData = { [ P in Exclude<keyof IEventContext, "eventHandler">]: IEventContext[P] };
@@ -8,7 +9,8 @@ export type TypeEventIdMapping = {
     path: number[];
 };
 
-export default class EventInWorker {
+@Service
+export class EventInWorker {
     sortEventId(mapData: TypeEventIdMapping[], eventPath: number[]):any {
         if(self["utils"].isArray(mapData)) {
             for(let i=0;i<mapData.length;i++) {

@@ -116,7 +116,7 @@
         "elmer-worker": "^1.0.10",
         "num2fraction": "^1.2.2",
         "promise": "^8.0.3",
-        "reflect-metadata": "^0.1.12",
+        "reflect-metadata": "^0.1.13",
         "source-map": "^0.7.3",
         "zone.js": "^0.8.26"
     },
