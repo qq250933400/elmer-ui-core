@@ -3,24 +3,17 @@ import { HtmlParse, IVirtualElement, VirtualNode, VirtualRender } from "elmer-vi
 import { queueCallFunc } from "elmer-common";
 import { Component } from "../component";
 import { getComponents } from "../decorators/loadComponents";
-import { Autowired, Service } from "../decorators";
+import { Autowired } from "../decorators";
+import { pluginExec } from "../decorators/Plugin";
 import { RenderQueue, TypeRenderQueueOptions } from "./RenderQueue";
 import { ElmerWorker } from "elmer-worker";
 import { EventInWorker } from "../events/EventInWorker";
 import { getServiceObj } from "../decorators/Autowired";
 import { ElmerEvent } from "../events/ElmerEvent";
-import elmerRenderAction from "./ElmerRenderAction";
+import { TOKEN_PLUGIN_RENDER, PluginRender } from "./PluginRender";
+import { TypeElmerRenderOptions, TypeVirtualRenders } from "./IElmerRender";
+import elmerRenderAction, { TypeElmerRenderDispatchNodes } from "./ElmerRenderAction";
 import utils from "../lib/utils";
-
-type TypeElmerRenderOptions = {
-    vdom: IVirtualElement;
-    container: HTMLElement;
-    component: Object;
-    ComponentFactory: Component;
-    children: IVirtualElement[];
-    path: number[];
-    useComponents: any;
-};
 
 export class ElmerRender {
     private options: TypeElmerRenderOptions;
@@ -28,26 +21,21 @@ export class ElmerRender {
     private htmlCode: String;
     private virtualId: string;
     private srcVdom: IVirtualElement;
-    private oldDom: IVirtualElement;
+    private lastVirtualNode: IVirtualElement;
+
+    private wikiNodes: TypeElmerRenderDispatchNodes[] = [];
+    private virtualRenderObj: TypeVirtualRenders = {};
 
     @Autowired(RenderQueue)
     private renderQueue: RenderQueue;
 
-    @Autowired(ElmerWorker, {
-        eventObj: getServiceObj(EventInWorker),
-        htmlParse: getServiceObj(HtmlParse)
-    })
+    @Autowired(ElmerWorker)
     private worker: ElmerWorker;
 
-    @Autowired(ElmerEvent, getServiceObj(ElmerWorker, {
-        eventObj: getServiceObj(EventInWorker),
-        htmlParse: getServiceObj(HtmlParse)
-    }))
+    @Autowired(ElmerEvent)
     private eventObj: ElmerEvent;
 
-    @Autowired(VirtualNode)
-    private virtualNode: VirtualNode;
-    @Autowired(VirtualRender)
+    @Autowired(VirtualRender, VirtualNode)
     private virtualRender: VirtualRender;
 
     constructor(options: TypeElmerRenderOptions) {
@@ -60,6 +48,28 @@ export class ElmerRender {
         (this.options.component as any).dom = {};
         this.virtualId = this.options.vdom.virtualID;
         elmerRenderAction.callLifeCycle(this.options.component as any, "$init");
+        pluginExec<PluginRender>({
+            name: "setComponents",
+            token: [TOKEN_PLUGIN_RENDER],
+            type: "NodeRender",
+        }, this.useComponents);
+        pluginExec<PluginRender>({
+            name: "setSessionAction",
+            token: [TOKEN_PLUGIN_RENDER],
+            type: "NodeRender",
+        },this.options.vdom.virtualID, {
+            getComponentFirstElement: (virtualId: string): any => {
+                if(this.virtualRenderObj[virtualId]) {
+                    return (this.virtualRenderObj[virtualId] as ElmerRender).getFirstDom();
+                }
+            },
+            getComponentLastElement: (virtualId: string): any => {
+                if(this.virtualRenderObj[virtualId]) {
+                    return (this.virtualRenderObj[virtualId] as ElmerRender).getLastDom();
+                }
+            }
+        });
+        this.eventObj.dispose();
     }
     async render(options: TypeRenderQueueOptions): Promise<any> {
         return new Promise<any>((resolve, reject) => {
@@ -90,8 +100,57 @@ export class ElmerRender {
             });
         });
     }
+    /**
+     * 获取最后一个渲染的真实元素
+     */
+    getLastDom(): HTMLElement | null | undefined {
+        if (this.lastVirtualNode && this.lastVirtualNode.children) {
+            for (let i = this.lastVirtualNode.children.length - 1; i >= 0; i--) {
+                if (this.lastVirtualNode.children[i].status !== "DELETE") {
+                    const lVdom = this.lastVirtualNode.children[i];
+                    if (!utils.isEmpty(lVdom.virtualID)) {
+                        if (this.virtualRenderObj[lVdom.virtualID]) {
+                            return (this.virtualRenderObj[lVdom.virtualID] as ElmerRender).getLastDom();
+                        }
+                    } else {
+                        return this.lastVirtualNode.children[i].dom as any;
+                    }
+                }
+            }
+        }
+        return this.options.previousSibling;
+    }
+    /**
+     * 获取第一个渲染到browser的元素
+     */
+    getFirstDom():HTMLElement|null|undefined {
+        if(this.lastVirtualNode && this.lastVirtualNode.children) {
+            for(let i=0;i<this.lastVirtualNode.children.length;i--) {
+                if(this.lastVirtualNode.children[i].status !== "DELETE") {
+                    const lVdom = this.lastVirtualNode.children[i];
+                    if(!utils.isEmpty(lVdom.virtualID)) {
+                        if(this.virtualRenderObj[lVdom.virtualID]) {
+                            return (this.virtualRenderObj[lVdom.virtualID] as ElmerRender).getFirstDom();
+                        }
+                    } else {
+                        return this.lastVirtualNode.children[i].dom as any;
+                    }
+                }
+            }
+        }
+        return this.options.previousSibling;
+    }
     destory(): void {
-        console.log("release all elements");
+        // TODO: 需要在此处释放所有事件监听
+        // 释放渲染插件调用对象
+        pluginExec<PluginRender>({
+            name: "destory",
+            token: [ TOKEN_PLUGIN_RENDER ],
+            type: "NodeRender"
+        });
+    }
+    private callLifeCycle(eventName: keyof Component, ...args: any[]):any {
+        return elmerRenderAction.callLifeCycle(this.options.component, eventName, ...args);
     }
     private async renderAction(options:TypeRenderQueueOptions): Promise<any> {
         return new Promise<any>((resolve, reject) => {
@@ -125,16 +184,60 @@ export class ElmerRender {
         return new Promise<any>((resolve, reject) => {
             const options:TypeRenderQueueOptions = opt.options;
             const vdom: IVirtualElement = opt.vdom;
-            this.virtualRender.on(this.virtualId, "onDataBinding", (evt) => {
-                console.log("----BindData---",evt);
+            this.virtualRender.on(this.virtualId, "onAfterRender", (evt: any) => {
+                this.callLifeCycle("$afterVirtualRender", evt);
             });
-            const newDom = this.virtualRender.render(vdom, this.oldDom, this.options.component, {
+            const stillNeedVirtualRender = this.callLifeCycle("$beforeVirtualRender", vdom);
+            // 在虚拟节点数据渲染前人为中断操作
+            if(undefined !== stillNeedVirtualRender && null !== stillNeedVirtualRender && !stillNeedVirtualRender) {
+                resolve({});
+                return;
+            }
+            const newDom = this.virtualRender.render(vdom, this.lastVirtualNode, this.options.component, {
                 children: this.options.children,
                 rootPath: this.options.path,
                 sessionId: this.virtualId
             });
-            console.log("---NewDom----", newDom);
-            resolve({});
+            const stillNeedRender = this.callLifeCycle("$beforeRender", {
+                props: (this.options.component as any).props,
+                vdom: newDom
+            });
+            // 在进入实际渲染阶段人为停止渲染操作
+            if(undefined !== stillNeedRender && null !== stillNeedRender && !stillNeedRender) {
+                resolve({});
+                return;
+            }
+            pluginExec<PluginRender>({
+                name: "vdomRender",
+                token: [ TOKEN_PLUGIN_RENDER ],
+                type: "NodeRender",
+                // tslint:disable-next-line: object-literal-sort-keys
+                args: {
+                    sessionId: this.options.vdom.virtualID
+                }
+            }, newDom.children, (vNode, isHtmlNode) => {
+                pluginExec<PluginRender>({
+                    name: "vdomAttatch",
+                    token: [ TOKEN_PLUGIN_RENDER ],
+                    type: "NodeRender",
+                    // tslint:disable-next-line: object-literal-sort-keys
+                    args: {
+                        sessionId: this.options.vdom.virtualID
+                    }
+                }, {
+                    container: this.options.container,
+                    isHtmlNode,
+                    sessionId: this.options.vdom.virtualID,
+                    vdom: vNode,
+                    vdomParent: newDom
+                });
+            }).then(() => {
+                resolve({});
+            }).catch((err) => {
+                reject(err);
+            });
+            this.lastVirtualNode = newDom;
+            console.log(this.options.container);
         });
     }
     private async getSourceCode():Promise<any> {

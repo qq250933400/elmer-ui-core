@@ -1,4 +1,4 @@
-import { HtmlParse, VirtualNode } from "elmer-virtual-dom";
+import { HtmlParse, VirtualNode, VirtualRender } from "elmer-virtual-dom";
 import { ElmerWorker } from "elmer-worker";
 import { Service } from "../decorators";
 
@@ -6,6 +6,9 @@ import { Service } from "../decorators";
 Service(VirtualNode);
 Service(HtmlParse);
 Service(ElmerWorker);
+Service(VirtualRender);
+
+console.log("---注册Service模块----");
 
 if(!String.prototype["__defineGetter__"]) {
     // tslint:disable-next-line:typedef

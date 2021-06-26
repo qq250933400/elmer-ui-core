@@ -1,5 +1,6 @@
 import { IVirtualElement } from "elmer-virtual-dom";
 import { Component, CONST_CLASS_COMPONENT_FLAG } from "../component/Component";
+import utils from "../lib/utils";
 import renderActions from "./ElmerRenderAction";
 
 const isNodeComponent = (com:any): com is Component => {
@@ -13,6 +14,7 @@ type TypeInitizationOptions = {
 
 export const Initialization = (ComFactory:Function|Component, options: TypeInitizationOptions): Object => {
     let renderComponent = null;
+    const virtualId = "virtualNode_" + utils.guid();
     const props = options.vdom.props || {};
     const currentDispatchState = {
         component: null,
@@ -22,6 +24,7 @@ export const Initialization = (ComFactory:Function|Component, options: TypeIniti
         },
         isFunc: false
     };
+    options.vdom.virtualID = virtualId;
     if(isNodeComponent(ComFactory)) {
         // 类组件
         renderComponent = new (ComFactory as any)(props, {});

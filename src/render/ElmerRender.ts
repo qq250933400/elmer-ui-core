@@ -9,8 +9,10 @@ import { TypeDomEventOptions } from "../events/IEventContext";
 import { wikiState } from "../hooks/hookUtils";
 import { globalVar } from "../lib/globalState";
 import { RenderMiddleware } from "../middleware/RenderMiddleware";
-import { ElmerRenderAttrs, SVG_ELE, SVG_NL } from "./ElmerRenderAttrs";
+
 import { RenderQueue, TypeRenderQueueOptions } from "./RenderQueue";
+export const SVG_NL = "http://www.w3.org/2000/svg";
+export const SVG_ELE = ["a", "circle", "ellipse", "foreignObject", "g", "image", "line", "path", "polygon", "polyline", "rect", "svg", "text", "tspan", "use", "animate"];
 
 export type TypeUIRenderOptions = {
     isRSV?: boolean; // Render first init
@@ -59,6 +61,8 @@ type TypeComponentRenderEvent = {
     prevDom: HTMLElement;
 };
 
+const elmerRenderAttr = (dom: any, vdom: any): void => {};
+
 export class ElmerRender extends Common {
 
     @Autowired(VirtualRender, "VirtualRender")
@@ -68,8 +72,6 @@ export class ElmerRender extends Common {
     @Autowired(RenderQueue)
     private renderQueue: RenderQueue; // 采用队列形式执行渲染过程
 
-    @Autowired(ElmerRenderAttrs)
-    private renderDomAttrs: ElmerRenderAttrs; // 将虚拟dom属性渲染到真实dom节点
     @Autowired(RenderMiddleware)
     private renderMiddleware: RenderMiddleware; // 渲染生命周期扩展
     @Autowired(ContextStore)
@@ -291,7 +293,7 @@ export class ElmerRender extends Common {
                         resolve({});
                         return;
                     }
-                    const destoryOnVirtualRender = this.virtualRender.on(this.virtualId, "onRender", (opt) => {
+                    const destoryOnVirtualRender = this.virtualRender.on(this.virtualId, "onAfterRender", (opt) => {
                         const vituralDom: IVirtualElement = opt.data.dom;
                         const isComponentChild = opt.data.isComponentChild;
                         let isUserComponent = false;
@@ -553,7 +555,7 @@ export class ElmerRender extends Common {
                             hasPathChange = true;
                         } else if(vdom.status === "UPDATE") {
                             if(this.isDOM(vdom.dom) || this.isTextNode(vdom.dom)) {
-                                this.renderDomAttrs.render(vdom.dom as any, vdom);
+                                elmerRenderAttr(vdom.dom as any, vdom);
                             } else {
                                 // vdom.dom对象为undefined或null即为不存在对应的真实dom节点，需要新增
                                 !vdom.dom && this.vdomAppendRender(container, vdom, vdomParent, prevDom as any);
@@ -565,7 +567,7 @@ export class ElmerRender extends Common {
                             hasPathChange = true;
                             if(this.isDOM(vdom.dom) || this.isTextNode(vdom.dom)) {
                                 this.vdomMove(container, vdom, vdomParent);
-                                this.renderDomAttrs.render(vdom.dom as HTMLElement, vdom);
+                                elmerRenderAttr(vdom.dom as HTMLElement, vdom);
                             } else {
                                 !vdom.dom && this.vdomAppendRender(container, vdom, vdomParent, prevDom as any);
                             }
@@ -1055,7 +1057,7 @@ export class ElmerRender extends Common {
         }
         if(!/^<\!--$/.test(vdom.tagName) && !/^text$/.test(vdom.tagName)) {
             // 文本节点不需要做事件绑定和属性渲染
-            this.renderDomAttrs.render(newDom as HTMLElement, vdom);
+            elmerRenderAttr(newDom as HTMLElement, vdom);
         }
         vdom.dom = newDom;
     }

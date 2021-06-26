@@ -1,11 +1,16 @@
 import "../polyfill";
-// tslint:disable-next-line: ordered-imports
-import { HtmlParse, VirtualNode } from "elmer-virtual-dom";
-import { ElmerWorker } from "elmer-worker";
+// tslint:disable: ordered-imports
+import { VirtualNode, HtmlParse } from "elmer-virtual-dom";
+import { queueCallFunc } from "elmer-common";
 import { Component } from "../component/Component";
-import { Autowired, Service } from "../decorators";
+import { Autowired } from "../decorators";
 import { ElmerRender } from "./ElmerRender2";
 import { Initialization } from "./Initialization";
+import { decoratorStorage } from "../decorators/base";
+import { ElmerWorker } from "elmer-worker";
+import { EventInWorker } from "../events/EventInWorker";
+// init plugin
+import "./PluginRender";
 
 type TypeSupportComponent = Function|Component;
 type TypeLoadComponents<T={}> = {[P in keyof T]: TypeSupportComponent};
@@ -21,12 +26,28 @@ export class ElmerUI {
     @Autowired(VirtualNode)
     private virtualNode: VirtualNode;
 
+    @Autowired(HtmlParse)
+    private htmlParse: HtmlParse;
+
+    @Autowired(EventInWorker)
+    private eventInWorker: EventInWorker;
+
+    @Autowired(ElmerWorker)
+    private worker: ElmerWorker;
+
     private vRender: ElmerRender;
+    private onReadyCallbacks: any = [];
+    private isDocumentReady: boolean = false;
+    private isWorkerReady: boolean = false;
+    constructor() {
+        this.workerInitialization();
+    }
     onReady(fn: Function): void {
+        this.onReadyCallbacks.push(fn);
         if(window.addEventListener) {
-            window.addEventListener("load", fn as any);
+            window.addEventListener("load", this.onWindowReady.bind(this) as any);
         } else {
-            (window as any).attachEvent("onload", fn);
+            (window as any).attachEvent("onload", this.onWindowReady.bind(this));
         }
     }
     render(container: HTMLElement, RootApp: TypeSupportComponent, options?: TypeRenderOptions): ElmerRender {
@@ -39,18 +60,60 @@ export class ElmerUI {
             children: [],
             component: entryComponent as any,
             container,
+            nextSibling: null,
             path: [],
+            previousSibling: null,
             useComponents: options?.components || {},
-            vdom: entryVirtualNode,
+            vdom: entryVirtualNode
         });
         vRender.render({
             firstRender: true,
             state: (entryComponent as any).state
         });
         this.vRender = vRender;
+        console.log(decoratorStorage);
         return vRender;
     }
     destory(): void {
         this.vRender.destory();
     }
+    private workerInitialization(): void {
+        queueCallFunc([
+            {
+                id: "htmlParse",
+                params: this.htmlParse
+            }, {
+                id: "eventObj",
+                params: this.eventInWorker
+            }
+        ], (opt, obj) => {
+            return this.worker.addObject(opt.id, obj);
+        }).then(() => {
+            this.isWorkerReady = true;
+            this.onAllReady();
+        }).catch((err) => {
+            // tslint:disable-next-line: no-console
+            console.error(err);
+        });
+    }
+    private onWindowReady(): void {
+        this.isDocumentReady = true;
+        this.onAllReady();
+    }
+    private onAllReady(): void {
+        if(
+            this.isWorkerReady &&
+            this.isDocumentReady
+        ) {
+            for(const fn of this.onReadyCallbacks) {
+                try{
+                    fn();
+                } catch(e) {
+                    // tslint:disable-next-line: no-console
+                    console.error(e);
+                }
+            }
+        }
+    }
 }
+// tslint:enable: ordered-imports

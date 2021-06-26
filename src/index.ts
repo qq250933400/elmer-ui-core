@@ -1,6 +1,8 @@
 
 import "@babel/polyfill";
 import "core-js/es5";
+import "./polyfill";
+// tslint:disable-next-line: ordered-imports
 import utilsModule from "./lib/utils";
 
 export const utils = utilsModule;

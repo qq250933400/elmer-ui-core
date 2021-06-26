@@ -1,8 +1,11 @@
 import "reflect-metadata";
 import utils from "../lib/utils";
 
-const decoratorStorage = {
+export type TypePluginFundation = "NodeEvent" | "NodeRender";
+
+export const decoratorStorage = {
     classPool: {},
+    execIndex: {},
     objPool: {}
 };
 
@@ -10,6 +13,7 @@ export const DECORATORS_CLASS_TYPE = "DECORATORS_CLASS_TYPE";
 export const DECORATORS_CLASS_TYPE_SERVICE = "DECORATORS_CLASS_SERVICE";
 export const DECORATORS_CLASS_TYPE_MODEL = "DECORATORS_CLASS_MODEL";
 export const DECORATORS_CLASS_TYPE_RENDER_PLUGIN = "DECORATORS_CLASS_RENDER_PLUGIN"; // 渲染中间件
+export const DECORATORS_CLASS_OPTIONS = "";
 export const DECORATORS_FUNDATION_COMPONENTS = "DECORATORS_FUNDATION_COMPONENTS"; // 功能性装饰器
 export const DECORATORS_MODEL_ID = "DECORATORS_ID";
 
@@ -44,6 +48,26 @@ export const saveToClassPool = (type: string, ClassFactory: new(...args: any) =>
  * @param id 定义的Model Id
  * @returns any
  */
-export const getFromClassPool = (type: string, id: string): any => {
+export const getFromClassPool = (type: TypePluginFundation, id: string): any => {
     return decoratorStorage.classPool[type] ? decoratorStorage.classPool[type][id] : null;
+};
+
+export const getAllClassFromPool = (type: TypePluginFundation): any => {
+    return decoratorStorage.classPool[type];
+};
+/**
+ * 保存插件执行顺序索引
+ * @param type - 插件类型
+ * @param index - 执行索引
+ */
+export const setExecIndex = (type: TypePluginFundation, index: string[]|number[]): void => {
+    decoratorStorage.execIndex[type] = index;
+};
+/**
+ * 获取插件执行顺序索引
+ * @param type - 插件类型
+ * @return - 执行索引
+ */
+export const getExecIndex = (type: TypePluginFundation): string[]|number[] => {
+    return decoratorStorage.execIndex[type];
 };
