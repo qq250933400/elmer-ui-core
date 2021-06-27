@@ -9,8 +9,8 @@ import { Initialization } from "./Initialization";
 import { decoratorStorage } from "../decorators/base";
 import { ElmerWorker } from "elmer-worker";
 import { EventInWorker } from "../events/EventInWorker";
-// init plugin
-import "./PluginRender";
+import elmerRenderAction from "./ElmerRenderAction";
+import { ElmerRenderNode } from "./ElmerRenderNode";
 
 type TypeSupportComponent = Function|Component;
 type TypeLoadComponents<T={}> = {[P in keyof T]: TypeSupportComponent};
@@ -34,6 +34,9 @@ export class ElmerUI {
 
     @Autowired(ElmerWorker)
     private worker: ElmerWorker;
+
+    @Autowired(ElmerRenderNode)
+    private renderNode: ElmerRenderNode;
 
     private vRender: ElmerRender;
     private onReadyCallbacks: any = [];
@@ -69,8 +72,23 @@ export class ElmerUI {
         vRender.render({
             firstRender: true,
             state: (entryComponent as any).state
+        }).then(() => {
+            elmerRenderAction.connectNodeRender({
+                container,
+                sessionId:entryVirtualNode.virtualID,
+                vRender,
+                vdom: entryVirtualNode,
+                vdomParent: entryVirtualNode,
+                // tslint:disable-next-line: object-literal-sort-keys
+                getRenderSession: this.renderNode.getSessionAction.bind(this.renderNode)
+            });
+        }).catch((err) => {
+            // tslint:disable-next-line: no-console
+            console.error(err);
+            // ignoreelmerRenderAction.callLifeCycle(entryComponent, "")
         });
         this.vRender = vRender;
+        // tslint:disable-next-line: no-console
         console.log(decoratorStorage);
         return vRender;
     }
@@ -106,7 +124,7 @@ export class ElmerUI {
             this.isDocumentReady
         ) {
             for(const fn of this.onReadyCallbacks) {
-                try{
+                try {
                     fn();
                 } catch(e) {
                     // tslint:disable-next-line: no-console
@@ -116,4 +134,5 @@ export class ElmerUI {
         }
     }
 }
+
 // tslint:enable: ordered-imports

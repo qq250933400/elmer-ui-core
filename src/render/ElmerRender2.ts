@@ -7,24 +7,26 @@ import { Autowired } from "../decorators";
 import { pluginExec } from "../decorators/Plugin";
 import { RenderQueue, TypeRenderQueueOptions } from "./RenderQueue";
 import { ElmerWorker } from "elmer-worker";
-import { EventInWorker } from "../events/EventInWorker";
-import { getServiceObj } from "../decorators/Autowired";
 import { ElmerEvent } from "../events/ElmerEvent";
-import { TOKEN_PLUGIN_RENDER, PluginRender } from "./PluginRender";
-import { TypeElmerRenderOptions, TypeVirtualRenders } from "./IElmerRender";
-import elmerRenderAction, { TypeElmerRenderDispatchNodes } from "./ElmerRenderAction";
+import { TOKEN_PLUGIN_RENDER, ElmerRenderNode } from "./ElmerRenderNode";
+import { TypeElmerRenderDispatchNodes, TypeElmerRenderOptions, TypeRenderGetNodeResult, TypeVirtualRenders } from "./IElmerRender";
+import elmerRenderAction from "./ElmerRenderAction";
 import utils from "../lib/utils";
 
 export class ElmerRender {
-    private options: TypeElmerRenderOptions;
+
+    isDidMount: boolean;
+    lastVirtualNode: IVirtualElement;
+    options: TypeElmerRenderOptions;
+    virtualRenderObj: TypeVirtualRenders = {};
+    tagName: string;
+
     private useComponents: any;
     private htmlCode: String;
     private virtualId: string;
     private srcVdom: IVirtualElement;
-    private lastVirtualNode: IVirtualElement;
 
     private wikiNodes: TypeElmerRenderDispatchNodes[] = [];
-    private virtualRenderObj: TypeVirtualRenders = {};
 
     @Autowired(RenderQueue)
     private renderQueue: RenderQueue;
@@ -38,6 +40,9 @@ export class ElmerRender {
     @Autowired(VirtualRender, VirtualNode)
     private virtualRender: VirtualRender;
 
+    @Autowired(ElmerRenderNode)
+    private elmerRenderNode: ElmerRenderNode;
+
     constructor(options: TypeElmerRenderOptions) {
         const importComponents = getComponents(options.ComponentFactory);
         this.options = options;
@@ -47,27 +52,37 @@ export class ElmerRender {
         };
         (this.options.component as any).dom = {};
         this.virtualId = this.options.vdom.virtualID;
+        this.tagName = this.options.vdom.tagName;
         elmerRenderAction.callLifeCycle(this.options.component as any, "$init");
-        pluginExec<PluginRender>({
-            name: "setComponents",
-            token: [TOKEN_PLUGIN_RENDER],
-            type: "NodeRender",
-        }, this.useComponents);
-        pluginExec<PluginRender>({
-            name: "setSessionAction",
-            token: [TOKEN_PLUGIN_RENDER],
-            type: "NodeRender",
-        },this.options.vdom.virtualID, {
-            getComponentFirstElement: (virtualId: string): any => {
+        this.elmerRenderNode.setSessionAction(this.options.vdom.virtualID, {
+            getComponentFirstElement: (virtualId: string): TypeRenderGetNodeResult => {
                 if(this.virtualRenderObj[virtualId]) {
                     return (this.virtualRenderObj[virtualId] as ElmerRender).getFirstDom();
+                } else {
+                    return {
+                        isDidMount: false
+                    };
                 }
             },
-            getComponentLastElement: (virtualId: string): any => {
+            getComponentLastElement: (virtualId: string): TypeRenderGetNodeResult => {
                 if(this.virtualRenderObj[virtualId]) {
                     return (this.virtualRenderObj[virtualId] as ElmerRender).getLastDom();
+                } else  {
+                    return {
+                        isDidMount: false
+                    };
                 }
-            }
+            },
+            removeRender: (virtualId: string): void => {
+                if(this.virtualRenderObj[virtualId]) {
+                    this.virtualRenderObj[virtualId].destory();
+                }
+                delete this.virtualRenderObj[virtualId];
+            },
+            saveRender: (virtualId: string, newRender: any): void => {
+                this.virtualRenderObj[virtualId] = newRender;
+            },
+            useComponents: this.useComponents
         });
         this.eventObj.dispose();
     }
@@ -103,51 +118,77 @@ export class ElmerRender {
     /**
      * 获取最后一个渲染的真实元素
      */
-    getLastDom(): HTMLElement | null | undefined {
-        if (this.lastVirtualNode && this.lastVirtualNode.children) {
-            for (let i = this.lastVirtualNode.children.length - 1; i >= 0; i--) {
-                if (this.lastVirtualNode.children[i].status !== "DELETE") {
-                    const lVdom = this.lastVirtualNode.children[i];
-                    if (!utils.isEmpty(lVdom.virtualID)) {
-                        if (this.virtualRenderObj[lVdom.virtualID]) {
-                            return (this.virtualRenderObj[lVdom.virtualID] as ElmerRender).getLastDom();
+    getLastDom(): TypeRenderGetNodeResult {
+        if(this.isDidMount) {
+            let findDom = null;
+            if (this.lastVirtualNode && this.lastVirtualNode.children) {
+                for (let i = this.lastVirtualNode.children.length - 1; i >= 0; i--) {
+                    if (this.lastVirtualNode.children[i].status !== "DELETE") {
+                        const lVdom = this.lastVirtualNode.children[i];
+                        if ((lVdom as any).isComponent) {
+                            if (this.virtualRenderObj[lVdom.virtualID]) {
+                                findDom = (this.virtualRenderObj[lVdom.virtualID] as ElmerRender).getLastDom()?.dom;
+                            }
+                        } else {
+                            findDom = this.lastVirtualNode.children[i].dom as any;
                         }
-                    } else {
-                        return this.lastVirtualNode.children[i].dom as any;
                     }
                 }
             }
+            if(!findDom) {
+                findDom = this.options.previousSibling;
+            }
+            return ({
+                dom: findDom,
+                isDidMount: true,
+                tagName: this.tagName,
+                vdoms: this.lastVirtualNode
+            }) as any;
+        } else {
+            return {
+                dom: this.options.previousSibling,
+                isDidMount: false
+            };
         }
-        return this.options.previousSibling;
     }
     /**
      * 获取第一个渲染到browser的元素
      */
-    getFirstDom():HTMLElement|null|undefined {
-        if(this.lastVirtualNode && this.lastVirtualNode.children) {
-            for(let i=0;i<this.lastVirtualNode.children.length;i--) {
-                if(this.lastVirtualNode.children[i].status !== "DELETE") {
-                    const lVdom = this.lastVirtualNode.children[i];
-                    if(!utils.isEmpty(lVdom.virtualID)) {
-                        if(this.virtualRenderObj[lVdom.virtualID]) {
-                            return (this.virtualRenderObj[lVdom.virtualID] as ElmerRender).getFirstDom();
+    getFirstDom():TypeRenderGetNodeResult {
+        if(this.isDidMount) {
+            let findDom = null;
+            if(this.lastVirtualNode && this.lastVirtualNode.children) {
+                for(let i=0;i<this.lastVirtualNode.children.length;i++) {
+                    if(this.lastVirtualNode.children[i].status !== "DELETE") {
+                        const lVdom = this.lastVirtualNode.children[i];
+                        if(!utils.isEmpty(lVdom.virtualID)) {
+                            if(this.virtualRenderObj[lVdom.virtualID]) {
+                                findDom = (this.virtualRenderObj[lVdom.virtualID] as ElmerRender).getFirstDom()?.dom;
+                            }
+                        } else {
+                            findDom = this.lastVirtualNode.children[i].dom as any;
                         }
-                    } else {
-                        return this.lastVirtualNode.children[i].dom as any;
                     }
                 }
             }
+            if(!findDom) {
+                findDom = this.options.previousSibling;
+            }
+            return {
+                dom: findDom,
+                isDidMount: true
+            };
+        } else {
+            return {
+                dom: this.options.previousSibling,
+                isDidMount: false
+            };
         }
-        return this.options.previousSibling;
     }
     destory(): void {
         // TODO: 需要在此处释放所有事件监听
         // 释放渲染插件调用对象
-        pluginExec<PluginRender>({
-            name: "destory",
-            token: [ TOKEN_PLUGIN_RENDER ],
-            type: "NodeRender"
-        });
+        this.elmerRenderNode.destory(this.options.vdom.virtualID);
     }
     private callLifeCycle(eventName: keyof Component, ...args: any[]):any {
         return elmerRenderAction.callLifeCycle(this.options.component, eventName, ...args);
@@ -207,36 +248,26 @@ export class ElmerRender {
                 resolve({});
                 return;
             }
-            pluginExec<PluginRender>({
-                name: "vdomRender",
-                token: [ TOKEN_PLUGIN_RENDER ],
-                type: "NodeRender",
-                // tslint:disable-next-line: object-literal-sort-keys
-                args: {
-                    sessionId: this.options.vdom.virtualID
-                }
-            }, newDom.children, (vNode, isHtmlNode) => {
-                pluginExec<PluginRender>({
-                    name: "vdomAttatch",
-                    token: [ TOKEN_PLUGIN_RENDER ],
-                    type: "NodeRender",
-                    // tslint:disable-next-line: object-literal-sort-keys
-                    args: {
-                        sessionId: this.options.vdom.virtualID
-                    }
-                }, {
-                    container: this.options.container,
-                    isHtmlNode,
-                    sessionId: this.options.vdom.virtualID,
-                    vdom: vNode,
-                    vdomParent: newDom
-                });
-            }).then(() => {
-                resolve({});
+            this.elmerRenderNode.vdomRender({
+                isFirstLevel: true,
+                isNewAction: true,
+                sessionId: this.options.vdom.virtualID,
+                token: utils.guid()
+            }, {
+                ElmerRender,
+                container: this.options.container,
+                previousSibling: this.getFirstDom()?.dom,
+                vdomParent: newDom,
+                vdoms: newDom.children
+            }).then((vResp) => {
+                this.isDidMount = true;
+                this.lastVirtualNode = newDom;
+                console.log(vResp, newDom);
+                resolve(vResp);
             }).catch((err) => {
+                this.isDidMount = true;
                 reject(err);
             });
-            this.lastVirtualNode = newDom;
             console.log(this.options.container);
         });
     }

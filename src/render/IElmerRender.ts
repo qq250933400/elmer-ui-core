@@ -14,11 +14,56 @@ export type TypeElmerRenderOptions = {
     useComponents: any;
 };
 
+export type TypeVirtualRenders<T={}> = {[P in keyof T]: IElmerRender};
+
+export type TypeCurrentRenderDispatch = {
+    component: any;
+    hookState: {
+        hookIndex: number;
+        state: any;
+    },
+    isFunc: Boolean;
+};
+
+export type TypeRenderGetNodeResult = {
+    isDidMount: boolean;
+    dom?: HTMLElement
+};
+
+export type TypeElmerRenderDispatchNodes = {
+    vParent: IVirtualElement;
+    vdom: IVirtualElement;
+};
+
+export type TypeGetNodeOptions = {
+    hasDomNode?: boolean;
+    getFirstNode(virtualId: string): TypeRenderGetNodeResult;
+    getLastNode(virtualId: string): TypeRenderGetNodeResult;
+};
+
+export type TypeRenderSession = {
+    useComponents: any;
+    token?: string;
+    removeRender(virtualId: string): void,
+    saveRender(virtualId: string, renderObj: any): void;
+    getComponentLastElement(virtualId: string): TypeRenderGetNodeResult;
+    getComponentFirstElement(virtualId: string): TypeRenderGetNodeResult;
+};
+
+export type TypeVirtualRenderSession<T={}> = {[P in keyof T]: TypeRenderSession};
+
+export type TypeRenderActionConnectOptions = {
+    sessionId: string;
+    container: HTMLElement;
+    vRender: any;
+    vdom: IVirtualElement;
+    vdomParent?: IVirtualElement;
+    getRenderSession(sessionId: string):TypeRenderSession;
+};
+
 export interface IElmerRender {
     render(options: TypeRenderQueueOptions): Promise<any>;
     destory(): void;
     getFirstDom():HTMLElement | null | undefined;
     getLastDom(): HTMLElement | null | undefined;
 }
-
-export type TypeVirtualRenders<T={}> = {[P in keyof T]: IElmerRender};

@@ -3,24 +3,11 @@ import { Component } from "../component/Component";
 import { EventNames } from "../events/EventNames";
 import { classNames } from "../lib/ElmerDom";
 import utils from "../lib/utils";
+import { TypeCurrentRenderDispatch, TypeElmerRenderOptions, TypeGetNodeOptions, TypeRenderActionConnectOptions, TypeRenderGetNodeResult, TypeRenderSession } from "./IElmerRender";
 
 export const XML_NL = "http://www.w3.org/2000/xmlns/";
 export const SVG_NL = "http://www.w3.org/2000/svg";
 export const SVG_ELE = ["a", "circle", "ellipse", "foreignObject", "g", "image", "line", "path", "polygon", "polyline", "rect", "svg", "text", "tspan", "use", "animate"];
-
-type TypeCurrentRenderDispatch = {
-    component: any;
-    hookState: {
-        hookIndex: number;
-        state: any;
-    },
-    isFunc: Boolean;
-};
-
-export type TypeElmerRenderDispatchNodes = {
-    vParent: IVirtualElement;
-    vdom: IVirtualElement;
-};
 
 const renderDispatch = {
     current: null
@@ -53,25 +40,48 @@ const startRenderDispatch = (dispatchActions: any, renderCallback: Function): Pr
 
 const getCurrentRenderDispatch = (): TypeCurrentRenderDispatch => renderDispatch.current;
 
-const getPrevDom = (vdom:IVirtualElement, vdomParent:IVirtualElement): IVirtualElement|null => {
+const getPrevDom = (vdom:IVirtualElement, vdomParent:IVirtualElement, options?: TypeGetNodeOptions): IVirtualElement|null => {
     const index = vdom.path[vdom.path.length - 1];
     const prevIndex = index - 1;
-    const prevDom = vdomParent.children[prevIndex];
+    const prevDom =  vdomParent?.children[prevIndex];
     if(prevDom) {
         if(prevDom.status !== "DELETE") {
-            return prevDom;
+            if(!options?.hasDomNode) {
+                return prevDom;
+            } else {
+                if((prevDom as any).isComponent) {
+                    // 自定义组件调用Render中的方法获取真实元素做判断
+                    const vPDom = options.getFirstNode(prevDom.virtualID);
+                    return vPDom.dom ? prevDom : getPrevDom(prevDom, vdomParent);
+                } else {
+                    return prevDom.dom ? prevDom : getPrevDom(prevDom, vdomParent);
+                }
+            }
         } else {
             return getPrevDom(prevDom, vdomParent);
         }
     }
 };
-const getNextDom = (vdom:IVirtualElement, vdomParent:IVirtualElement): IVirtualElement|null => {
+const getNextDom = (vdom:IVirtualElement, vdomParent:IVirtualElement, options?: TypeGetNodeOptions): IVirtualElement|null => {
     const index = vdom.path[vdom.path.length - 1];
     const nextIndex = index + 1;
-    const nextDom = vdomParent.children[nextIndex];
+    const nextDom = vdomParent?.children[nextIndex];
     if(nextDom) {
         if(nextDom.status !== "DELETE") {
-            return nextDom;
+            if(!options?.hasDomNode) {
+                return nextDom;
+            } else {
+                if((nextDom as any).isComponent) {
+                    const vLDom = options.getLastNode(nextDom.virtualID);
+                    return vLDom.dom ? nextDom : getNextDom(nextDom, vdomParent);
+                } else {
+                    if(nextDom.dom) {
+                        return nextDom;
+                    } else {
+                        return getNextDom(nextDom, vdomParent);
+                    }
+                }
+            }
         } else {
             return getNextDom(nextDom, vdomParent);
         }
@@ -166,9 +176,75 @@ const renderAttr = (dom:HTMLElement, vdom:IVirtualElement): void => {
         }
     }
 };
+/**
+ * 将自定义组件第一层节点挂载到真实dom树
+ * @param options - 参数
+ */
+const connectNodeRender = (options: TypeRenderActionConnectOptions): void => {
+    const { sessionId, vRender, container, vdom, vdomParent } = options;
+    const newNodes: IVirtualElement = vRender.lastVirtualNode;
+    if(newNodes && newNodes.children?.length > 0) {
+        const getNodeOptions: TypeGetNodeOptions = {
+            getFirstNode: options.getRenderSession(vdom.virtualID).getComponentFirstElement,
+            getLastNode: options.getRenderSession(vdom.virtualID).getComponentLastElement,
+            hasDomNode: true,
+        };
+        const firstNode = getPrevDom(vdom, vdomParent, {
+            getFirstNode: options.getRenderSession(sessionId).getComponentFirstElement,
+            getLastNode: options.getRenderSession(sessionId).getComponentLastElement,
+            hasDomNode: true,
+        });
+        for(const childNode of newNodes.children) {
+            if(childNode.status !== "DELETE") {
+                if(!(childNode as any).isComponent) {
+                    const needAppendToTree = ["APPEND", "MOVE", "MOVEUPDATE"].indexOf(childNode.status) >= 0;
+                    if(needAppendToTree) {
+                        // 只有状态为Append,Move, MoveUpdate的节点需要重新插入到真实dom树
+                        const prevNode = getPrevDom(childNode, newNodes, getNodeOptions) || firstNode;
+                        if(prevNode) {
+                            if(prevNode.dom) {
+                                if(prevNode.dom.nextSibling) {
+                                    container.insertBefore(childNode.dom, prevNode.dom.nextSibling);
+                                } else {
+                                    container.appendChild(childNode.dom);
+                                }
+                            } else {
+                                if((prevNode as any).isComponent) {
+                                    const prevSession: TypeRenderSession = options.getRenderSession(sessionId);
+                                    const prevNodeDom = prevSession.getComponentLastElement(prevNode.virtualID);
+                                    if(prevNodeDom?.dom) {
+                                        if(prevNodeDom.dom.nextSibling) {
+                                            container.insertBefore(childNode.dom, prevNodeDom.dom.nextSibling);
+                                        } else {
+                                            container.appendChild(childNode.dom);
+                                        }
+                                    } else {
+                                        container.appendChild(childNode.dom);
+                                    }
+                                }
+                            }
+                        } else {
+                            container.appendChild(childNode.dom);
+                        }
+                    }
+                } else {
+                    const childRender = vRender.virtualRenderObj[childNode.virtualID];
+                    if(childRender) {
+                        connectNodeRender({
+                            ...options,
+                            vRender: childRender,
+                            // vdom: childNode
+                        });
+                    }
+                }
+            }
+        }
+    }
+};
 
 export default {
     callLifeCycle,
+    connectNodeRender,
     createNodeByVdom,
     getCurrentRenderDispatch,
     getNextDom,
