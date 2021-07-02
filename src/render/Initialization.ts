@@ -9,7 +9,9 @@ const isNodeComponent = (com:any): com is Component => {
 };
 
 type TypeInitizationOptions = {
-    vdom: IVirtualElement
+    vdom: IVirtualElement;
+    depth: number;
+    registeComponents?(components: any): void;
 };
 
 export const Initialization = (ComFactory:Function|Component, options: TypeInitizationOptions): Object => {
@@ -57,7 +59,8 @@ export const Initialization = (ComFactory:Function|Component, options: TypeIniti
             // tslint:disable-next-line: object-literal-sort-keys
             __factory: ComFactory,
             // tslint:disable-next-line: object-literal-shorthand
-            $render: null
+            $render: null,
+            registeComponents: options.registeComponents
         };
         renderComponent.$render = ((srcRenderAction: Function, currentDispatch) => {
             // tslint:disable-next-line: only-arrow-functions

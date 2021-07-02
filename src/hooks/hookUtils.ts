@@ -42,6 +42,7 @@ type TypeDefineHookCallbackOptions<T> = {
     onEffect?: (callback: TypeOnEffectEvent) => void;
     onDestory?: (callback: Function) => void;
     setState: (state: any, refresh?: boolean) => Promise<any>;
+    getHookStore(hookName: string): any[];
 };
 type TypeDefineHookCallback<T> = (options: TypeDefineHookCallbackOptions<T>) => T;
 
@@ -58,7 +59,16 @@ export const defineHook = <T>(hookName: string, callback: TypeDefineHookCallback
             component: currentDispatchState.component,
             hookIndex,
             isInit: true,
-            store: null
+            name: hookName,
+            store: null,
+            // tslint:disable-next-line: object-literal-sort-keys
+            getHookStore: (name: string) => {
+                const myHookStore: any[] = [];
+                Object.values(hookStore).forEach((hookObj: any) => {
+                    hookObj.name === hookName && myHookStore.push(hookObj);
+                });
+                return myHookStore;
+            }
         };
         const hookData = callback(hookOptions);
         hookOptions.returnValue = hookData;

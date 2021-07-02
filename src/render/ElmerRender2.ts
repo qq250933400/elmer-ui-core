@@ -1,6 +1,6 @@
 // tslint:disable: ordered-imports
 import { HtmlParse, IVirtualElement, VirtualNode, VirtualRender } from "elmer-virtual-dom";
-import { queueCallFunc } from "elmer-common";
+import { queueCallFunc, StaticCommon as comUtils } from "elmer-common";
 import { Component } from "../component";
 import { getComponents } from "../decorators/loadComponents";
 import { Autowired } from "../decorators";
@@ -28,19 +28,19 @@ export class ElmerRender {
 
     private wikiNodes: TypeElmerRenderDispatchNodes[] = [];
 
-    @Autowired(RenderQueue)
+    @Autowired()
     private renderQueue: RenderQueue;
 
-    @Autowired(ElmerWorker)
+    @Autowired()
     private worker: ElmerWorker;
 
-    @Autowired(ElmerEvent)
+    @Autowired()
     private eventObj: ElmerEvent;
 
-    @Autowired(VirtualRender, VirtualNode)
+    @Autowired(VirtualNode)
     private virtualRender: VirtualRender;
 
-    @Autowired(ElmerRenderNode)
+    @Autowired()
     private elmerRenderNode: ElmerRenderNode;
 
     constructor(options: TypeElmerRenderOptions) {
@@ -51,10 +51,14 @@ export class ElmerRender {
             ...importComponents
         };
         (this.options.component as any).dom = {};
+        (this.options.component as any).setState = this.setComponentState.bind(this);
         this.virtualId = this.options.vdom.virtualID;
         this.tagName = this.options.vdom.tagName;
         elmerRenderAction.callLifeCycle(this.options.component as any, "$init");
         this.elmerRenderNode.setSessionAction(this.options.vdom.virtualID, {
+            component: this.options.component,
+            depth: this.options.depth,
+            eventListeners: [],
             getComponentFirstElement: (virtualId: string): TypeRenderGetNodeResult => {
                 if(this.virtualRenderObj[virtualId]) {
                     return (this.virtualRenderObj[virtualId] as ElmerRender).getFirstDom();
@@ -73,6 +77,18 @@ export class ElmerRender {
                     };
                 }
             },
+            getRender: (virtualId: string) => {
+                return this.virtualRenderObj[virtualId];
+            },
+            registeComponents: (components: any): void => {
+                if(components) {
+                    Object.keys(components).map((selector: string): void => {
+                        if(!this.useComponents[selector]) {
+                            this.useComponents[selector] = components[selector];
+                        }
+                    });
+                }
+            },
             removeRender: (virtualId: string): void => {
                 if(this.virtualRenderObj[virtualId]) {
                     this.virtualRenderObj[virtualId].destory();
@@ -82,6 +98,9 @@ export class ElmerRender {
             saveRender: (virtualId: string, newRender: any): void => {
                 this.virtualRenderObj[virtualId] = newRender;
             },
+            // tslint:disable-next-line: object-literal-sort-keys
+            nodePath: this.options.path,
+            nodeId: this.virtualId,
             useComponents: this.useComponents
         });
         this.eventObj.dispose();
@@ -190,6 +209,53 @@ export class ElmerRender {
         // 释放渲染插件调用对象
         this.elmerRenderNode.destory(this.options.vdom.virtualID);
     }
+    private setComponentState(state: any): Promise<any> {
+        return new Promise((resolve, reject) => {
+            if(utils.isObject(state)) {
+                const component: any = this.options.component;
+                const stateKeys = Object.keys(state);
+                let dataChanged = false;
+                if(component.state) {
+                    for(const sKey of stateKeys) {
+                        if(utils.isObject(state[sKey]) && utils.isObject(component.state[sKey])) {
+                            if(!comUtils.isEqual(state[sKey], component.state[sKey])) {
+                                dataChanged = true;
+                                break;
+                            }
+                        } else {
+                            if(state[sKey] !== component.state[sKey]) {
+                                dataChanged = true;
+                                break;
+                            }
+                        }
+                    }
+                } else {
+                    dataChanged = true;
+                }
+                if(dataChanged) {
+                    const newState = {
+                        ...(component.state || {}),
+                        ...state
+                    };
+                    delete component.state;
+                    component.state = newState;
+                    this.render({
+                        firstRender: false,
+                        state
+                    }).then(() => {
+                        resolve({});
+                    }).catch((err) => {
+                        typeof this.options.component["$error"] === "function" && this.options.component["$error"](err);
+                        reject(err);
+                    });
+                } else {
+                    resolve({});
+                }
+            } else {
+                throw new Error("setState action get an wrong data,it\"s must be an object!");
+            }
+        });
+    };
     private callLifeCycle(eventName: keyof Component, ...args: any[]):any {
         return elmerRenderAction.callLifeCycle(this.options.component, eventName, ...args);
     }
@@ -262,13 +328,11 @@ export class ElmerRender {
             }).then((vResp) => {
                 this.isDidMount = true;
                 this.lastVirtualNode = newDom;
-                console.log(vResp, newDom);
                 resolve(vResp);
             }).catch((err) => {
                 this.isDidMount = true;
                 reject(err);
             });
-            console.log(this.options.container);
         });
     }
     private async getSourceCode():Promise<any> {

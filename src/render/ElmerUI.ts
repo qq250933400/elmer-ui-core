@@ -11,6 +11,7 @@ import { ElmerWorker } from "elmer-worker";
 import { EventInWorker } from "../events/EventInWorker";
 import elmerRenderAction from "./ElmerRenderAction";
 import { ElmerRenderNode } from "./ElmerRenderNode";
+import { ElmerEvent } from "../events/ElmerEvent";
 
 type TypeSupportComponent = Function|Component;
 type TypeLoadComponents<T={}> = {[P in keyof T]: TypeSupportComponent};
@@ -23,20 +24,23 @@ type TypeRenderOptions = {
 
 export class ElmerUI {
 
-    @Autowired(VirtualNode)
+    @Autowired()
     private virtualNode: VirtualNode;
 
-    @Autowired(HtmlParse)
+    @Autowired()
     private htmlParse: HtmlParse;
 
-    @Autowired(EventInWorker)
+    @Autowired()
     private eventInWorker: EventInWorker;
 
-    @Autowired(ElmerWorker)
+    @Autowired()
     private worker: ElmerWorker;
 
-    @Autowired(ElmerRenderNode)
+    @Autowired()
     private renderNode: ElmerRenderNode;
+
+    @Autowired()
+    private eventObj: ElmerEvent;
 
     private vRender: ElmerRender;
     private onReadyCallbacks: any = [];
@@ -56,6 +60,7 @@ export class ElmerUI {
     render(container: HTMLElement, RootApp: TypeSupportComponent, options?: TypeRenderOptions): ElmerRender {
         const entryVirtualNode = this.virtualNode.create("RootNode", {});
         const entryComponent = Initialization(RootApp, {
+            depth: 0,
             vdom: entryVirtualNode
         });
         const vRender = new ElmerRender({
@@ -63,6 +68,7 @@ export class ElmerUI {
             children: [],
             component: entryComponent as any,
             container,
+            depth: 0,
             nextSibling: null,
             path: [],
             previousSibling: null,
@@ -101,7 +107,7 @@ export class ElmerUI {
                 id: "htmlParse",
                 params: this.htmlParse
             }, {
-                id: "eventObj",
+                id: "elmerEvent",
                 params: this.eventInWorker
             }
         ], (opt, obj) => {

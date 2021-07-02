@@ -85,20 +85,21 @@ export const getModelObj = <T={}>(Factory: new(...args: any[]) => any, ...args: 
     return obj as any;
 };
 
-export const Autowired = (Factory: new(...args: any[]) => any, ...args: any[]) => {
+export const Autowired = (...args: any[]) => {
     return (target: any, attrKey: string) => {
+        const TargetFactory = Reflect.getMetadata("design:type", target, attrKey);
         Object.defineProperty(target, attrKey, {
             configurable: false,
             enumerable: true,
             get: () => {
-                const type = Reflect.getMetadata(DECORATORS_CLASS_TYPE, Factory);
+                const type = Reflect.getMetadata(DECORATORS_CLASS_TYPE, TargetFactory);
                 let obj = null;
                 if(type === DECORATORS_CLASS_TYPE_SERVICE) {
-                    obj = getServiceObj(Factory, ...args);
+                    obj = getServiceObj(TargetFactory, ...args);
                 } else if(type === DECORATORS_CLASS_TYPE_MODEL) {
-                    obj = getModelObj(Factory, ...args);
+                    obj = getModelObj(TargetFactory, ...args);
                 } else {
-                    throw new Error(`(${Factory.name})当前模块注册类型不适合使用Autowired初始化.`);
+                    throw new Error(`(${TargetFactory.name})当前模块注册类型不适合使用Autowired初始化.`);
                 }
                 return obj;
             },

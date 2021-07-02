@@ -12,6 +12,7 @@ export type TypeElmerRenderOptions = {
     previousSibling: HTMLElement;
     nextSibling: HTMLElement;
     useComponents: any;
+    depth: number;
 };
 
 export type TypeVirtualRenders<T={}> = {[P in keyof T]: IElmerRender};
@@ -42,10 +43,17 @@ export type TypeGetNodeOptions = {
 };
 
 export type TypeRenderSession = {
+    component: any;
     useComponents: any;
     token?: string;
+    depth: number;
+    nodePath: number[];
+    nodeId: string;
+    eventListeners: any[];
+    registeComponents(components: any): void;
     removeRender(virtualId: string): void,
     saveRender(virtualId: string, renderObj: any): void;
+    getRender(virtualId: string): IElmerRender;
     getComponentLastElement(virtualId: string): TypeRenderGetNodeResult;
     getComponentFirstElement(virtualId: string): TypeRenderGetNodeResult;
 };

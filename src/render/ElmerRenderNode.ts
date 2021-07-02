@@ -1,17 +1,19 @@
 import { queueCallFunc } from "elmer-common";
 import { IVirtualElement } from "elmer-virtual-dom";
 import { Component } from "../component";
-import { Service } from "../decorators";
-import elmerRenderAction from "./ElmerRenderAction";
-import { Initialization } from "./Initialization";
+import { Autowired, Service } from "../decorators";
+import { ElmerEvent } from "../events/ElmerEvent";
+import { TypeDomEventOptions } from "../events/IEventContext";
 // tslint:disable-next-line: ordered-imports
 import utils from "../lib/utils";
+import elmerRenderAction from "./ElmerRenderAction";
 import {
     IElmerRender,
     TypeRenderGetNodeResult,
     TypeRenderSession,
     TypeVirtualRenderSession
 } from "./IElmerRender";
+import { Initialization } from "./Initialization";
 
 export const TOKEN_PLUGIN_RENDER = "PluginRender_54ba9eda-95eb-4fbe-ae29-6114985e9c7f";
 
@@ -26,6 +28,7 @@ type TypeVirtualRenderOptions = {
     container: HTMLElement;
     vdoms: IVirtualElement[];
     vdomParent: IVirtualElement;
+    hasPathChange?: boolean;
     previousSibling?: HTMLElement;
     ElmerRender: new(...args: any) => any;
 };
@@ -47,6 +50,10 @@ type TypeRenderComponentOptions = {
 
 @Service
 export class ElmerRenderNode {
+
+    @Autowired()
+    private eventObj: ElmerEvent;
+
     private renderSessions: TypeVirtualRenderSession = {};
     setSessionAction(virtualId: string, actions: TypeVirtualRenderSession): void {
         this.renderSessions[virtualId] = actions;
@@ -66,6 +73,7 @@ export class ElmerRenderNode {
                 const userComponentRender = [];
                 const scheduleAttachList = [];
                 let hasComponent = false;
+                let hasPathChange = options.hasPathChange;
                 for(let index=0;index<vdoms.length;index++) {
                     const vdom = vdoms[index];
                     if(vdom.status !== "DELETE") {
@@ -74,6 +82,7 @@ export class ElmerRenderNode {
                             let needAppendChild = false;
                             if(vdom.status === "APPEND") {
                                 vdom.dom = elmerRenderAction.createNodeByVdom(vdom);
+                                hasPathChange = true;
                             } else {
                                 if(!vdom.dom) {
                                     // 由于其他不可知原因导致无法追踪真实dom节点，需要重新创建
@@ -85,6 +94,9 @@ export class ElmerRenderNode {
                             if(["UPDATE", "APPEND", "MOVEUPDATE"].indexOf(vdom.status) >= 0) {
                                 elmerRenderAction.renderAttr(vdom.dom as any, vdom);
                             }
+                            if(["APPEND", "MOVE", "MOVEAPPEND"].indexOf(vdom.status) >= 0) {
+                                hasPathChange = true;
+                            }
                             if(vdom.children?.length > 0) {
                                 this.vdomRender({
                                     ...opt,
@@ -93,6 +105,7 @@ export class ElmerRenderNode {
                                 }, {
                                     ElmerRender,
                                     container: vdom.dom as any,
+                                    hasPathChange,
                                     vdomParent: vdom,
                                     vdoms: vdom.children
                                 }).then(() => {
@@ -126,6 +139,8 @@ export class ElmerRenderNode {
                                     });
                                 }
                             }
+                            // 渲染事件检查，有时间监听添加到EventManager
+                            this.vdomEventRender(sessionId, vdom, hasPathChange);
                         } else {
                             hasComponent = true;
                             (vdom as any).isComponent = true;
@@ -141,6 +156,11 @@ export class ElmerRenderNode {
                                 }
                             });
                         }
+                    } else {
+                        this.releaseOutJourneyNodes(sessionId, [vdom]);
+                    }
+                    if(vdom.deleteElements?.length > 0) {
+                        this.releaseOutJourneyNodes(sessionId, vdom.deleteElements);
                     }
                     if(sessionAction.token !== token) {
                         resolve({
@@ -159,12 +179,28 @@ export class ElmerRenderNode {
                         throwException: true
                     })
                     .then(() => {
-                        console.log(scheduleAttachList, "+++++++");
+                        if(scheduleAttachList.length > 0) {
+                            scheduleAttachList.map((scheduleNode) => {
+                                this.vdomAttatch({}, {
+                                    ...scheduleNode,
+                                    isHtmlNode: true,
+                                    sessionId
+                                });
+                            });
+                        }
                         resolve({});
                     })
                     .catch((err) => reject(err));
                 } else {
-                    console.log(scheduleAttachList, "---");
+                    if(scheduleAttachList.length > 0) {
+                        scheduleAttachList.map((scheduleNode) => {
+                            this.vdomAttatch({}, {
+                                ...scheduleNode,
+                                isHtmlNode: true,
+                                sessionId
+                            });
+                        });
+                    }
                     resolve({});
                 }
             } else {
@@ -178,15 +214,19 @@ export class ElmerRenderNode {
             const sessionAction: TypeRenderSession = this.renderSessions[sessionId];
             if(vdom.status === "APPEND") {
                 const component = Initialization(ComponentFactory, {
-                    vdom
+                    depth: 0,
+                    vdom,
+                    // tslint:disable-next-line: object-literal-sort-keys
+                    registeComponents: sessionAction.registeComponents
                 });
                 const vRender = new ElmerRender({
                     ComponentFactory: ComponentFactory as any,
                     children: vdom.children,
                     component,
                     container,
+                    depth: sessionAction.depth + 1,
                     nextSibling: elmerRenderAction.getNextDom(vdom, vdomParent)?.dom,
-                    path: [],
+                    path: vdom.path,
                     previousSibling: elmerRenderAction.getPrevDom(vdom, vdomParent, {
                         getFirstNode: sessionAction.getComponentFirstElement,
                         getLastNode: sessionAction.getComponentLastElement,
@@ -297,8 +337,8 @@ export class ElmerRenderNode {
                         } else {
                             // 相邻节点元素不存在
                             // 当前一个节点未找到真实节点时将当前元素插入第一个或则追加到最后
+                            // 放到临时任务列表，渲染结束后再此挂载到真实节点
                             hasAttached = false;
-                            console.error("2. some node can not be insert into browser dom correct", vdom);
                         }
                     }
                 }
@@ -307,7 +347,109 @@ export class ElmerRenderNode {
         return hasAttached;
     }
     destory(sessionId: string): void {
+        const currentSession: TypeRenderSession = this.renderSessions[sessionId];
+        this.eventObj.unsubscribe(currentSession.nodeId);
         delete this.renderSessions[sessionId];
+    }
+    releaseOutJourneyNodes(sessionId: string,vNodes:IVirtualElement[]): void {
+        const currentSession: TypeRenderSession = this.renderSessions[sessionId];
+        vNodes?.length > 0 && vNodes.map((vdom) => {
+            if((vdom as any).isComponent) {
+                currentSession.getRender(vdom.virtualID)?.destory();
+            } else {
+                this.releaseEventsByNode(vdom);
+                if(vdom.children?.length > 0) {
+                    this.releaseOutJourneyNodes(sessionId,vdom.children);
+                }
+                vdom.dom?.parentElement && vdom.dom.parentElement.removeChild(vdom.dom);
+                vdom.dom = null;
+            }
+        });
+    }
+    /**
+     * 添加节点事件监听
+     * @param sessionId 当前事务执行ID
+     * @param vdom 检测虚拟节点
+     * @param hasPathChange 是否节点位置有变化
+     */
+    private vdomEventRender(sessionId: string, vdom:IVirtualElement, hasPathChange: boolean): void {
+        if(hasPathChange) {
+            const allEvents = vdom.events || {};
+            const eventKeys = Object.keys(allEvents);
+            const eventOptions: TypeDomEventOptions = (vdom?.dom as any)?.EUIEventsOption;
+            if(allEvents && eventKeys.length > 0) {
+                const oldEvents = JSON.parse(JSON.stringify(eventOptions?.events || {}));
+                const sessionAction: TypeRenderSession = this.renderSessions[sessionId];
+                if(vdom.status !== "DELETE") {
+                    // 检测路径是否有变化，有变化更新信息
+                    if(eventOptions && JSON.stringify(eventOptions.path) !== JSON.stringify(vdom.path)) {
+                        this.eventObj.updateEventPath(eventOptions.events, vdom.path);
+                        eventOptions.path = vdom.path;
+                        (vdom?.dom as any).EUIEventsOption = eventOptions; // 更新最新的路径到绑定节点
+                    }
+                    Object.keys(allEvents).map((eventName: string): void => {
+                        const hasSubscribe = eventOptions?.events[eventName] ? true : false;
+                        if(!hasSubscribe) {
+                            if(typeof allEvents[eventName] === "function") {
+                                const eventId = this.eventObj.subscribe(vdom.dom as any, {
+                                    callback: ((obj: any, callback: Function) => {
+                                        return (event:any) => {
+                                            return callback.call(obj, event);
+                                        };
+                                    })(sessionAction.component, allEvents[eventName]),
+                                    data: vdom.data,
+                                    dataSet: vdom.dataSet,
+                                    depth: sessionAction.depth,
+                                    eventHandler: (allEvents[eventName] as Function).bind(this),
+                                    eventName,
+                                    path: vdom.path,
+                                    target: vdom.dom as any,
+                                    virtualId: sessionAction.nodeId,
+                                    virtualNodePath: sessionAction.nodePath,
+                                    virtualPath: sessionAction.nodePath.join("-")
+                                });
+                                sessionAction.eventListeners.push(eventId);
+                            }
+                        }
+                        delete oldEvents[eventName];
+                    });
+                }
+                // 由于前后渲染从html源码就删除的事件需要特殊处理，不推荐直接修改render返回的源码
+                const leftEvents = Object.keys(oldEvents);
+                if(leftEvents.length > 0) {
+                    const removeEvents = [];
+                    leftEvents.map((eventName) => {
+                        removeEvents.push(leftEvents[eventName]);
+                    });
+                    this.eventObj.unsubscribe(null, removeEvents);
+                }
+            } else {
+                if(eventOptions?.events) {
+                    this.eventObj.unsubscribe(null, eventOptions.events);
+                }
+            }
+        } else {
+            if(vdom.status === "DELETE") {
+                // 标记为删除状态的组件释放所有事件监听
+                this.releaseEventsByNode(vdom);
+            }
+        }
+    }
+    /**
+     * 释放指定节点所有事件监听
+     * @param vdom - 需要释放事件监听的节点
+     */
+    private releaseEventsByNode(vdom:IVirtualElement): void {
+        const eventOptions: TypeDomEventOptions = (vdom?.dom as any)?.EUIEventsOption;
+        const oldEvents = JSON.parse(JSON.stringify(eventOptions?.events || {}));
+        const leftEvents = Object.keys(oldEvents);
+        if(leftEvents.length > 0) {
+            const removeEvents = [];
+            leftEvents.map((eventName) => {
+                removeEvents.push(leftEvents[eventName]);
+            });
+            this.eventObj.unsubscribe(null, removeEvents);
+        }
     }
     private getUseComponent(sessionId: string, tagName: string): Function|Component|null|undefined {
         const currentSession:TypeRenderSession = this.renderSessions[sessionId];
