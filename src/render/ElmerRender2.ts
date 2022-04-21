@@ -12,6 +12,7 @@ import { TOKEN_PLUGIN_RENDER, ElmerRenderNode } from "./ElmerRenderNode";
 import { TypeElmerRenderDispatchNodes, TypeElmerRenderOptions, TypeRenderGetNodeResult, TypeVirtualRenders } from "./IElmerRender";
 import elmerRenderAction from "./ElmerRenderAction";
 import utils from "../lib/utils";
+import { RenderMiddleware } from "../middleware/RenderMiddleware";
 
 export class ElmerRender {
 
@@ -42,6 +43,9 @@ export class ElmerRender {
 
     @Autowired()
     private elmerRenderNode: ElmerRenderNode;
+
+    @Autowired()
+    private middleware: RenderMiddleware;
 
     constructor(options: TypeElmerRenderOptions) {
         const importComponents = getComponents(options.ComponentFactory);
@@ -117,6 +121,12 @@ export class ElmerRender {
             this.renderQueue.startAction(this.options.vdom.virtualID, options, this.renderAction.bind(this), () => {
                 if(options?.firstRender) {
                     elmerRenderAction.callLifeCycle(this.options.component, "$didMount", eventOptions);
+                    this.middleware.didMount({
+                        Component: this.options.ComponentFactory as any,
+                        componentObj: this.options.component as any,
+                        nodeData: this.options.vdom,
+                        props: (this.options.component as any).props
+                    });
                 } else {
                     elmerRenderAction.callLifeCycle(this.options.component, "$didUpdate", eventOptions);
                 }
@@ -314,11 +324,15 @@ export class ElmerRender {
                 resolve({});
                 return;
             }
+            if(newDom.deleteElements?.length >0) {
+                this.elmerRenderNode.releaseOutJourneyNodes(this.options.vdom.virtualID, newDom.deleteElements);
+            }
             this.elmerRenderNode.vdomRender({
                 isFirstLevel: true,
                 isNewAction: true,
                 sessionId: this.options.vdom.virtualID,
-                token: utils.guid()
+                token: utils.guid(),
+                component: this.options.component
             }, {
                 ElmerRender,
                 container: this.options.container,

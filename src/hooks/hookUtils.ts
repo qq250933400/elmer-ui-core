@@ -68,7 +68,15 @@ export const defineHook = <T>(hookName: string, callback: TypeDefineHookCallback
                     hookObj.name === hookName && myHookStore.push(hookObj);
                 });
                 return myHookStore;
-            }
+            },
+            onEffect: ((com)=>{
+                return (callback:Function) => {
+                    if(!com["$hookEffects"]) {
+                        com["$hookEffects"] = [];
+                    }
+                    com["$hookEffects"].push(callback);
+                };
+            })(currentDispatchState.component)
         };
         const hookData = callback(hookOptions);
         hookOptions.returnValue = hookData;

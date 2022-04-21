@@ -1,3 +1,4 @@
+// import { ReduxController } from "elmer-redux/lib/redux/ReduxController";
 import { HtmlParse, VirtualNode, VirtualRender } from "elmer-virtual-dom";
 import { ElmerWorker } from "elmer-worker";
 import { Service } from "../decorators";
@@ -7,6 +8,7 @@ Service(VirtualNode);
 Service(HtmlParse);
 Service(ElmerWorker);
 Service(VirtualRender);
+// Service(ReduxController);
 
 console.log("---注册Service模块----");
 

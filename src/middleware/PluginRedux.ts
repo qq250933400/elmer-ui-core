@@ -11,8 +11,8 @@ type IReduxConnect = {} & any;
 
 @Service
 export class PluginRedux extends RenderMiddlewarePlugin {
-    @Autowired(ReduxController)
-    private reduxController: ReduxController;
+    // @Autowired(ReduxController)
+    private reduxController: ReduxController = new ReduxController();
     constructor() {
         super();
         this.reduxController.checkInitStateData(getGlobalState, defineGlobalState);

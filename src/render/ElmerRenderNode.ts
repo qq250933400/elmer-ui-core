@@ -37,6 +37,7 @@ type TypeRenderOption = {
     token: string;
     isNewAction?: boolean;
     isFirstLevel?: boolean;
+    component: any;
 };
 
 type TypeRenderComponentOptions = {
@@ -83,6 +84,12 @@ export class ElmerRenderNode {
                             if(vdom.status === "APPEND") {
                                 vdom.dom = elmerRenderAction.createNodeByVdom(vdom);
                                 hasPathChange = true;
+                                if(!utils.isEmpty(vdom.props.id)) {
+                                    if(!opt.component.dom) {
+                                        opt.component.dom = {};
+                                    }
+                                    opt.component.dom[vdom.props.id] = vdom.dom;
+                                }
                             } else {
                                 if(!vdom.dom) {
                                     // 由于其他不可知原因导致无法追踪真实dom节点，需要重新创建
@@ -124,20 +131,29 @@ export class ElmerRenderNode {
                                     console.error(msg);
                                 });
                             }
-                            if(!opt.isFirstLevel && (["APPEND", "MOVE", "MOVEAPPEND"].indexOf(vdom.status) >= 0 || needAppendChild)) {
-                                if(!this.vdomAttatch({}, {
-                                    container: options.container,
-                                    isHtmlNode: true,
-                                    sessionId,
-                                    vdom,
-                                    vdomParent
-                                })) {
-                                    scheduleAttachList.push({
+                            if(!opt.isFirstLevel) {
+                                if((["APPEND", "MOVE", "MOVEAPPEND"].indexOf(vdom.status) >= 0 || needAppendChild)) {
+                                    if(!this.vdomAttatch({}, {
                                         container: options.container,
+                                        isHtmlNode: true,
+                                        sessionId,
                                         vdom,
                                         vdomParent
-                                    });
+                                    })) {
+                                        scheduleAttachList.push({
+                                            container: options.container,
+                                            vdom,
+                                            vdomParent
+                                        });
+                                    }
                                 }
+                            } else {
+                                // 第一级需要放到最后再去挂载
+                                scheduleAttachList.push({
+                                    container: options.container,
+                                    vdom,
+                                    vdomParent
+                                });
                             }
                             // 渲染事件检查，有时间监听添加到EventManager
                             this.vdomEventRender(sessionId, vdom, hasPathChange);
@@ -157,12 +173,18 @@ export class ElmerRenderNode {
                             });
                         }
                     } else {
+                        if(!utils.isEmpty(vdom.props.id)) {
+                            if(opt.component.dom && opt.component.dom[vdom.props.id]) {
+                                delete opt.component.dom[vdom.props.id];
+                            }
+                        }
                         this.releaseOutJourneyNodes(sessionId, [vdom]);
                     }
                     if(vdom.deleteElements?.length > 0) {
                         this.releaseOutJourneyNodes(sessionId, vdom.deleteElements);
                     }
                     if(sessionAction.token !== token) {
+                        console.error("被新的渲染任务中断(VR_501)");
                         resolve({
                             message: "被新的渲染任务中断",
                             statusCode: "VR_501"
@@ -278,6 +300,7 @@ export class ElmerRenderNode {
                         if(!isComponent) {
                             // this node is the html node if the virtualID is empty
                             if(nextNode && nextNode.dom) {
+                                console.log("1.",vdom.tagName,nextNode.dom.parentElement === container);
                                 container.insertBefore(vdom.dom, nextNode.dom);
                             } else {
                                 container.appendChild(vdom.dom);
@@ -287,6 +310,7 @@ export class ElmerRenderNode {
                             // the virtualId will be created when the component was initialized.
                             const nextDom = sessionAction.getComponentFirstElement(nextNode.virtualID);
                             if(nextDom.isDidMount && nextDom.dom) {
+                                console.log("2.",vdom.tagName,nextNode.dom.parentElement === container);
                                 container.insertBefore(vdom.dom, nextDom.dom);
                             } else {
                                 // 未找到相邻节点，放入schedule task
@@ -306,6 +330,7 @@ export class ElmerRenderNode {
                         // prev node is a html element not a user component;
                         if(prevDom.dom) {
                             if(prevDom.dom.nextSibling) {
+                                console.log("3.",vdom.tagName,prevDom.dom.nextSibling.parentElement === container);
                                 container.insertBefore(vdom.dom, prevDom.dom.nextSibling);
                             } else {
                                 container.appendChild(vdom.dom);
@@ -330,6 +355,7 @@ export class ElmerRenderNode {
                         if(prevNodeElement.isDidMount) {
                             // 相邻节点元素存在
                             if(prevNodeElement.dom?.nextSibling) {
+                                console.log("4.",vdom.tagName,prevNodeElement.dom.nextSibling.parentElement === container);
                                 container.insertBefore(vdom.dom, prevNodeElement.dom?.nextSibling);
                             } else {
                                 container.appendChild(vdom.dom);
