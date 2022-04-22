@@ -12,5 +12,6 @@ package-lock.json
 /lib/
 /mochawesome-report/
 eui.vscode.json
+/dist/
 .DS_Store
 /**/*/.DS_Store
