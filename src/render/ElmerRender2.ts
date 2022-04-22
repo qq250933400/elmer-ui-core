@@ -60,6 +60,7 @@ export class ElmerRender {
         this.tagName = this.options.vdom.tagName;
         elmerRenderAction.callLifeCycle(this.options.component as any, "$init");
         this.elmerRenderNode.setSessionAction(this.options.vdom.virtualID, {
+            ComponentFactory: this.options.ComponentFactory,
             component: this.options.component,
             depth: this.options.depth,
             eventListeners: [],
@@ -265,7 +266,7 @@ export class ElmerRender {
                 throw new Error("setState action get an wrong data,it\"s must be an object!");
             }
         });
-    };
+    }
     private callLifeCycle(eventName: keyof Component, ...args: any[]):any {
         return elmerRenderAction.callLifeCycle(this.options.component, eventName, ...args);
     }
@@ -328,11 +329,11 @@ export class ElmerRender {
                 this.elmerRenderNode.releaseOutJourneyNodes(this.options.vdom.virtualID, newDom.deleteElements);
             }
             this.elmerRenderNode.vdomRender({
+                component: this.options.component,
                 isFirstLevel: true,
                 isNewAction: true,
                 sessionId: this.options.vdom.virtualID,
-                token: utils.guid(),
-                component: this.options.component
+                token: utils.guid()
             }, {
                 ElmerRender,
                 container: this.options.container,
@@ -364,7 +365,15 @@ export class ElmerRender {
                     id: "readSourceCode",
                     params: null,
                     // tslint:disable-next-line: object-literal-sort-keys
-                    fn: vRender as any
+                    fn: () => {
+                        const vitualNodes = vRender();
+                        const hookUserComponent = getComponents(this.options.ComponentFactory);
+                        this.useComponents = {
+                            ...this.useComponents,
+                            ...(hookUserComponent || {})
+                        };
+                        return vitualNodes;
+                    }
                 }, {
                     id: "htmlParse",
                     params: null,

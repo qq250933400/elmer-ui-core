@@ -1,4 +1,4 @@
-import { queueCallFunc, queueCallRaceAll, utils, TypeQueueCallParam } from "elmer-common";
+import { queueCallFunc, queueCallRaceAll, TypeQueueCallParam, utils } from "elmer-common";
 import { useComponent, useEffect, useService, useState } from "../hooks";
 import { classNames } from "../lib/ElmerDom";
 import { ElmerService, TypeServiceSendOptions } from "../lib/ElmerService";
@@ -73,8 +73,10 @@ export const Loadable = (options: TypeLoadableOptions) => {
             showLoading: true,
             statusCode: "200"
         });
-        const useNewComponent = useComponent("AsyncComponent", options.loading || defaultLoading);
+        const [ setShowAsync, getShowAsync ] = useState("showAsyncComponent",false);
+        const [ setDefineComponent, _, defineComponent] = useState("defineComponent", options.loading || defaultLoading);
         const service = useService<ElmerService>(ElmerService);
+        useComponent("AsyncComponent", defineComponent, { replace: true });
         useComponent("ErrorInfo", options.error || defaultError);
         useComponent("Loading", options.loading || defaultLoading);
         useState("className", classNames("Loadable", options.className));
@@ -139,13 +141,14 @@ export const Loadable = (options: TypeLoadableOptions) => {
                                         if(resp["__esModule"] && typeof resp.default === "function") {
                                             const AsyncComponet= resp.default;
                                             const lastStatus = getStatus();
-                                            useNewComponent(AsyncComponet);
+                                            setDefineComponent(AsyncComponet, false);
                                             setStatus({
                                                 ...lastStatus,
                                                 loaded: true,
                                                 showError: false,
                                                 showLoading: false,
-                                            });
+                                            }, false);
+                                            setShowAsync(true, false);
                                             resolve({});
                                         } else {
                                             setStatus({
@@ -154,7 +157,8 @@ export const Loadable = (options: TypeLoadableOptions) => {
                                                 showError: true,
                                                 showLoading: false,
                                                 statusCode: "Async500"
-                                            });
+                                            }, false);
+                                            setShowAsync(false, false);
                                             resolve({});
                                         }
                                         // setLoaded(true);
@@ -176,7 +180,7 @@ export const Loadable = (options: TypeLoadableOptions) => {
                             ...getStatus(),
                             apiData: allResp.call_apis,
                             showLoading: false
-                        });
+                        }, true);
                     }).catch((error) => {
                         if(!utils.isEmpty(error.statusCode) || !utils.isEmpty(error.message)) {
                             setStatus({
@@ -204,9 +208,9 @@ export const Loadable = (options: TypeLoadableOptions) => {
             }
         });
         return `<div data="Loadable" class="{{state.className}}">
-            <div class="AsyncComponent"><AsyncComponent em:if="state.loadStatus.loaded seq true && state.loadStatus.showError sneq true" ...="{{props}}" id="{{state.asyncAppId}}" status="{{state.loadStatus.loaded}}"/></div>
-            <div class="LoadableLoading"><Loading em:if="state.loadStatus.showLoading"/></div>
-            <div class="ErrorInfo"><ErrorInfo if="{{state.loadStatus.showError}}" message="{{state.loadStatus.message}}" statusCode="{{state.loadStatus.statusCode}}"/></div>
+            <div class="AsyncComponent" if="{{state.showAsyncComponent}}"><AsyncComponent ...="{{props}}" id="{{state.asyncAppId}}" status="{{state.loadStatus.loaded}}"/></div>
+            <div class="LoadableLoading" if="{{state.loadStatus.showLoading}}"><Loading /></div>
+            <div class="ErrorInfo" if="{{state.loadStatus.showError}}" ><ErrorInfo message="{{state.loadStatus.message}}" statusCode="{{state.loadStatus.statusCode}}"/></div>
         </div>`;
     };
 };

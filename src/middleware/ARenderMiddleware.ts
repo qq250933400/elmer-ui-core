@@ -25,7 +25,7 @@ export abstract class ARenderMiddleware {
     abstract didMount?(options: TypeRenderMiddlewareEvent): void;
     /**
      * 渲染前回调，所有渲染都调用此方法
-     * @param options 
+     * @param options
      */
     abstract beforeRender?(options: TypeRenderMiddlewareEvent): void;
     /**

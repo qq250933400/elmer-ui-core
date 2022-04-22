@@ -73,7 +73,7 @@ export class SortHelper {
             } else {
                 if(a === b) {
                     return EnumSortCompare.EQUALS;
-                } else if(a > b) { 
+                } else if(a > b) {
                     return EnumSortCompare.BIGGER_THAN;
                 } else {
                     return EnumSortCompare.LESS_THAN;

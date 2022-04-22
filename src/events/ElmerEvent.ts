@@ -1,4 +1,4 @@
-import { queueCallFunc, utils, TypeQueueCallParam, Common } from "elmer-common";
+import { Common, utils } from "elmer-common";
 import { ElmerWorker } from "elmer-worker";
 import { Service } from "../decorators";
 import { EventContext } from "./EventContext";

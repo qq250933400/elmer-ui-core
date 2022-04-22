@@ -4,7 +4,6 @@ import { Autowired, loadComponents } from "../../decorators";
 import { ElmerService } from "../../lib/ElmerService";
 import { PropTypes } from "../../propsValidation";
 
-
 type TypeRouteProps = {
     path: string;
     component: any;

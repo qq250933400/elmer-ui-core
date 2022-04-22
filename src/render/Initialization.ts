@@ -19,12 +19,13 @@ export const Initialization = (ComFactory:Function|Component, options: TypeIniti
     const virtualId = "virtualNode_" + utils.guid();
     const props = options.vdom.props || {};
     const currentDispatchState = {
+        Factory: ComFactory,
         component: null,
         hookState: {
             hookIndex: 0,
             state: {}
         },
-        isFunc: false
+        isFunc: false,
     };
     options.vdom.virtualID = virtualId;
     if(isNodeComponent(ComFactory)) {

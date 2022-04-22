@@ -24,6 +24,7 @@ export type TypeCurrentRenderDispatch = {
         state: any;
     },
     isFunc: Boolean;
+    Factory: Function|Component;
 };
 
 export type TypeRenderGetNodeResult = {
@@ -50,6 +51,7 @@ export type TypeRenderSession = {
     nodePath: number[];
     nodeId: string;
     eventListeners: any[];
+    ComponentFactory: Function|Component;
     registeComponents(components: any): void;
     removeRender(virtualId: string): void,
     saveRender(virtualId: string, renderObj: any): void;

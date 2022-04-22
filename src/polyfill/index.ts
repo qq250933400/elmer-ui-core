@@ -10,8 +10,6 @@ Service(ElmerWorker);
 Service(VirtualRender);
 // Service(ReduxController);
 
-console.log("---注册Service模块----");
-
 if(!String.prototype["__defineGetter__"]) {
     // tslint:disable-next-line:typedef
     String.prototype["__defineGetter__"] = function(color,func) {

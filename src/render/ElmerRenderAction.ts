@@ -144,7 +144,7 @@ const renderAttr = (dom:HTMLElement, vdom:IVirtualElement): void => {
                     } else if(/^(class|className)$/.test(attrKey)) {
                         hasClassNameChange = true;
                     } else {
-                        dom.setAttribute(attrKey, attrValue);
+                        ["if","em:if"].indexOf(attrKey) < 0 && dom.setAttribute(attrKey, attrValue);
                     }
                 }
             });

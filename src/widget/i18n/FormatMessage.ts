@@ -1,5 +1,4 @@
-import { useCallback, useState } from "../../hooks";
-import { useService } from "../../hooks";
+import { useCallback, useService, useState } from "../../hooks";
 import { PropTypes } from "../../propsValidation";
 import { I18nService } from "./I18nService";
 import { withI18n } from "./withI18n";

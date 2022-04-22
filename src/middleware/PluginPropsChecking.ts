@@ -1,9 +1,10 @@
-import { utils } from "elmer-common";
+import { Service, utils } from "elmer-common";
 import { Component } from "../component/Component";
 import { IPropValidator } from "../propsValidation";
 import { TypeRenderMiddlewareEvent } from "./ARenderMiddleware";
 import { RenderMiddlewarePlugin } from "./RenderMiddlewarePlugin";
 
+@Service
 export class PluginPropsChecking extends RenderMiddlewarePlugin {
     beforeInit(options: TypeRenderMiddlewareEvent): void {
         if(options?.props && options?.props["..."]) {

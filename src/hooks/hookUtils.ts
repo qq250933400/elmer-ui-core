@@ -1,4 +1,5 @@
 import { utils } from "elmer-common";
+import { Component } from "../component";
 import { ARenderMiddleware, TypeRenderMiddlewareEvent } from "../middleware/ARenderMiddleware";
 import renderActions from "../render/ElmerRenderAction";
 export type TypeHookStore = {
@@ -39,6 +40,7 @@ type TypeDefineHookCallbackOptions<T> = {
     isInit: boolean;
     hookIndex?: number;
     store: any;
+    Factory: Function|Component;
     onEffect?: (callback: TypeOnEffectEvent) => void;
     onDestory?: (callback: Function) => void;
     setState: (state: any, refresh?: boolean) => Promise<any>;
@@ -48,10 +50,13 @@ type TypeDefineHookCallback<T> = (options: TypeDefineHookCallbackOptions<T>) => 
 
 export const defineHook = <T>(hookName: string, callback: TypeDefineHookCallback<T>, override?: boolean): T => {
     const currentDispatchState = renderActions.getCurrentRenderDispatch();
-    let hookIndex = currentDispatchState.hookState.hookIndex;
-    if(!currentDispatchState.isFunc) {
-        throw new Error("hook函数只能用于函数组件。");
+    if(!currentDispatchState?.isFunc) {
+        throw new Error("hook函数只能用于函数组件，不允许使用if等嵌套。");
     }
+    if(!currentDispatchState || !currentDispatchState.hookState) {
+        throw new Error("hook函数只能用于函数组件内部。");
+    }
+    let hookIndex = currentDispatchState.hookState.hookIndex;
     hookIndex += 1;
     const hookStore = currentDispatchState.hookState.state;
     if(!hookStore[hookIndex]) {
@@ -62,6 +67,8 @@ export const defineHook = <T>(hookName: string, callback: TypeDefineHookCallback
             name: hookName,
             store: null,
             // tslint:disable-next-line: object-literal-sort-keys
+            Factory: currentDispatchState.Factory,
+            // tslint:disable-next-line: object-literal-sort-keys
             getHookStore: (name: string) => {
                 const myHookStore: any[] = [];
                 Object.values(hookStore).forEach((hookObj: any) => {
@@ -69,12 +76,12 @@ export const defineHook = <T>(hookName: string, callback: TypeDefineHookCallback
                 });
                 return myHookStore;
             },
-            onEffect: ((com)=>{
-                return (callback:Function) => {
+            onEffect: ((com)=> {
+                return (useCallbackX:Function) => {
                     if(!com["$hookEffects"]) {
                         com["$hookEffects"] = [];
                     }
-                    com["$hookEffects"].push(callback);
+                    com["$hookEffects"].push(useCallbackX);
                 };
             })(currentDispatchState.component)
         };

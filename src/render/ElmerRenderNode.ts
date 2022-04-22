@@ -2,6 +2,7 @@ import { queueCallFunc } from "elmer-common";
 import { IVirtualElement } from "elmer-virtual-dom";
 import { Component } from "../component";
 import { Autowired, Service } from "../decorators";
+import { getComponents } from "../decorators/loadComponents";
 import { ElmerEvent } from "../events/ElmerEvent";
 import { TypeDomEventOptions } from "../events/IEventContext";
 // tslint:disable-next-line: ordered-imports
@@ -56,7 +57,7 @@ export class ElmerRenderNode {
     private eventObj: ElmerEvent;
 
     private renderSessions: TypeVirtualRenderSession = {};
-    setSessionAction(virtualId: string, actions: TypeVirtualRenderSession): void {
+    setSessionAction(virtualId: string, actions: TypeRenderSession): void {
         this.renderSessions[virtualId] = actions;
     }
     getSessionAction(sessionId: string): TypeRenderSession {
@@ -184,7 +185,6 @@ export class ElmerRenderNode {
                         this.releaseOutJourneyNodes(sessionId, vdom.deleteElements);
                     }
                     if(sessionAction.token !== token) {
-                        console.error("被新的渲染任务中断(VR_501)");
                         resolve({
                             message: "被新的渲染任务中断",
                             statusCode: "VR_501"
@@ -254,7 +254,10 @@ export class ElmerRenderNode {
                         getLastNode: sessionAction.getComponentLastElement,
                         hasDomNode: true
                     })?.dom,
-                    useComponents: sessionAction.useComponents || {},
+                    useComponents: {
+                        ...(sessionAction.useComponents || {}),
+                        ...(getComponents(ComponentFactory))
+                    },
                     vdom
                 });
                 (vRender as IElmerRender).render({
@@ -300,6 +303,7 @@ export class ElmerRenderNode {
                         if(!isComponent) {
                             // this node is the html node if the virtualID is empty
                             if(nextNode && nextNode.dom) {
+                                // tslint:disable-next-line: no-console
                                 console.log("1.",vdom.tagName,nextNode.dom.parentElement === container);
                                 container.insertBefore(vdom.dom, nextNode.dom);
                             } else {
@@ -310,11 +314,13 @@ export class ElmerRenderNode {
                             // the virtualId will be created when the component was initialized.
                             const nextDom = sessionAction.getComponentFirstElement(nextNode.virtualID);
                             if(nextDom.isDidMount && nextDom.dom) {
+                                // tslint:disable-next-line: no-console
                                 console.log("2.",vdom.tagName,nextNode.dom.parentElement === container);
                                 container.insertBefore(vdom.dom, nextDom.dom);
                             } else {
                                 // 未找到相邻节点，放入schedule task
                                 hasAttached = false;
+                                // tslint:disable-next-line: no-console
                                 console.error("some node can not be insert into browser dom correct", vdom);
                             }
                         }
@@ -330,6 +336,7 @@ export class ElmerRenderNode {
                         // prev node is a html element not a user component;
                         if(prevDom.dom) {
                             if(prevDom.dom.nextSibling) {
+                                // tslint:disable-next-line: no-console
                                 console.log("3.",vdom.tagName,prevDom.dom.nextSibling.parentElement === container);
                                 container.insertBefore(vdom.dom, prevDom.dom.nextSibling);
                             } else {
@@ -355,6 +362,7 @@ export class ElmerRenderNode {
                         if(prevNodeElement.isDidMount) {
                             // 相邻节点元素存在
                             if(prevNodeElement.dom?.nextSibling) {
+                                // tslint:disable-next-line: no-console
                                 console.log("4.",vdom.tagName,prevNodeElement.dom.nextSibling.parentElement === container);
                                 container.insertBefore(vdom.dom, prevNodeElement.dom?.nextSibling);
                             } else {
@@ -480,7 +488,12 @@ export class ElmerRenderNode {
     private getUseComponent(sessionId: string, tagName: string): Function|Component|null|undefined {
         const currentSession:TypeRenderSession = this.renderSessions[sessionId];
         if(currentSession) {
-            return currentSession.useComponents ? currentSession.useComponents[tagName] : null;
+            const vComponents = getComponents(currentSession.ComponentFactory);
+            const allComponents = {
+                ...(currentSession.useComponents || {}),
+                ...(vComponents || {})
+            };
+            return allComponents[tagName];
         }
         return null;
     }

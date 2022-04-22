@@ -3,8 +3,8 @@ import { RouterService } from "./RouterService";
 
 export const withRouter = () => {
     return (TargetComponent: Function) => {
-        const serviceObj = useService<RouterService>(RouterService);
         return ({}, context) => {
+            const serviceObj = useService<RouterService>(RouterService);
             useComponent("RouterComponent", TargetComponent);
             useState("routeObj", {
                 push: (pathName: string, state?: any) => {

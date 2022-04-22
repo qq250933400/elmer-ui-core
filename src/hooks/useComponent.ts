@@ -2,12 +2,17 @@ import { utils } from "elmer-common";
 import { getComponents, loadComponents } from "../decorators/loadComponents";
 import { defineHook } from "./hookUtils";
 
-export const useComponent = (selector: string, Component: Function): any => {
+type TypeUserComponentOption = {
+    replace?: boolean;
+};
+
+export const useComponent = (selector: string, Component: Function, option?: TypeUserComponentOption): any => {
     return defineHook("useComponent", (opt) => {
-        if(opt.isInit) {
-            const newComponents = {};
+        if(opt.isInit || option?.replace) {
+            const oldComponents = getComponents(opt.component);
+            const newComponents = {...(oldComponents || {})};
             newComponents[selector] = Component;
-            opt.component.registeComponents(newComponents);
+            loadComponents(newComponents)(opt.Factory as any);
         }
     });
 };

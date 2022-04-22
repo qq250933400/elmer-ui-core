@@ -13,7 +13,7 @@ export const useState = (stateKey: string, defaultState?: any):TypeUseStateResul
                         const updateState = {};
                         updateState[opt.store.stateKey] = newState;
                         return (component as any).setState(updateState);
-                    } else if(isUpdate){
+                    } else if(isUpdate) {
                         const allStateStore = opt.getHookStore("useState");
                         const allState = {};
                         allStateStore.map((stateStore) => {
@@ -38,7 +38,7 @@ export const useState = (stateKey: string, defaultState?: any):TypeUseStateResul
             return [setState, getStatus, initState];
         } else {
             const hookReturn = options.returnValue || [];
-            return [hookReturn[0], hookReturn[1], options.store];
+            return [hookReturn[0], hookReturn[1], options.store.stateValue];
         }
     });
 };

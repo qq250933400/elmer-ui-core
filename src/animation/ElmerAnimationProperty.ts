@@ -150,7 +150,7 @@ const getTransformValue = (dom:HTMLElement): string => {
 };
 export const isCssEmpty = (cssValue:any):boolean => {
     return cssValue === undefined || cssValue === null;
-}
+};
 export const calcPropertyData = (resultData: any, key, value: string | number): void => {
     const dResult:TypeAnimationContext = {
         cssKey: key,
