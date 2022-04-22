@@ -13,7 +13,6 @@ declare namespace ElmerUI {
         version: string;
         elmerState: any;
         components: any;
-        resizeListeners: any;
         bindTempVars: any;
         $console: any;
         classPool: Function[];
@@ -24,8 +23,8 @@ declare namespace ElmerUI {
         getUI: Function;
         declareComponent:Function;
         autowired:Function;
-        Injectable: Function;
-        propTypes:any;
+        injectable: Function;
+        PropTypes:any;
         Component:Function;
         setEnv: Function;
         ServiceHelper: Function;
@@ -44,3 +43,5 @@ declare var require: NodeRequire;
 declare interface NodeRequire {
   <T>(path: string): any;
 }
+
+declare var ENV: String;

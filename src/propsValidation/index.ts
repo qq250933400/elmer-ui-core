@@ -2,7 +2,7 @@
 import { createParamChecker } from "./paramChecker";
 import { createTypeChecker,EnumCheckerTypes,  IDataTypeChecker } from "./typeChecker";
 
-export interface IPropCheckRule {
+export interface IPropValidator {
     rule: IDataTypeChecker | Function;
     defaultValue?: any;
     description?: string;
@@ -34,7 +34,7 @@ const enumValueOf = (enumValue: any): IDataTypeChecker => {
     return createParamChecker(EnumCheckerTypes.oneEnumValueOf, enumValue);
 };
 
-export const propTypes = {
+export const PropTypes = {
     any,
     array,
     bool,
@@ -48,5 +48,4 @@ export const propTypes = {
     oneValueOf,
     string
 };
-export const PropTypes = propTypes;
 // tslint:enable:variable-name

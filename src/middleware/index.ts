@@ -1,1 +1,2 @@
-export * from "./InjectModel";
+export * from "./RenderMiddlewarePlugin";
+export * from "./RenderMiddleware";
