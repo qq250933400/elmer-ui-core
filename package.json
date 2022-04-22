@@ -82,7 +82,6 @@
         "core-js": "^2.5.7",
         "decorator": "^0.0.1",
         "elmer-common": "^3.1.10",
-        "elmer-ui-core": "^3.0.0",
         "elmer-virtual-dom": "^2.0.13",
         "path": "^0.12.7",
         "promise": "^8.0.3",
