@@ -1,4 +1,4 @@
-import { StaticCommon as utils } from "elmer-common";
+import { utils } from "elmer-common";
 import { getNode, useCallback,useComponent, useEffect, useState } from "../../hooks";
 import { getDefaultLocale, i18nContext } from "./initI18n";
 

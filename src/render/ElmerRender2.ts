@@ -1,6 +1,6 @@
 // tslint:disable: ordered-imports
 import { HtmlParse, IVirtualElement, VirtualNode, VirtualRender } from "elmer-virtual-dom";
-import { queueCallFunc, StaticCommon as comUtils } from "elmer-common";
+import { queueCallFunc, utils as comUtils } from "elmer-common";
 import { Component } from "../component";
 import { getComponents } from "../decorators/loadComponents";
 import { Autowired } from "../decorators";

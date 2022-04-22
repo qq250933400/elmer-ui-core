@@ -1,5 +1,5 @@
 import axios, { AxiosBasicCredentials } from "axios";
-import { StaticCommon as utils } from "elmer-common";
+import { utils } from "elmer-common";
 import { createContext } from "../context";
 import { Service} from "../decorators";
 import { getServiceObj } from "../decorators/Autowired";

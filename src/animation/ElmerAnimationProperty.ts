@@ -1,4 +1,4 @@
-import { StaticCommon } from "elmer-common";
+import { utils as StaticCommon } from "elmer-common";
 import colorData from "./ElmerColorMapping";
 
 export type TypeAnimationProperty = {
@@ -158,7 +158,7 @@ export const calcPropertyData = (resultData: any, key, value: string | number): 
     };
     if(/color$/i.test(key)) {
         dResult.unit = "";
-        if(!StaticCommon.isEmpty(value) && StaticCommon.isString(value)) {
+        if(!StaticCommon.isEmpty(value) && StaticCommon.isString(value) && typeof value === "string") {
             const mapValue = value.replace(/^\s*/, "").replace(/\s*$/, "").replace(/\s{2,}/," ");
             const mapList = mapValue.split(" ");
             if(mapList.length>0) {

@@ -1,4 +1,4 @@
-import { StaticCommon as utils } from "elmer-common";
+import { utils } from "elmer-common";
 import { ARenderMiddleware, TypeRenderMiddlewareEvent } from "../middleware/ARenderMiddleware";
 import renderActions from "../render/ElmerRenderAction";
 export type TypeHookStore = {

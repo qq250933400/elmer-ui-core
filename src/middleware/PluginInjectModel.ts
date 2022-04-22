@@ -1,4 +1,4 @@
-import { StaticCommon as utils } from "elmer-common";
+import { utils } from "elmer-common";
 import { Service } from "../decorators";
 import { getServiceObj } from "../decorators/Autowired";
 import { TypeRenderMiddlewareEvent } from "./ARenderMiddleware";

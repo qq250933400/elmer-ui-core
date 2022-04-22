@@ -1,4 +1,4 @@
-import { StaticCommon as utils } from "elmer-common";
+import { utils } from "elmer-common";
 import { getComponents, loadComponents } from "../decorators/loadComponents";
 import { defineHook } from "./hookUtils";
 

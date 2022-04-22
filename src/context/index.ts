@@ -1,4 +1,4 @@
-import { StaticCommon as util } from "elmer-common";
+import { utils as util } from "elmer-common";
 import { useComponent, useContext, useEffect, useState } from "../hooks";
 
 type TypeContextStore<T> = {

@@ -1,4 +1,4 @@
-import { StaticCommon as utils } from "elmer-common";
+import { utils } from "elmer-common";
 import { attachReducerToController, defineReducer, ReduxController } from "elmer-redux";
 import { Autowired, Service } from "../decorators";
 // import { IReduxConnect } from "../component/IDeclareComponent";

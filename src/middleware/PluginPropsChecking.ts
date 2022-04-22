@@ -1,4 +1,4 @@
-import { StaticCommon as utils } from "elmer-common";
+import { utils } from "elmer-common";
 import { Component } from "../component/Component";
 import { IPropValidator } from "../propsValidation";
 import { TypeRenderMiddlewareEvent } from "./ARenderMiddleware";
@@ -53,7 +53,7 @@ export class PluginPropsChecking extends RenderMiddlewarePlugin {
             if(utils.isFunction(checkRuleData)) {
                 this.doCheckPropType(target, tmpKey, checkRuleData, tagName, props);
             } else if(utils.isObject(checkRuleData)) {
-                let checkData:IPropValidator = checkRuleData;
+                let checkData:IPropValidator = checkRuleData as any;
                 if(( undefined === props[tmpKey] || null === props[tmpKey]) && checkData.defaultValue) {
                     delete props[tmpKey];
                     props[tmpKey] = checkData.defaultValue;

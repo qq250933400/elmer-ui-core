@@ -1,4 +1,4 @@
-import { queueCallFunc, queueCallRaceAll,StaticCommon as utils, TypeQueueCallParam } from "elmer-common";
+import { queueCallFunc, queueCallRaceAll, utils, TypeQueueCallParam } from "elmer-common";
 import { useComponent, useEffect, useService, useState } from "../hooks";
 import { classNames } from "../lib/ElmerDom";
 import { ElmerService, TypeServiceSendOptions } from "../lib/ElmerService";

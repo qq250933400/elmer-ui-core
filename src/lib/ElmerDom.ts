@@ -1,4 +1,4 @@
-import { StaticCommon as utils } from "elmer-common";
+import { utils } from "elmer-common";
 import { ElmerAnimation, TypeAnimationChangeEvent, TypeElmerAnimationType } from "../animation/ElmerAnimation";
 import animationMethod, { TypeAnimationProperty } from "../animation/ElmerAnimationProperty";
 import { Service } from "../decorators";

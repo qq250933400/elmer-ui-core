@@ -1,4 +1,4 @@
-import { StaticCommon as utils } from "elmer-common";
+import { utils } from "elmer-common";
 import { IVirtualElement } from "elmer-virtual-dom";
 import { Autowired } from "../../decorators";
 import { RouterService, TypeRouterType } from "./RouterService";

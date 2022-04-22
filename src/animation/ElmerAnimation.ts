@@ -1,4 +1,4 @@
-import { Canvas, MathAnimationApi, StaticCommon } from "elmer-common";
+import { Canvas, MathAnimationApi, utils as StaticCommon } from "elmer-common";
 import AnimationMethod,{ isCssEmpty, TypeAnimationContext, TypeAnimationProperty, TypeAnimationPropertyData } from "./ElmerAnimationProperty";
 
 export type TypeElmerAnimationType = "Linear" | "QuadEaseIn" | "QuadEaseOut" | "QuadEaseInOut" |
