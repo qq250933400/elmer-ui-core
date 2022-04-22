@@ -138,7 +138,7 @@ export class ElmerRender {
                 } else {
                     elmerRenderAction.callLifeCycle(this.options.component, "$didUpdate", eventOptions);
                 }
-                const errMsg = err.stack ? err.stack : (err.exception ? err.exception.stack : err.exception);
+                const errMsg = err.stack ? err.stack : (err.exception?.exception ? err.exception.exception.stack : err.exception?.stack);
                 // tslint:disable-next-line: no-console
                 console.error(errMsg || err);
                 reject(err);

@@ -20,6 +20,7 @@ type TypeRenderOptions = {
     components: TypeLoadComponents;
     /** 是否服务端渲染模式 */
     ssr?: boolean;
+    debug?: boolean;
 };
 
 export class ElmerUI {
@@ -94,8 +95,9 @@ export class ElmerUI {
             // ignoreelmerRenderAction.callLifeCycle(entryComponent, "")
         });
         this.vRender = vRender;
-        // tslint:disable-next-line: no-console
-        console.log(decoratorStorage);
+        if(options?.debug) {
+            console.log(decoratorStorage);
+        }
         return vRender;
     }
     destory(): void {
