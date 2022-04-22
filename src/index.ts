@@ -19,4 +19,11 @@ export * from "./render";
 export * from "./events/IElmerEvent";
 export * from "./propsValidation";
 export * from "./lib/Observer";
+export {
+    Autowired,
+    Model,
+    Plugin,
+    Service,
+    loadComponents
+} from "./decorators";
 // todo: refractor entry code

@@ -198,7 +198,6 @@ export class ElmerRender extends Common {
                 props: this.options.component.props
             });
             this.renderQueue.startAction(this.virtualId, option, this.renderAction.bind(this), () => {
-                console.log("---RenderDidMount--", (this.options.component as any).selector);
                 if(option.firstRender) {
                     this.renderMiddleware.didMount({
                         Component: this.options.componentFactory,
