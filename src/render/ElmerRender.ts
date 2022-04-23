@@ -334,7 +334,8 @@ export class ElmerRender {
                 isFirstLevel: true,
                 isNewAction: true,
                 sessionId: this.options.vdom.virtualID,
-                token: utils.guid()
+                token: utils.guid(),
+                useComponents: this.useComponents
             }, {
                 ElmerRender,
                 container: this.options.container,

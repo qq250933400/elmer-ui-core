@@ -83,6 +83,14 @@ export const defineHook = <T>(hookName: string, callback: TypeDefineHookCallback
                     }
                     com["$hookEffects"].push(useCallbackX);
                 };
+            })(currentDispatchState.component),
+            onDestory: ((com)=> {
+                return (unMountFn:Function) => {
+                    if(!com["$hookUnMount"]) {
+                        com["$hookUnMount"] = [];
+                    }
+                    com["$hookUnMount"].push(unMountFn);
+                };
             })(currentDispatchState.component)
         };
         const hookData = callback(hookOptions);

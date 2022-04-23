@@ -39,6 +39,7 @@ type TypeRenderOption = {
     isNewAction?: boolean;
     isFirstLevel?: boolean;
     component: any;
+    useComponents: any;
 };
 
 type TypeRenderComponentOptions = {
