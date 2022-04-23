@@ -254,7 +254,10 @@ export class ElmerRenderNode {
                         getLastNode: sessionAction.getComponentLastElement,
                         hasDomNode: true
                     })?.dom,
-                    props: vdom.props,
+                    props: {
+                        ...(vdom.props),
+                        ...(vdom.events || {})
+                    },
                     useComponents: {
                         ...(sessionAction.useComponents || {}),
                         ...(getComponents(ComponentFactory))
@@ -284,7 +287,8 @@ export class ElmerRenderNode {
                     firstRender: false,
                     props: {
                         ...(vdom.props || {}),
-                        ...(vdom.changeAttrs || {})
+                        ...(vdom.changeAttrs || {}),
+                        ...(vdom.events || {})
                     }
                 }).then(resolve).catch(reject);
             } else {
@@ -314,7 +318,6 @@ export class ElmerRenderNode {
                             // this node is the html node if the virtualID is empty
                             if(nextNode && nextNode.dom) {
                                 // tslint:disable-next-line: no-console
-                                console.log("1.",vdom.tagName,nextNode.dom.parentElement === container);
                                 container.insertBefore(vdom.dom, nextNode.dom);
                             } else {
                                 container.appendChild(vdom.dom);
@@ -356,7 +359,9 @@ export class ElmerRenderNode {
                             // 当前节点的前一个节点不是自定义组件，也没有对应的真实节点，这种情况是不可能出现的
                             // 如果执行到此处证明渲染逻辑已经出现问题
                             // 当前做法是为了显示出现错误的元素,
-                            (vdom.dom as HTMLElement).style.border = "1px solid red";
+                            if((vdom.dom as HTMLElement).style) {
+                                (vdom.dom as HTMLElement).style.border = "1px solid red";
+                            }
                             if(container.children.length > 0) {
                                 container.insertBefore(vdom.dom, container.children[0]);
                             } else {
@@ -418,7 +423,7 @@ export class ElmerRenderNode {
      */
     private vdomEventRender(sessionId: string, vdom:IVirtualElement, hasPathChange: boolean): void {
         if(hasPathChange) {
-            const allEvents = vdom.events || {};
+            const allEvents = {...(vdom.events || {})};
             const eventKeys = Object.keys(allEvents);
             const eventOptions: TypeDomEventOptions = (vdom?.dom as any)?.EUIEventsOption;
             if(allEvents && eventKeys.length > 0) {

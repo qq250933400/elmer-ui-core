@@ -355,7 +355,11 @@ export class ElmerRender {
         return new Promise<any>((resolve, reject) => {
             const com = (this.options.component as any);
             const isFunc: boolean = !isNodeComponent(this.options.ComponentFactory);
-            const props = isFunc ? { ...(this.options.props), ...(options.props || {}) } : null;
+            const props = isFunc ? {
+                ...(this.options.props),
+                ...(options.props || {}),
+                ...(this.options.vdom.events || {})
+            } : null;
             let vRender: Function;
             // render方法经过initializtion 方法初始化以后重写过此方法，返回的是一个Promise结果
             if(typeof com.$render === "function") {
