@@ -1,7 +1,7 @@
 {
     "name": "elmer-ui-core",
-    "version": "3.0.2",
-    "description": "web app framework",
+    "version": "3.0.3",
+    "description": "学习研究用途前端框架",
     "typings": "lib/index.d.ts",
     "main": "lib/index.js",
     "module": "lib/index.js",

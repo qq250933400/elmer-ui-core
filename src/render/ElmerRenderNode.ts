@@ -254,6 +254,7 @@ export class ElmerRenderNode {
                         getLastNode: sessionAction.getComponentLastElement,
                         hasDomNode: true
                     })?.dom,
+                    props: vdom.props,
                     useComponents: {
                         ...(sessionAction.useComponents || {}),
                         ...(getComponents(ComponentFactory))
@@ -277,6 +278,15 @@ export class ElmerRenderNode {
                     reject(err);
                 });
                 sessionAction.saveRender(vdom.virtualID, vRender);
+            } else if(vdom.status === "UPDATE") {
+                const vRender = sessionAction.getRender(vdom.virtualID);
+                vRender.render({
+                    firstRender: false,
+                    props: {
+                        ...(vdom.props || {}),
+                        ...(vdom.changeAttrs || {})
+                    }
+                }).then(resolve).catch(reject);
             } else {
                 resolve({
                     message: "不需要渲染的组件",

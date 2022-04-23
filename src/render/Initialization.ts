@@ -3,7 +3,7 @@ import { Component, CONST_CLASS_COMPONENT_FLAG } from "../component/Component";
 import utils from "../lib/utils";
 import renderActions from "./ElmerRenderAction";
 
-const isNodeComponent = (com:any): com is Component => {
+export const isNodeComponent = (com:any): com is Component => {
     const flag = (<any>com)?.flag;
     return flag === CONST_CLASS_COMPONENT_FLAG;
 };

@@ -10,6 +10,7 @@ export type TypeElmerRenderOptions = {
     children: IVirtualElement[];
     path: number[];
     previousSibling: HTMLElement;
+    props?: any;
     nextSibling: HTMLElement;
     useComponents: any;
     depth: number;

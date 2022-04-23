@@ -4,7 +4,7 @@ import { VirtualNode, HtmlParse } from "elmer-virtual-dom";
 import { queueCallFunc } from "elmer-common";
 import { Component } from "../component/Component";
 import { Autowired } from "../decorators";
-import { ElmerRender } from "./ElmerRender2";
+import { ElmerRender } from "./ElmerRender";
 import { Initialization } from "./Initialization";
 import { decoratorStorage } from "../decorators/base";
 import { ElmerWorker } from "elmer-worker";

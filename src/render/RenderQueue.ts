@@ -4,6 +4,7 @@ import { Service } from "../decorators";
 export type TypeRenderQueueOptions = {
     state?: any;
     data?: any;
+    props?: any;
     firstRender?: boolean;
 };
 type TypeRenderQueueAction = {
@@ -67,6 +68,7 @@ export class RenderQueue extends Common {
                 // has task waiting
                 const updateState = {};
                 const updateData = {};
+                const updateProps = {};
                 let firstRender = false;
                 for(let i=actionLength - 1;i>renderSession.lastActionIndex;i--) {
                     if(!renderSession.actionList[i].isRended) {
@@ -76,6 +78,7 @@ export class RenderQueue extends Common {
                         firstRender = curAction.options.firstRender;
                         this.extend(updateState, curAction.options.state);
                         this.extend(updateData, curAction.options.data);
+                        this.extend(updateProps, curAction.options.props);
                         renderSession.actionRuningIndexs.push(i);
                         renderSession.actionList[i].isRended = true;
                     }
@@ -84,6 +87,7 @@ export class RenderQueue extends Common {
                 renderSession.actionRuning = true;
                 renderSession.render({
                     data: updateData,
+                    props: updateProps,
                     state: updateState,
                     // tslint:disable-next-line: object-literal-sort-keys
                     firstRender
