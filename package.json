@@ -1,6 +1,6 @@
 {
     "name": "elmer-ui-core",
-    "version": "3.0.4",
+    "version": "3.0.5",
     "description": "学习研究用途前端框架",
     "typings": "lib/index.d.ts",
     "main": "lib/index.js",
