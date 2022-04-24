@@ -73,7 +73,7 @@ export const Loadable = (options: TypeLoadableOptions) => {
             showLoading: true,
             statusCode: "200"
         });
-        const [ setShowAsync, getShowAsync ] = useState("showAsyncComponent",false);
+        const [ setShowAsync ] = useState("showAsyncComponent",false);
         const [ setDefineComponent, _, defineComponent] = useState("defineComponent", options.loading || defaultLoading);
         const service = useService<ElmerService>(ElmerService);
         useComponent("AsyncComponent", defineComponent, { replace: true });

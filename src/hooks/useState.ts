@@ -1,11 +1,12 @@
 import { defineHook } from "./hookUtils";
+import { utils } from "elmer-common";
 
-type TypeUseStateResult = [(state:any, update?: boolean) => Promise<any>, () => any, any];
+type TypeUseStateResult<T={}> = [(state:any, update?: boolean) => Promise<T>, () => T, T];
 
-export const useState = (stateKey: string, defaultState?: any):TypeUseStateResult => {
+export const useState = <T extends {}>(stateKey: string, defaultState?: T | Function):TypeUseStateResult<T> => {
     return defineHook("useState", (options):any => {
         if(options.isInit) {
-            const initState = typeof defaultState === "function" ? defaultState() : defaultState;
+            const initState = typeof defaultState === "function" && utils.isFunction(defaultState) ? (defaultState as Function)() : defaultState;
             const setState = ((opt, component: any) => {
                 return (newState: any, isUpdate?: boolean): Promise<any> => {
                     opt.store.stateValue = newState; // save the state to hookStore

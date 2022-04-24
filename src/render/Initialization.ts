@@ -27,6 +27,9 @@ export const Initialization = (ComFactory:Function|Component, options: TypeIniti
         },
         isFunc: false,
     };
+    const virtualNode = {
+        say: "hi"
+    };
     options.vdom.virtualID = virtualId;
     if(isNodeComponent(ComFactory)) {
         // 类组件
@@ -44,6 +47,7 @@ export const Initialization = (ComFactory:Function|Component, options: TypeIniti
                         for(let i=0;i<newArgs.length;i++) {
                             args.push(newArgs[i]);
                         }
+                        args.push(virtualId);
                         return srcRender.apply(target, args);
                     });
                 };
@@ -65,19 +69,25 @@ export const Initialization = (ComFactory:Function|Component, options: TypeIniti
         };
         renderComponent.$render = ((srcRenderAction: Function, currentDispatch) => {
             // tslint:disable-next-line: only-arrow-functions
-            return function(): Promise<any> {
+            return (function(): Promise<any> {
                 const newArgs = arguments;
                 currentDispatch.isFunc = true;
                 currentDispatch.hookState.hookIndex = 0;
                 currentDispatch.component = renderComponent;
-                return renderActions.startRenderDispatch(currentDispatch, () => {
+                return renderActions.startRenderDispatch.call(virtualNode, currentDispatch, () => {
                     const args: any[] = [];
                     for(let i=0;i<newArgs.length;i++) {
                         args.push(newArgs[i]);
                     }
-                    return srcRenderAction.apply(null, args);
+                    return (new Function("Func", "args", "self", `
+                    var nodeFunc = (function() {
+                        return Func.apply(self, args)
+                    }).bind(self);
+                    nodeFunc();
+                    return nodeFunc();
+                    `))(srcRenderAction, args, this);
                 });
-            };
+            }).bind(virtualNode);
         })(ComFactory, currentDispatchState);
     }
     return renderComponent;

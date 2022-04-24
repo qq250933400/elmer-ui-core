@@ -38,7 +38,7 @@ export const withI18n = (option?: TypeWithI18nOption):Function => {
         })(option);
         (TargetComponent as any).i18n = getI18nData();
         const WithI18nComponent = ({}, context) => {
-            const [ {}, getComId, comId ] = useState("comId", () => {
+            const [ {}, getComId, comId ] = useState<string>("comId", () => {
                 return "i18nComponent_" + utils.guid();
             });
             const getTargetComponent = getNode(getComId());

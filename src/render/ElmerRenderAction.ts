@@ -19,11 +19,12 @@ const callLifeCycle = (component: any, methodName: keyof Component, ...args:any[
     }
 };
 
-const startRenderDispatch = (dispatchActions: any, renderCallback: Function): Promise<any> => {
+// tslint:disable-next-line: only-arrow-functions
+const startRenderDispatch = function(dispatchActions: any, renderCallback: Function): Promise<any> {
     return new Promise<any>((resolve) => {
         if(!renderDispatch.current) {
             renderDispatch.current = dispatchActions;
-            resolve(renderCallback());
+            resolve(renderCallback.call(this));
             renderDispatch.current = null;
         } else {
             const timerTick = setInterval(() => {
@@ -33,7 +34,7 @@ const startRenderDispatch = (dispatchActions: any, renderCallback: Function): Pr
                     renderDispatch.current = null;
                     clearInterval(timerTick);
                 }
-            }, 10);
+            }, 100);
         }
     });
 };

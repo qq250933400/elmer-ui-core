@@ -45,6 +45,7 @@ type TypeRenderOption = {
 type TypeRenderComponentOptions = {
     vdom:IVirtualElement;
     vdomParent: IVirtualElement;
+    parent: any;
     container: HTMLElement;
     ComponentFactory: Function|Component;
     sessionId: string;
@@ -144,6 +145,7 @@ export class ElmerRenderNode {
                                     })) {
                                         scheduleAttachList.push({
                                             container: options.container,
+                                            parent: opt.component,
                                             vdom,
                                             vdomParent
                                         });
@@ -168,6 +170,7 @@ export class ElmerRenderNode {
                                     ComponentFactory,
                                     ElmerRender,
                                     container: options.container,
+                                    parent: opt.component,
                                     sessionId,
                                     vdom,
                                     vdomParent
@@ -233,7 +236,7 @@ export class ElmerRenderNode {
     }
     vdomRenderComponent(options: TypeRenderComponentOptions): Promise<any> {
         return new Promise<any>((resolve, reject) => {
-            const { vdom, vdomParent, ComponentFactory, container, sessionId, ElmerRender} = options;
+            const { vdom, vdomParent, ComponentFactory, container, sessionId, parent, ElmerRender} = options;
             const sessionAction: TypeRenderSession = this.renderSessions[sessionId];
             if(vdom.status === "APPEND") {
                 const component = Initialization(ComponentFactory, {
@@ -281,6 +284,9 @@ export class ElmerRenderNode {
                 }).catch((err) => {
                     reject(err);
                 });
+                if(!utils.isEmpty(vdom.props.id)) {
+                    parent.dom[vdom.props.id] = component;
+                }
                 sessionAction.saveRender(vdom.virtualID, vRender);
             } else if(vdom.status === "UPDATE") {
                 const vRender = sessionAction.getRender(vdom.virtualID);
@@ -292,6 +298,12 @@ export class ElmerRenderNode {
                         ...(vdom.events || {})
                     }
                 }).then(resolve).catch(reject);
+            } else if(vdom.status === "DELETE") {
+                const vRender = sessionAction.getRender(vdom.virtualID);
+                if(!utils.isEmpty(vdom.props.id)) {
+                    delete parent.dom[vdom.props.id];
+                }
+                vRender.destory();
             } else {
                 resolve({
                     message: "不需要渲染的组件",
@@ -333,9 +345,9 @@ export class ElmerRenderNode {
                                 container.insertBefore(vdom.dom, nextDom.dom);
                             } else {
                                 // 未找到相邻节点，放入schedule task
-                                hasAttached = false;
+                                hasAttached = false;console.log(nextNode);
                                 // tslint:disable-next-line: no-console
-                                console.error("some node can not be insert into browser dom correct", vdom);
+                                console.error("node can not be insert into browser dom correct", vdom);
                             }
                         }
                     } else {
