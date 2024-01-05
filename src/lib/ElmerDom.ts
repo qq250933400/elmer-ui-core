@@ -197,9 +197,9 @@ export class ElmerDOM extends ElmerDomQuery {
             } else {
                 if(!this.isObject(attrName)) {
                     const v:string|null = dom.getAttribute(attrName);
-                    return this.isNumeric(v) && v !==null ? (v.indexOf(".")<0 ? parseInt(v, 10) : parseFloat(v)) : v;
+                    return this.isNumeric(v) && v !==null ? ((v as string).indexOf(".")<0 ? parseInt(v, 10) : parseFloat(v)) : v;
                 } else {
-                    Object.keys(attrName).map((tmpAttrName: string) => {
+                    Object.keys(attrName).forEach((tmpAttrName: string) => {
                         dom.setAttribute(tmpAttrName, attrName[tmpAttrName]);
                     });
                 }

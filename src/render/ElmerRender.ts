@@ -88,7 +88,7 @@ export class ElmerRender {
             },
             registeComponents: (components: any): void => {
                 if(components) {
-                    Object.keys(components).map((selector: string): void => {
+                    Object.keys(components).forEach((selector: string): void => {
                         if(!this.useComponents[selector]) {
                             this.useComponents[selector] = components[selector];
                         }
@@ -109,15 +109,34 @@ export class ElmerRender {
             nodeId: this.virtualId,
             useComponents: this.useComponents
         });
+        if(isNodeComponent(options.ComponentFactory)) {
+            (options.component as any).setData = (newData: any, opt: any) => {
+                if(newData) {
+                    Object.keys(newData).forEach((key: string) => {
+                        options.component[key] = newData[key];
+                    });
+                    if(!opt?.slince) {
+                        this.render({
+                            data: newData,
+                            firstRender: false,
+                            props: { ...((this.options.component as any).props||{}) },
+                            state: (this.options.component as any).state,
+                        });
+                        console.log("fire-Render-", options.parent);
+                    }
+                }
+            }
+        }
         this.eventObj.dispose();
     }
     async render(options: TypeRenderQueueOptions): Promise<any> {
         return new Promise<any>((resolve, reject) => {
+            const evtProps = elmerRenderAction.funcBindNode(this.options.ComponentFactory as any, this.options.component,{ ...((this.options.component as any).props||{}), ...(options.props || {}) });
             const eventOptions = {
                 Component: this.options.ComponentFactory,
                 componentObj: this.options.component,
                 nodeData: this.options.vdom,
-                props: { ...((this.options.component as any).props||{}), ...(options.props || {}) },
+                props: evtProps,
                 state: (this.options.component as any).state,
             };
             this.renderQueue.startAction(this.options.vdom.virtualID, options, this.renderAction.bind(this), () => {
@@ -132,6 +151,7 @@ export class ElmerRender {
                 } else {
                     elmerRenderAction.callLifeCycle(this.options.component, "$didUpdate", eventOptions);
                 }
+                this.bindChildrenDom(this.options.vdom, false);
                 resolve({});
             }).catch((err) => {
                 if(options?.firstRender) {
@@ -220,6 +240,39 @@ export class ElmerRender {
         // TODO: 需要在此处释放所有事件监听
         // 释放渲染插件调用对象
         this.elmerRenderNode.destory(this.options.vdom.virtualID);
+    }
+    private bindChildrenDom(vdom: IVirtualElement, isChildrenNode: boolean) {
+        if(!(this.options.component as any).dom) {
+            (this.options.component as any).dom = {};
+        }
+        if(isChildrenNode) {
+            if(!utils.isEmpty(vdom.props.id)) {
+                if(vdom.status !== "DELETE") {
+                    if(isChildrenNode) {
+                        // console.log("--------",this.options.component, this.options.parent);
+                        // console.log(vdom);
+                        if(this.options.parent) {
+                            this.options.parent[vdom.props.id] = vdom.dom;
+                        }
+                    } else {
+                        if(!(this.options.component as any).dom[vdom.props.id]) {
+                            (this.options.component as any).dom[vdom.props.id] = vdom.dom;
+                        }
+                    }
+                } else {
+                    delete (this.options.component as any).dom[vdom.props.id];
+                }
+            }
+        }
+        if(vdom.children?.length > 0) {
+            vdom.children.forEach((item) => {
+                if(item.tagName.startsWith("Container")) {
+                    this.bindChildrenDom(item, true);
+                } else {
+                    this.bindChildrenDom(item, isChildrenNode);
+                }
+            })
+        }
     }
     private setComponentState(state: any): Promise<any> {
         return new Promise((resolve, reject) => {
@@ -316,7 +369,7 @@ export class ElmerRender {
                 children: this.options.children,
                 rootPath: this.options.path,
                 sessionId: this.virtualId
-            });
+            });console.log(newDom);
             const stillNeedRender = this.callLifeCycle("$beforeRender", {
                 props: (this.options.component as any).props,
                 vdom: newDom

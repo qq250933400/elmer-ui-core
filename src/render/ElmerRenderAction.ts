@@ -4,6 +4,7 @@ import { EventNames } from "../events/EventNames";
 import { classNames } from "../lib/ElmerDom";
 import utils from "../lib/utils";
 import { TypeCurrentRenderDispatch, TypeElmerRenderOptions, TypeGetNodeOptions, TypeRenderActionConnectOptions, TypeRenderGetNodeResult, TypeRenderSession } from "./IElmerRender";
+import { isNodeComponent } from "./Initialization";
 
 export const XML_NL = "http://www.w3.org/2000/xmlns/";
 export const SVG_NL = "http://www.w3.org/2000/svg";
@@ -242,7 +243,20 @@ const connectNodeRender = (options: TypeRenderActionConnectOptions): void => {
         }
     }
 };
-
+/**
+ * 绑定function this对象
+ */
+const funcBindNode = (ComponentFactory: new(...args: any[]) => any, component: any, props: any) => {
+    if(isNodeComponent(ComponentFactory) && component.props) {
+        Object.keys(component.props).forEach((attrKey: string) => {
+            const funcValue = component.props[attrKey];
+            if(typeof funcValue === "function" && !funcValue.isBind) {
+                funcValue.isBind = true;
+                component.props[attrKey] = funcValue.bind(component);
+            }
+        });
+    }
+};
 export default {
     callLifeCycle,
     connectNodeRender,
@@ -252,5 +266,6 @@ export default {
     getPrevDom,
     isTextNode,
     renderAttr,
-    startRenderDispatch
+    startRenderDispatch,
+    funcBindNode
 };

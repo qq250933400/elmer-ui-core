@@ -44,23 +44,29 @@ export class ElmerEvent extends Common {
             if (!this.eventData[bindEventName]) {
                 const invokeEvent = (event: Event) => {
                     const eventPath = <HTMLElement[]>(event as any).path;
-                    if (event.type !== "resize" && eventPath && eventPath.length > 0) {
-                        let srcEventDom: HTMLElement;
-                        let eventOptions: TypeDomEventOptions;
-                        for (let i = 0; i < eventPath.length; i++) {
-                            const myOptions: TypeDomEventOptions = (eventPath[i] as any).EUIEventsOption;
-                            if (myOptions) {
-                                eventOptions = myOptions;
-                                srcEventDom = eventPath[i];
-                                break;
+                    if(eventPath) {
+                        if (event.type !== "resize" && eventPath && eventPath.length > 0) {
+                            let srcEventDom: HTMLElement;
+                            let eventOptions: TypeDomEventOptions;
+                            for (let i = 0; i < eventPath.length; i++) {
+                                const myOptions: TypeDomEventOptions = (eventPath[i] as any).EUIEventsOption;
+                                if (myOptions) {
+                                    eventOptions = myOptions;
+                                    srcEventDom = eventPath[i];
+                                    break;
+                                }
                             }
-                        }
-                        if (srcEventDom) {
-                            // find the event target that event handler was bind by ElmerEvent
-                            this.callEventHandler(eventOptions, event);
+                            if (srcEventDom) {
+                                // find the event target that event handler was bind by ElmerEvent
+                                this.callEventHandler(eventOptions, event);
+                            }
+                        } else {
+                            this.callResizeEventHandler(event);
                         }
                     } else {
-                        this.callResizeEventHandler(event);
+                        const srcEventDom: HTMLElement = event.target as any;
+                        const myOptions: TypeDomEventOptions = (srcEventDom as any).EUIEventsOption;
+                        this.callEventHandler(myOptions, event);
                     }
                 };
                 this.addEventListener(options.eventName, invokeEvent);

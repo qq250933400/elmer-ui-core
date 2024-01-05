@@ -3,7 +3,7 @@ import { Component, CONST_CLASS_COMPONENT_FLAG } from "../component/Component";
 import utils from "../lib/utils";
 import renderActions from "./ElmerRenderAction";
 
-export const isNodeComponent = (com:any): com is Component => {
+export const isNodeComponent = (com:any): com is Component<any,any,any> => {
     const flag = (<any>com)?.flag;
     return flag === CONST_CLASS_COMPONENT_FLAG;
 };
@@ -14,7 +14,7 @@ type TypeInitizationOptions = {
     registeComponents?(components: any): void;
 };
 
-export const Initialization = (ComFactory:Function|Component, options: TypeInitizationOptions): Object => {
+export const Initialization = (ComFactory:Function|Component<any,any,any>, options: TypeInitizationOptions): Object => {
     let renderComponent = null;
     const virtualId = "virtualNode_" + utils.guid();
     const props = options.vdom.props || {};

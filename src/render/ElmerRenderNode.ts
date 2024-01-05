@@ -73,6 +73,10 @@ export class ElmerRenderNode {
             if(opt.isNewAction) {
                 sessionAction.token = token;
             }
+            if(!sessionAction) {
+                resolve({});
+                return;
+            }
             if(vdoms?.length > 0) {
                 const userComponentRender = [];
                 const scheduleAttachList = [];
@@ -83,9 +87,11 @@ export class ElmerRenderNode {
                     if(vdom.status !== "DELETE") {
                         const ComponentFactory = this.getUseComponent(sessionId, vdom.tagName);
                         if(!ComponentFactory) {
+                            //原生dom元素
                             let needAppendChild = false;
                             if(vdom.status === "APPEND") {
                                 vdom.dom = elmerRenderAction.createNodeByVdom(vdom);
+                                
                                 hasPathChange = true;
                                 if(!utils.isEmpty(vdom.props.id)) {
                                     if(!opt.component.dom) {
@@ -101,6 +107,13 @@ export class ElmerRenderNode {
                                     needAppendChild = true;
                                 }
                             }
+                            // if(!(vdom.dom as any).EUIEventsOption) {
+                            //     (vdom.dom as any).EUIEventsOption = {
+                            //         path: vdom.path,
+                            //         depth: vdom.path.length - 1,
+                            //         events: vdom.events
+                            //     };
+                            // }
                             if(["UPDATE", "APPEND", "MOVEUPDATE"].indexOf(vdom.status) >= 0) {
                                 elmerRenderAction.renderAttr(vdom.dom as any, vdom);
                             }
@@ -206,7 +219,7 @@ export class ElmerRenderNode {
                     })
                     .then(() => {
                         if(scheduleAttachList.length > 0) {
-                            scheduleAttachList.map((scheduleNode) => {
+                            scheduleAttachList.forEach((scheduleNode) => {
                                 this.vdomAttatch({}, {
                                     ...scheduleNode,
                                     isHtmlNode: true,
@@ -219,7 +232,7 @@ export class ElmerRenderNode {
                     .catch((err) => reject(err));
                 } else {
                     if(scheduleAttachList.length > 0) {
-                        scheduleAttachList.map((scheduleNode) => {
+                        scheduleAttachList.forEach((scheduleNode) => {
                             this.vdomAttatch({}, {
                                 ...scheduleNode,
                                 isHtmlNode: true,
@@ -266,8 +279,10 @@ export class ElmerRenderNode {
                         ...(sessionAction.useComponents || {}),
                         ...(getComponents(ComponentFactory))
                     },
-                    vdom
+                    vdom,
+                    parent: options.parent
                 });
+                console.log(vdom.tagName, options.parent);
                 (vRender as IElmerRender).render({
                     firstRender: true
                 }).then((resp) => {
@@ -341,13 +356,10 @@ export class ElmerRenderNode {
                             const nextDom = sessionAction.getComponentFirstElement(nextNode.virtualID);
                             if(nextDom.isDidMount && nextDom.dom) {
                                 // tslint:disable-next-line: no-console
-                                console.log("2.",vdom.tagName,nextNode.dom.parentElement === container);
                                 container.insertBefore(vdom.dom, nextDom.dom);
                             } else {
-                                // 未找到相邻节点，放入schedule task
-                                hasAttached = false;console.log(nextNode);
-                                // tslint:disable-next-line: no-console
-                                console.error("node can not be insert into browser dom correct", vdom);
+                                // 未找到相邻的下一个节点，证明当前节点为最后一个元素或渲染逻辑错误，放入schedule task
+                                hasAttached = false;
                             }
                         }
                     } else {
@@ -438,7 +450,8 @@ export class ElmerRenderNode {
         if(hasPathChange) {
             const allEvents = {...(vdom.events || {})};
             const eventKeys = Object.keys(allEvents);
-            const eventOptions: TypeDomEventOptions = (vdom?.dom as any)?.EUIEventsOption;
+            const eventOptions: TypeDomEventOptions = (vdom?.dom as any)?.EUIEventsOption
+            console.log("----Event-Bind", vdom);
             if(allEvents && eventKeys.length > 0) {
                 const oldEvents = JSON.parse(JSON.stringify(eventOptions?.events || {}));
                 const sessionAction: TypeRenderSession = this.renderSessions[sessionId];
@@ -449,7 +462,8 @@ export class ElmerRenderNode {
                         eventOptions.path = vdom.path;
                         (vdom?.dom as any).EUIEventsOption = eventOptions; // 更新最新的路径到绑定节点
                     }
-                    Object.keys(allEvents).map((eventName: string): void => {
+                    console.log(vdom.tagName, eventOptions);
+                    Object.keys(allEvents).forEach((eventName: string): void => {
                         const hasSubscribe = eventOptions?.events[eventName] ? true : false;
                         if(!hasSubscribe) {
                             if(typeof allEvents[eventName] === "function") {
@@ -507,7 +521,7 @@ export class ElmerRenderNode {
         const leftEvents = Object.keys(oldEvents);
         if(leftEvents.length > 0) {
             const removeEvents = [];
-            leftEvents.map((eventName) => {
+            leftEvents.forEach((eventName) => {
                 removeEvents.push(leftEvents[eventName]);
             });
             this.eventObj.unsubscribe(null, removeEvents);

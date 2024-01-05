@@ -8,7 +8,7 @@ type TypeDefinePropTypes<T={}> = {[P in keyof T]?: IPropValidator};
 
 export const CONST_CLASS_COMPONENT_FLAG = "COMPONENT_113df7d2-555c-53a1-30fb-58627fd7";
 
-export abstract class Component<P={children?: IVirtualElement[]}, S={}, C={}> extends Common implements IComponent {
+export abstract class Component<P = {}, S={}, C={}> extends Common implements IComponent {
     static flag:string = CONST_CLASS_COMPONENT_FLAG;
     static propTypes?: TypeDefinePropTypes;
     static $willReceiveProps?(newProps: any,oldProps: any): any;
@@ -47,7 +47,7 @@ export abstract class Component<P={children?: IVirtualElement[]}, S={}, C={}> ex
      * @param data 更新数据
      * @param argv 其他参数
      */
-    setData<T>(data: {} & T, ...argv:any[]): Promise<any> {
+    setData<T ={}>(data: Partial<T>, ...argv:any[]): Promise<any> {
         throw new Error("Method not implemented.");
     }
     /**

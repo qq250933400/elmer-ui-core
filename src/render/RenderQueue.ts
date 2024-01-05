@@ -96,7 +96,7 @@ export class RenderQueue extends Common {
                     this.checkSessionStatus(sessionId, false);
                 }).catch((err) => {
                     // tslint:disable-next-line: no-console
-                    console.error(err.exception.stack);
+                    console.error(err.exception?.stack || err.stack || err);
                     this.checkSessionStatus(sessionId, true, err);
                 });
             }

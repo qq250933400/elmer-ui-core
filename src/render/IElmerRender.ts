@@ -14,6 +14,7 @@ export type TypeElmerRenderOptions = {
     nextSibling: HTMLElement;
     useComponents: any;
     depth: number;
+    parent?: any;
 };
 
 export type TypeVirtualRenders<T={}> = {[P in keyof T]: IElmerRender};
@@ -52,7 +53,7 @@ export type TypeRenderSession = {
     nodePath: number[];
     nodeId: string;
     eventListeners: any[];
-    ComponentFactory: Function|Component;
+    ComponentFactory: Function|Component<any,any,any>;
     registeComponents(components: any): void;
     removeRender(virtualId: string): void,
     saveRender(virtualId: string, renderObj: any): void;
