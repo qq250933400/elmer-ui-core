@@ -4,7 +4,7 @@ import { defineHook, getWikiState, setWikiState, TypeHookStore } from "./hookUti
  * 获取节点对象
  * @param id 节点ID
  */
-export const getNode = (id: string): Function => {
+export const useNode = (id: string): Function => {
     return defineHook("getNode", (opt) => {
         if(opt.isInit) {
             const getNodeCallback = ((obj:any, vNodeId: string) => {

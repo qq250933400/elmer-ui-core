@@ -84,8 +84,11 @@ export class ElmerRenderNode {
                 let hasPathChange = options.hasPathChange;
                 for(let index=0;index<vdoms.length;index++) {
                     const vdom = vdoms[index];
+                    const ComponentFactory = this.getUseComponent(sessionId, vdom.tagName);
+                    if(ComponentFactory) {
+                        (vdom as any).isComponent = true;
+                    }
                     if(vdom.status !== "DELETE") {
-                        const ComponentFactory = this.getUseComponent(sessionId, vdom.tagName);
                         if(!ComponentFactory) {
                             //原生dom元素
                             let needAppendChild = false;
@@ -107,13 +110,6 @@ export class ElmerRenderNode {
                                     needAppendChild = true;
                                 }
                             }
-                            // if(!(vdom.dom as any).EUIEventsOption) {
-                            //     (vdom.dom as any).EUIEventsOption = {
-                            //         path: vdom.path,
-                            //         depth: vdom.path.length - 1,
-                            //         events: vdom.events
-                            //     };
-                            // }
                             if(["UPDATE", "APPEND", "MOVEUPDATE"].indexOf(vdom.status) >= 0) {
                                 elmerRenderAction.renderAttr(vdom.dom as any, vdom);
                             }
@@ -176,7 +172,6 @@ export class ElmerRenderNode {
                             this.vdomEventRender(sessionId, vdom, hasPathChange);
                         } else {
                             hasComponent = true;
-                            (vdom as any).isComponent = true;
                             userComponentRender.push({
                                 id: "ComponentRender_" + index,
                                 params: {
@@ -282,7 +277,6 @@ export class ElmerRenderNode {
                     vdom,
                     parent: options.parent
                 });
-                console.log(vdom.tagName, options.parent);
                 (vRender as IElmerRender).render({
                     firstRender: true
                 }).then((resp) => {
@@ -420,16 +414,20 @@ export class ElmerRenderNode {
         }
         return hasAttached;
     }
-    destory(sessionId: string): void {
+    destory(sessionId: string): TypeRenderSession {
         const currentSession: TypeRenderSession = this.renderSessions[sessionId];
-        this.eventObj.unsubscribe(currentSession.nodeId);
-        delete this.renderSessions[sessionId];
+        if(currentSession) {
+            this.eventObj.unsubscribe(currentSession.nodeId);
+            delete this.renderSessions[sessionId];
+        }
+        return currentSession;
     }
     releaseOutJourneyNodes(sessionId: string,vNodes:IVirtualElement[]): void {
         const currentSession: TypeRenderSession = this.renderSessions[sessionId];
-        vNodes?.length > 0 && vNodes.map((vdom) => {
+        vNodes?.length > 0 && vNodes.forEach((vdom) => {
             if((vdom as any).isComponent) {
-                currentSession.getRender(vdom.virtualID)?.destory();
+                const render = currentSession.getRender(vdom.virtualID);
+                render?.destory();
             } else {
                 this.releaseEventsByNode(vdom);
                 if(vdom.children?.length > 0) {
@@ -451,7 +449,6 @@ export class ElmerRenderNode {
             const allEvents = {...(vdom.events || {})};
             const eventKeys = Object.keys(allEvents);
             const eventOptions: TypeDomEventOptions = (vdom?.dom as any)?.EUIEventsOption
-            console.log("----Event-Bind", vdom);
             if(allEvents && eventKeys.length > 0) {
                 const oldEvents = JSON.parse(JSON.stringify(eventOptions?.events || {}));
                 const sessionAction: TypeRenderSession = this.renderSessions[sessionId];
@@ -462,7 +459,6 @@ export class ElmerRenderNode {
                         eventOptions.path = vdom.path;
                         (vdom?.dom as any).EUIEventsOption = eventOptions; // 更新最新的路径到绑定节点
                     }
-                    console.log(vdom.tagName, eventOptions);
                     Object.keys(allEvents).forEach((eventName: string): void => {
                         const hasSubscribe = eventOptions?.events[eventName] ? true : false;
                         if(!hasSubscribe) {

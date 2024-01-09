@@ -12,26 +12,31 @@ export type TypeEventIdMapping = {
 @Service
 export class EventInWorker {
     sortEventId(mapData: TypeEventIdMapping[], eventPath: number[]):any {
-        if(self["utils"].isArray(mapData)) {
-            for(let i=0;i<mapData.length;i++) {
-                const checkItem = mapData[i];
-                for(let j=i;j<mapData.length;j++) {
-                    const mapItem = mapData[j];
-                    if(this.isNextPath(checkItem.path, mapItem.path)) {
-                        mapData[i] = mapItem;
-                        mapData[j] = checkItem;
+        try {
+            if(self["utils"].isArray(mapData)) {
+                for(let i=0;i<mapData.length;i++) {
+                    const checkItem = mapData[i];
+                    for(let j=i;j<mapData.length;j++) {
+                        const mapItem = mapData[j];
+                        if(this.isNextPath(checkItem.path, mapItem.path)) {
+                            mapData[i] = mapItem;
+                            mapData[j] = checkItem;
+                        }
                     }
                 }
+                return {
+                    allPathData: mapData,
+                    path: eventPath
+                };
+            } else {
+                return {
+                    allPathData: mapData,
+                    path: eventPath
+                };
             }
-            return {
-                allPathData: mapData,
-                path: eventPath
-            };
-        } else {
-            return {
-                allPathData: mapData,
-                path: eventPath
-            };
+        } catch(err) {
+            console.error(err);
+            console.error(mapData, eventPath);
         }
     }
     isNextPath(path1: number[], path2: number[]): boolean {

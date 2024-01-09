@@ -83,8 +83,12 @@ export const Initialization = (ComFactory:Function|Component<any,any,any>, optio
                     var nodeFunc = (function() {
                         return Func.apply(self, args)
                     }).bind(self);
-                    nodeFunc();
-                    return nodeFunc();
+                    var res = nodeFunc();
+                    if(!res) {
+                        console.error(Func);
+                        throw new Error("函数组件必须返回html代码", Func);
+                    }
+                    return res;
                     `))(srcRenderAction, args, this);
                 });
             }).bind(virtualNode);

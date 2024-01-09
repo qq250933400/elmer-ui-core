@@ -1,5 +1,5 @@
 import { utils } from "elmer-common";
-import { getNode, useCallback,useComponent, useEffect, useState } from "../../hooks";
+import { useNode, useCallback,useComponent, useEffect, useState } from "../../hooks";
 import { getDefaultLocale, i18nContext } from "./initI18n";
 
 const [ i18nState ] = i18nContext;
@@ -41,7 +41,7 @@ export const withI18n = (option?: TypeWithI18nOption):Function => {
             const [ {}, getComId, comId ] = useState<string>("comId", () => {
                 return "i18nComponent_" + utils.guid();
             });
-            const getTargetComponent = getNode(getComId());
+            const getTargetComponent = useNode(getComId());
             const [ {}, getI18nCallback ] = useCallback(() => {
                 const i18nData = getI18nData();
                 const locale = !utils.isEmpty(i18nState.locale) ? i18nState.locale : getDefaultLocale();

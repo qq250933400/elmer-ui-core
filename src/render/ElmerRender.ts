@@ -18,6 +18,7 @@ import { isNodeComponent } from "./Initialization";
 export class ElmerRender {
 
     isDidMount: boolean;
+    // 最后一次渲染过后的虚拟节点数据
     lastVirtualNode: IVirtualElement;
     options: TypeElmerRenderOptions;
     virtualRenderObj: TypeVirtualRenders = {};
@@ -122,7 +123,6 @@ export class ElmerRender {
                             props: { ...((this.options.component as any).props||{}) },
                             state: (this.options.component as any).state,
                         });
-                        console.log("fire-Render-", options.parent);
                     }
                 }
             }
@@ -172,7 +172,7 @@ export class ElmerRender {
     getLastDom(): TypeRenderGetNodeResult {
         if(this.isDidMount) {
             let findDom = null;
-            if (this.lastVirtualNode && this.lastVirtualNode.children) {
+            if (this.lastVirtualNode?.children) {
                 for (let i = this.lastVirtualNode.children.length - 1; i >= 0; i--) {
                     if (this.lastVirtualNode.children[i].status !== "DELETE") {
                         const lVdom = this.lastVirtualNode.children[i];
@@ -208,7 +208,7 @@ export class ElmerRender {
     getFirstDom():TypeRenderGetNodeResult {
         if(this.isDidMount) {
             let findDom = null;
-            if(this.lastVirtualNode && this.lastVirtualNode.children) {
+            if(this.lastVirtualNode?.children) {
                 for(let i=0;i<this.lastVirtualNode.children.length;i++) {
                     if(this.lastVirtualNode.children[i].status !== "DELETE") {
                         const lVdom = this.lastVirtualNode.children[i];
@@ -239,7 +239,18 @@ export class ElmerRender {
     destory(): void {
         // TODO: 需要在此处释放所有事件监听
         // 释放渲染插件调用对象
-        this.elmerRenderNode.destory(this.options.vdom.virtualID);
+        const renderSession = this.elmerRenderNode.destory(this.options.vdom.virtualID);
+        if(this.lastVirtualNode) {
+            this.lastVirtualNode.children?.forEach((vdom) => {
+                if(!(vdom as any).isComponent) {
+                    const domNode = vdom.dom;
+                    domNode?.parentElement && domNode.parentElement.removeChild(domNode);
+                } else {
+                    const render = renderSession?.getRender(vdom.virtualID);
+                    render?.destory();
+                }
+            });
+        }
     }
     private bindChildrenDom(vdom: IVirtualElement, isChildrenNode: boolean) {
         if(!(this.options.component as any).dom) {
@@ -249,8 +260,6 @@ export class ElmerRender {
             if(!utils.isEmpty(vdom.props.id)) {
                 if(vdom.status !== "DELETE") {
                     if(isChildrenNode) {
-                        // console.log("--------",this.options.component, this.options.parent);
-                        // console.log(vdom);
                         if(this.options.parent) {
                             this.options.parent[vdom.props.id] = vdom.dom;
                         }
@@ -365,11 +374,14 @@ export class ElmerRender {
                 resolve({});
                 return;
             }
+            if(!vdom) {
+                console.log(this);
+            }
             const newDom = this.virtualRender.render(vdom, this.lastVirtualNode, this.options.component, {
                 children: this.options.children,
                 rootPath: this.options.path,
                 sessionId: this.virtualId
-            });console.log(newDom);
+            });
             const stillNeedRender = this.callLifeCycle("$beforeRender", {
                 props: (this.options.component as any).props,
                 vdom: newDom
@@ -430,13 +442,18 @@ export class ElmerRender {
                     params: null,
                     // tslint:disable-next-line: object-literal-sort-keys
                     fn: async () => {
-                        const vitualNodes = await vRender(props || {}, this.options.vdom.tagName);
-                        const hookUserComponent = getComponents(this.options.ComponentFactory);
-                        this.useComponents = {
-                            ...this.useComponents,
-                            ...(hookUserComponent || {})
-                        };
-                        return vitualNodes;
+                        try {
+                            const vitualNodes = await vRender(props || {}, this.options.vdom.tagName);
+                            const hookUserComponent = getComponents(this.options.ComponentFactory);
+                            this.useComponents = {
+                                ...this.useComponents,
+                                ...(hookUserComponent || {})
+                            };
+                            return vitualNodes;
+                        }catch(err) {
+                            console.error("Error:", this.options.vdom.tagName, this.options.vdom.path);
+                            throw err;
+                        }
                     }
                 }, {
                     id: "htmlParse",
