@@ -247,6 +247,8 @@ export class RouterService extends Common {
                             }
                         }
                     }).then((resp:any) => {
+                        const dispatchAction = (this as any).dispatch;
+                        typeof dispatchAction === "function" && dispatchAction(param.endPoint?.options?.reduxActionType, resp);
                         _resolve(resp);
                     }).catch((error:any) => {
                         _reject(error);
