@@ -71,7 +71,7 @@
         "@abraham/reflection": "^0.4.2",
         "@types/core-js": "^2.5.0",
         "@types/jquery": "^3.3.22",
-        "ajv": "5.0.0",
+        "ajv": "6.12.3",
         "autoprefixer": "^9.2.0",
         "axios": "^0.21.1",
         "babel-cli": "^6.26.0",
