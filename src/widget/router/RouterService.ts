@@ -218,6 +218,7 @@ export class RouterService extends Common {
                 // tslint:disable-next-line: variable-name
                 return new Promise<any>((_resolve, _reject) => {
                     let myLoaded = 0;
+                    const apiConfig = this.http.getEndPoint(param);
                     this.http.sendRequest({
                         endPoint: param.endPoint,
                         namespace: param.namespace,
@@ -248,7 +249,10 @@ export class RouterService extends Common {
                         }
                     }).then((resp:any) => {
                         const dispatchAction = (this as any).dispatch;
-                        typeof dispatchAction === "function" && dispatchAction(param.endPoint?.options?.reduxActionType, resp);
+                        typeof dispatchAction === "function" && dispatchAction({
+                            type: apiConfig?.options?.reduxActionType,
+                            data: resp
+                        });
                         _resolve(resp);
                     }).catch((error:any) => {
                         _reject(error);

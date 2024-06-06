@@ -243,7 +243,7 @@ export class ElmerServiceRequest extends Common {
         }
         return "GET";
     }
-    private getEndPoint(option:IServiceRequest<any>): any {
+    public getEndPoint(option:IServiceRequest<any>): any {
         if(this.isEmpty(this.config)) {
             this.init();
             // throw new Error("Please call init first");
